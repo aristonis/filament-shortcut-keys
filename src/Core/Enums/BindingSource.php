@@ -1,10 +1,10 @@
 <?php
 
-namespace Aristonis\FilamentShortcutKeys\Core\Enum;
+namespace Aristonis\FilamentShortcutKeys\Core\Enums;
 
-enum BindingSource:string
+enum BindingSource: string
 {
-    # convention | overlay | user | custom
+    // convention | overlay | user | custom
     case CONVENTION = 'convention';
     case OVERLAY = 'overlay';
     case USER = 'user';
