@@ -1,13 +1,46 @@
-**/.DS_Store
-.idea
+# Dependencies
+/vendor
+/node_modules
+
+# Composer (this is a library — consumers resolve their own versions)
+composer.lock
+
+# Build / coverage output
+/build
+/coverage
+coverage
+
+# PHP tooling caches
 .phpunit.result.cache
 .phpunit.cache
-.vscode
-build
-coverage
-docs
-node_modules
+.php-cs-fixer.cache
+.php-cs-fixer.php
+.rector.cache
+
+# Local tool config overrides
 phpunit.xml
 phpstan.neon
 testbench.yaml
-vendor
+
+# Environment
+.env
+.env.backup
+
+# Editors / IDEs
+.idea
+.vscode
+.fleet
+.nova
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+**/.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-error.log
+
+# Docs build
+docs
