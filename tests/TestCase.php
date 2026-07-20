@@ -2,6 +2,7 @@
 
 namespace Aristonis\FilamentShortcutKeys\Tests;
 
+use Aristonis\FilamentShortcutKeys\FilamentShortcutKeysServiceProvider;
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
 use Filament\Actions\ActionsServiceProvider;
@@ -19,7 +20,6 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
-use Aristonis\FilamentShortcutKeys\FilamentShortcutKeysServiceProvider;
 
 class TestCase extends Orchestra
 {
