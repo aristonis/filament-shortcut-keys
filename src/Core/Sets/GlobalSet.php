@@ -26,7 +26,8 @@ final class GlobalSet implements ShortcutSet
     {
         return array_map(fn (ActionTarget $target) => new ShortcutBinding(
             new ShortcutTarget('global', $target->name),
-            null
+            null,
+            letterHint: $target->name,
         ), $pageContextProvider->actions());
     }
 

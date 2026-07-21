@@ -46,6 +46,7 @@ it('the navigation set discovers one convention binding per sidebar item, letter
         ->and($bindings[0]->target->set)->toBe('navigation')
         ->and($bindings[0]->target->structureKey)->toBe('App\\Filament\\Resources\\ProductResource')
         ->and($bindings[0]->keyCombo)->toBeNull()
+        ->and($bindings[0]->letterHint)->toBe('Products')   // label drives the letter (FR-4)
         ->and($bindings[0]->source)->toBe(BindingSource::CONVENTION);
 });
 
@@ -69,6 +70,7 @@ it('the global set discovers one convention binding per page action, letter unas
         ->and($bindings[0]->target->set)->toBe('global')
         ->and($bindings[0]->target->structureKey)->toBe('create')
         ->and($bindings[0]->keyCombo)->toBeNull()
+        ->and($bindings[0]->letterHint)->toBe('create')   // action name drives the letter (FR-7)
         ->and($bindings[0]->source)->toBe(BindingSource::CONVENTION);
 });
 

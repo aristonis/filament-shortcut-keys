@@ -10,6 +10,7 @@ final readonly class ShortcutBinding
         public ShortcutTarget $target,
         public ?KeyCombo $keyCombo,
         public bool $enabled = true,
-        public BindingSource $source = BindingSource::CONVENTION
+        public BindingSource $source = BindingSource::CONVENTION,
+        public ?string $letterHint = null
     ) {}
 }

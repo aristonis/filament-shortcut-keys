@@ -27,7 +27,8 @@ final class NavigationSet implements ShortcutSet
         return array_map(
             fn (NavItem $item) => new ShortcutBinding(
                 new ShortcutTarget('navigation', $item->structureKey),
-                null
+                null,
+                letterHint: $item->label,
             ),
             $navigationProvider->items($panelId)
         );
