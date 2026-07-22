@@ -7,6 +7,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\ShortcutSet;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 
+/** Page-scoped shortcuts declared by an individual page. Registered for precedence; discovery returns none until a page can declare them. */
 final class PageSet implements ShortcutSet
 {
     public function key(): string

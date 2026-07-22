@@ -10,6 +10,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
+/** Table shortcuts: fixed bare keys (search, row/page movement, row actions), active only when the page has a table. */
 final class TableSet implements ShortcutSet
 {
     public function key(): string

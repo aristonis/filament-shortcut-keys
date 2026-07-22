@@ -2,6 +2,7 @@
 
 namespace Aristonis\FilamentShortcutKeys\Core\Resolution;
 
+/** The final keymap for one page: shortcut groups (one per set), serialized for the client via toArray(). */
 final readonly class ResolvedMap
 {
     public function __construct(

@@ -10,6 +10,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
+/** Global shortcuts: one per page action, Alt + a letter from the action name. */
 final class GlobalSet implements ShortcutSet
 {
     public function key(): string

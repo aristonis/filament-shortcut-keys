@@ -2,6 +2,7 @@
 
 namespace Aristonis\FilamentShortcutKeys\Core\ValueObjects;
 
+/** Stable identity of a shortcut — "set:structureKey" (e.g. navigation:products) — so overrides survive renames. */
 final readonly class ShortcutTarget
 {
     public function __construct(

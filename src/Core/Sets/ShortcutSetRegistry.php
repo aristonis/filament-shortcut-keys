@@ -6,6 +6,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\ShortcutSet;
 
+/** Holds the registered shortcut sets and gathers every set's raw bindings for a page. */
 final class ShortcutSetRegistry
 {
     private array $sets = [];

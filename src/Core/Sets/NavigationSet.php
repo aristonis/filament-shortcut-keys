@@ -10,6 +10,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\NavItem;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
+/** Navigation shortcuts: one per registered nav item, Alt+Shift + a letter from its label. */
 final class NavigationSet implements ShortcutSet
 {
     public function key(): string
