@@ -5,12 +5,13 @@ namespace Aristonis\FilamentShortcutKeys\Core\Resolution;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
 use Aristonis\FilamentShortcutKeys\Core\Enums\BindingSource;
 use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 
-final readonly class ShortcutResolver
+final readonly class ShortcutResolver implements Resolver
 {
     public function __construct(
         private ShortcutSetRegistry $registry,
@@ -29,6 +30,11 @@ final readonly class ShortcutResolver
         return $this->group($bindings);
     }
 
+    /**
+     * Applies developer config overrides. A forced letter is set as a fixed combo now, before
+     * letter assignment, so LetterAssigner keeps it and routes other keys around it. A disable is
+     * only flagged here; keepEnabled() removes it before assignment.
+     */
     private function applyOverlay(array $bindings): array
     {
         $bindingsOverlaid = [];
@@ -36,14 +42,12 @@ final readonly class ShortcutResolver
             $rule = $this->overlay[$binding->target->identity()] ?? null;
 
             if ($rule === null) {
-                // no dev rule for this shortcut — pass it through untouched
                 $bindingsOverlaid[] = $binding;
 
                 continue;
             }
 
             if ($rule['disabled'] ?? false) {
-                // disable: flag it off + tag OVERLAY; keepEnabled() drops it before assignment
                 $bindingsOverlaid[] = new ShortcutBinding(
                     $binding->target,
                     $binding->keyCombo,
@@ -56,7 +60,6 @@ final readonly class ShortcutResolver
             }
 
             if (isset($rule['letter'])) {
-                // force letter: fix the combo now so assignLetters() honors it and routes others around
                 $scheme = $this->registry->get($binding->target->set)->defaultModifier();
                 $combo = KeyCombo::parse($scheme->toString() . '+' . strtolower($rule['letter']));
 
@@ -71,13 +74,17 @@ final readonly class ShortcutResolver
                 continue;
             }
 
-            // rule shape we don't recognise — leave the binding alone
             $bindingsOverlaid[] = $binding;
         }
 
         return $bindingsOverlaid;
     }
 
+    /**
+     * Applies the user's active map over the convention bindings. A remap stores the full combo
+     * the user chose; a disable is flagged (removed later by keepEnabled). Targets the map does not
+     * mention fall through to convention unchanged.
+     */
     private function applyActiveMap(array $bindings, string $panelId, string $authType = '', string $authId = ''): array
     {
         if ($this->maps === null) {
@@ -89,14 +96,12 @@ final readonly class ShortcutResolver
             $entry = $entries[$binding->target->identity()] ?? null;
 
             if ($entry === null) {
-                // user map does not touch this shortcut — fall through to convention (FR-26)
                 $bindingsMapped[] = $binding;
 
                 continue;
             }
 
             if ($entry['disabled'] ?? false) {
-                // user disabled it: flag off + tag USER; keepEnabled() drops it before assignment
                 $bindingsMapped[] = new ShortcutBinding(
                     $binding->target,
                     $binding->keyCombo,
@@ -109,7 +114,6 @@ final readonly class ShortcutResolver
             }
 
             if (isset($entry['key'])) {
-                // user remapped it: the map stores the full combo, so parse it straight
                 $bindingsMapped[] = new ShortcutBinding(
                     $binding->target,
                     KeyCombo::parse($entry['key']),
@@ -121,7 +125,6 @@ final readonly class ShortcutResolver
                 continue;
             }
 
-            // entry shape we don't recognise — leave the binding alone
             $bindingsMapped[] = $binding;
         }
 
