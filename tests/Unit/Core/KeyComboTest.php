@@ -6,10 +6,10 @@ use Aristonis\FilamentShortcutKeys\Exceptions\InvalidKeyComboException;
 it('parses modifiers and maps the letter to a physical key code', function () {
     $combo = KeyCombo::parse('alt+shift+p');
 
-    expect($combo->alt)->toBeTrue()
-        ->and($combo->shift)->toBeTrue()
-        ->and($combo->ctrl)->toBeFalse()
-        ->and($combo->meta)->toBeFalse()
+    expect($combo->modifiers->alt)->toBeTrue()
+        ->and($combo->modifiers->shift)->toBeTrue()
+        ->and($combo->modifiers->ctrl)->toBeFalse()
+        ->and($combo->modifiers->meta)->toBeFalse()
         ->and($combo->code)->toBe('KeyP');
 });
 
@@ -21,10 +21,10 @@ it('accepts a bare key with no modifiers (table keys, letter actions like c/e)',
     $combo = KeyCombo::parse('c');
 
     expect($combo->code)->toBe('KeyC')
-        ->and($combo->ctrl)->toBeFalse()
-        ->and($combo->alt)->toBeFalse()
-        ->and($combo->shift)->toBeFalse()
-        ->and($combo->meta)->toBeFalse();
+        ->and($combo->modifiers->ctrl)->toBeFalse()
+        ->and($combo->modifiers->alt)->toBeFalse()
+        ->and($combo->modifiers->shift)->toBeFalse()
+        ->and($combo->modifiers->meta)->toBeFalse();
 });
 
 it('is case-insensitive and order-independent when comparing', function () {

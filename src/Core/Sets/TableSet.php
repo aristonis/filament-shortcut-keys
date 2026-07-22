@@ -44,7 +44,7 @@ final class TableSet implements ShortcutSet
         foreach ($reserved as $structureKey => $code) {
             $bindings[] = new ShortcutBinding(
                 new ShortcutTarget('table', $structureKey),
-                new KeyCombo(false, false, false, false, $code),
+                new KeyCombo(ModifierScheme::none(), $code),
             );
         }
 

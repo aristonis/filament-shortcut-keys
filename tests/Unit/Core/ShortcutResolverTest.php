@@ -12,6 +12,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapData;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
+use Aristonis\FilamentShortcutKeys\Exceptions\UnknownShortcutSetException;
 use Aristonis\FilamentShortcutKeys\Tests\Fakes\InMemoryMapRepository;
 use Aristonis\FilamentShortcutKeys\Tests\Fakes\InMemoryNavigationProvider;
 use Aristonis\FilamentShortcutKeys\Tests\Fakes\InMemoryPageContextProvider;
@@ -204,7 +205,7 @@ it('throws when a binding references an unregistered set', function () {
     ]));
 
     expect(fn () => resolveGroups($registry))
-        ->toThrow(Aristonis\FilamentShortcutKeys\Exceptions\UnknownShortcutSetException::class);
+        ->toThrow(UnknownShortcutSetException::class);
 });
 
 it('ignores an invalid overlay letter and keeps the convention key', function () {

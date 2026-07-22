@@ -43,7 +43,7 @@ final readonly class LetterAssigner
             $taken[] = $code;
             $result[] = new ShortcutBinding(
                 $binding->target,
-                new KeyCombo($scheme->ctrl, $scheme->alt, $scheme->shift, $scheme->meta, $code),
+                new KeyCombo($scheme, $code),
                 $binding->enabled,
                 $binding->source,
                 $binding->letterHint,

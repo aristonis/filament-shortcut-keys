@@ -109,9 +109,9 @@ it('the table set reserves pagination on the left and right arrow keys', functio
         ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
 
     expect($byKey->has('page-prev'))->toBeTrue()
-        ->and($byKey['page-prev']->keyCombo->equals(new KeyCombo(false, false, false, false, 'ArrowLeft')))->toBeTrue()
+        ->and($byKey['page-prev']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowLeft')))->toBeTrue()
         ->and($byKey->has('page-next'))->toBeTrue()
-        ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(false, false, false, false, 'ArrowRight')))->toBeTrue();
+        ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowRight')))->toBeTrue();
 });
 
 // --- Page set (D34: registered but dormant until SG-8) ---------------------

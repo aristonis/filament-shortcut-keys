@@ -5,10 +5,9 @@ namespace Aristonis\FilamentShortcutKeys\Core\ValueObjects;
 use Aristonis\FilamentShortcutKeys\Exceptions\InvalidKeyComboException;
 
 /**
- * Immutable keyboard combo: modifier flags + one physical key code ("KeyP", "Slash").
- * The key is stored as e.code so matching is stable across keyboard layouts and RTL; the four
- * bools mirror the browser's e.*Key flags so server and client compare 1:1. parse() is the only
- * validated entry point — the constructor trusts normalized input.
+ * Immutable keyboard combo: a modifier scheme + one physical key code ("KeyP", "Slash").
+ * The key is stored as e.code so matching is stable across keyboard layouts and RTL. parse() is
+ * the only validated entry point — the constructor trusts normalized input.
  */
 final readonly class KeyCombo
 {
@@ -17,10 +16,7 @@ final readonly class KeyCombo
     ];
 
     public function __construct(
-        public bool $ctrl,
-        public bool $alt,
-        public bool $shift,
-        public bool $meta,
+        public ModifierScheme $modifiers,
         public string $code,
     ) {}
 
@@ -69,38 +65,21 @@ final readonly class KeyCombo
             throw InvalidKeyComboException::forInput($raw);
         }
 
-        return new self($ctrl, $alt, $shift, $meta, $code);
+        return new self(new ModifierScheme($ctrl, $alt, $shift, $meta), $code);
     }
 
     public function equals(self $other): bool
     {
-        return $this->ctrl === $other->ctrl
-            && $this->alt === $other->alt
-            && $this->shift === $other->shift
-            && $this->meta === $other->meta
+        return $this->modifiers->equals($other->modifiers)
             && $this->code === $other->code;
     }
 
     public function toString(): string
     {
-        $parts = [];
+        $modifier = $this->modifiers->toString();
+        $token = self::toToken($this->code);
 
-        if ($this->ctrl) {
-            $parts[] = 'ctrl';
-        }
-        if ($this->alt) {
-            $parts[] = 'alt';
-        }
-        if ($this->shift) {
-            $parts[] = 'shift';
-        }
-        if ($this->meta) {
-            $parts[] = 'meta';
-        }
-
-        $parts[] = self::toToken($this->code);
-
-        return implode('+', $parts);
+        return $modifier === '' ? $token : $modifier . '+' . $token;
     }
 
     private static function toCode(string $token): string

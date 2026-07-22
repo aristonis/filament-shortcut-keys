@@ -161,7 +161,7 @@ final readonly class ShortcutResolver implements Resolver
             return null;
         }
 
-        return new KeyCombo($scheme->ctrl, $scheme->alt, $scheme->shift, $scheme->meta, 'Key' . strtoupper($letter));
+        return new KeyCombo($scheme, 'Key' . strtoupper($letter));
     }
 
     private function schemeFor(string $set): ModifierScheme
