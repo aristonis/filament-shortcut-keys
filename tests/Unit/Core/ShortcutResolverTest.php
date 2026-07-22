@@ -158,7 +158,7 @@ it('applies a user active-map remap and frees the convention letter (AC-9)', fun
         convention('navigation', 'payments', 'Payments'),
     ]));
 
-    $groups = resolveWithMap($registry, ['navigation:products' => ['key' => 'alt+shift+z']]);
+    $groups = resolveWithMap($registry, ['navigation:products' => ['letter' => 'z']]);
 
     $products = bindingFor($groups, 'navigation', 'products');
     $payments = bindingFor($groups, 'navigation', 'payments');
@@ -189,10 +189,49 @@ it('falls through to convention for targets the user map does not mention (FR-26
         convention('navigation', 'payments', 'Payments'),
     ]));
 
-    $groups = resolveWithMap($registry, ['navigation:products' => ['key' => 'alt+shift+z']]);
+    $groups = resolveWithMap($registry, ['navigation:products' => ['letter' => 'z']]);
 
     $payments = bindingFor($groups, 'navigation', 'payments');
 
     expect($payments->source)->toBe(BindingSource::CONVENTION)
         ->and($payments->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue();
+});
+
+it('throws when a binding references an unregistered set', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+        convention('ghost', 'thing', 'Thing'),
+    ]));
+
+    expect(fn () => resolveGroups($registry))
+        ->toThrow(Aristonis\FilamentShortcutKeys\Exceptions\UnknownShortcutSetException::class);
+});
+
+it('ignores an invalid overlay letter and keeps the convention key', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+        convention('navigation', 'products', 'Products'),
+    ]));
+
+    $groups = resolveGroups($registry, ['navigation:products' => ['letter' => 'enter']]);
+    $products = bindingFor($groups, 'navigation', 'products');
+
+    expect($products->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue()
+        ->and($products->source)->toBe(BindingSource::CONVENTION);
+});
+
+it('resolves a pool larger than the alphabet without emitting a null key', function () {
+    $bindings = [];
+    for ($i = 0; $i < 30; $i++) {
+        $bindings[] = convention('navigation', "r{$i}", 'Item');
+    }
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), $bindings));
+
+    $groups = resolveGroups($registry);
+
+    expect($groups[0]->bindings)->toHaveCount(26);
+    foreach ($groups[0]->bindings as $binding) {
+        expect($binding->keyCombo)->not->toBeNull();
+    }
 });

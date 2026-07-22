@@ -9,7 +9,9 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
 use Aristonis\FilamentShortcutKeys\Core\Enums\BindingSource;
 use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
+use Aristonis\FilamentShortcutKeys\Exceptions\UnknownShortcutSetException;
 
 final readonly class ShortcutResolver implements Resolver
 {
@@ -33,7 +35,8 @@ final readonly class ShortcutResolver implements Resolver
     /**
      * Applies developer config overrides. A forced letter is set as a fixed combo now, before
      * letter assignment, so LetterAssigner keeps it and routes other keys around it. A disable is
-     * only flagged here; keepEnabled() removes it before assignment.
+     * only flagged here; keepEnabled() removes it before assignment. An invalid forced letter is
+     *  ignored, so one bad config value can't take down the whole map.
      */
     private function applyOverlay(array $bindings): array
     {
@@ -48,48 +51,30 @@ final readonly class ShortcutResolver implements Resolver
             }
 
             if ($rule['disabled'] ?? false) {
-                $bindingsOverlaid[] = new ShortcutBinding(
-                    $binding->target,
-                    $binding->keyCombo,
-                    false,
-                    BindingSource::OVERLAY,
-                    $binding->letterHint,
-                );
+                $bindingsOverlaid[] = $this->disabled($binding, BindingSource::OVERLAY);
 
                 continue;
             }
 
-            if (isset($rule['letter'])) {
-                $scheme = $this->registry->get($binding->target->set)->defaultModifier();
-                $combo = KeyCombo::parse($scheme->toString() . '+' . strtolower($rule['letter']));
-
-                $bindingsOverlaid[] = new ShortcutBinding(
-                    $binding->target,
-                    $combo,
-                    $binding->enabled,
-                    BindingSource::OVERLAY,
-                    $binding->letterHint,
-                );
-
-                continue;
-            }
-
-            $bindingsOverlaid[] = $binding;
+            $bindingsOverlaid[] = isset($rule['letter'])
+                ? $this->forced($binding, (string) $rule['letter'], BindingSource::OVERLAY)
+                : $binding;
         }
 
         return $bindingsOverlaid;
     }
 
     /**
-     * Applies the user's active map over the convention bindings. A remap stores the full combo
-     * the user chose; a disable is flagged (removed later by keepEnabled). Targets the map does not
-     * mention fall through to convention unchanged.
+     * Applies the user's active map over the convention bindings. A remap re-letters the shortcut
+     * within its set's own modifier scheme; a disable is flagged (removed later by keepEnabled).
+     * Targets the map does not mention fall through to convention unchanged.
      */
     private function applyActiveMap(array $bindings, string $panelId, string $authType = '', string $authId = ''): array
     {
         if ($this->maps === null) {
             return $bindings;
         }
+
         $entries = $this->maps->activeMap($authType, $authId, $panelId)->entries;
         $bindingsMapped = [];
         foreach ($bindings as $binding) {
@@ -102,30 +87,14 @@ final readonly class ShortcutResolver implements Resolver
             }
 
             if ($entry['disabled'] ?? false) {
-                $bindingsMapped[] = new ShortcutBinding(
-                    $binding->target,
-                    $binding->keyCombo,
-                    false,
-                    BindingSource::USER,
-                    $binding->letterHint,
-                );
+                $bindingsMapped[] = $this->disabled($binding, BindingSource::USER);
 
                 continue;
             }
 
-            if (isset($entry['key'])) {
-                $bindingsMapped[] = new ShortcutBinding(
-                    $binding->target,
-                    KeyCombo::parse($entry['key']),
-                    $binding->enabled,
-                    BindingSource::USER,
-                    $binding->letterHint,
-                );
-
-                continue;
-            }
-
-            $bindingsMapped[] = $binding;
+            $bindingsMapped[] = isset($entry['letter'])
+                ? $this->forced($binding, (string) $entry['letter'], BindingSource::USER)
+                : $binding;
         }
 
         return $bindingsMapped;
@@ -139,16 +108,16 @@ final readonly class ShortcutResolver implements Resolver
 
     private function assignLetters(array $bindings): array
     {
+        // Pool by effective modifier scheme: only bindings that share a scheme can collide.
         $pools = [];
         foreach ($bindings as $binding) {
-            $scheme = $this->registry->get($binding->target->set)->defaultModifier();
-            $key = $scheme->toString();
-            $pools[$key][] = $binding;
+            $pools[$this->schemeFor($binding->target->set)->toString()][] = $binding;
         }
+
+        $assigner = new LetterAssigner;
         $result = [];
-        foreach ($pools as $key => $pool) {
-            $scheme = $this->registry->get($pool[0]->target->set)->defaultModifier();
-            $result = array_merge($result, (new LetterAssigner)->assign($scheme, $pool));
+        foreach ($pools as $pool) {
+            $result = array_merge($result, $assigner->assign($this->schemeFor($pool[0]->target->set), $pool));
         }
 
         return $result;
@@ -160,12 +129,48 @@ final readonly class ShortcutResolver implements Resolver
         foreach ($bindings as $binding) {
             $groups[$binding->target->set][] = $binding;
         }
+
         $resolvedGroups = [];
         foreach ($groups as $key => $group) {
-            $resolvedGroups[] = new ResolvedGroup($key, $this->registry->get($key)->defaultModifier(), $group);
-
+            $resolvedGroups[] = new ResolvedGroup($key, $this->schemeFor($key), $group);
         }
 
         return new ResolvedMap($resolvedGroups);
+    }
+
+    private function disabled(ShortcutBinding $binding, BindingSource $source): ShortcutBinding
+    {
+        return new ShortcutBinding($binding->target, $binding->keyCombo, false, $source, $binding->letterHint);
+    }
+
+    /** Forces a shortcut onto a specific letter, or returns it unchanged if the letter is unusable. */
+    private function forced(ShortcutBinding $binding, string $letter, BindingSource $source): ShortcutBinding
+    {
+        $combo = $this->forcedCombo($this->schemeFor($binding->target->set), $letter);
+        if ($combo === null) {
+            return $binding;
+        }
+
+        return new ShortcutBinding($binding->target, $combo, $binding->enabled, $source, $binding->letterHint);
+    }
+
+    /** A letter forced onto a set's scheme, or null if the letter isn't a–z or the set has no modifier. */
+    private function forcedCombo(ModifierScheme $scheme, string $letter): ?KeyCombo
+    {
+        if ($scheme->toString() === '' || ! preg_match('/^[a-z]$/i', $letter)) {
+            return null;
+        }
+
+        return new KeyCombo($scheme->ctrl, $scheme->alt, $scheme->shift, $scheme->meta, 'Key' . strtoupper($letter));
+    }
+
+    private function schemeFor(string $set): ModifierScheme
+    {
+        $shortcutSet = $this->registry->get($set);
+        if ($shortcutSet === null) {
+            throw UnknownShortcutSetException::forSet($set);
+        }
+
+        return $shortcutSet->defaultModifier();
     }
 }
