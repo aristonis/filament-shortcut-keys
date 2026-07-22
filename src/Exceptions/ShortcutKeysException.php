@@ -9,7 +9,7 @@ abstract class ShortcutKeysException extends \RuntimeException
         parent::__construct($message, $code, $previous);
     }
 
-    public function StringCode(): string
+    public function stringCode(): string
     {
         return $this->stringCode;
     }
