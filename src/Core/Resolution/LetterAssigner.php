@@ -6,26 +6,40 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 
-class LetterAssigner
+/**
+ * Assigns a letter to every unset binding in one clash pool (bindings sharing a modifier scheme),
+ * keeping the whole pool free of duplicate keys.
+ *
+ * Bindings that already carry a combo (forced by config or a user map) are reserved first so an
+ * auto-assigned letter never steals a forced key. A binding is dropped when its key can't be made
+ * unique — a duplicate forced key, or a pool larger than the 26 letters can hold — because a
+ * shortcut with no unique key can't fire. Auto-assignment follows input order (sidebar order).
+ */
+final readonly class LetterAssigner
 {
     public function assign(ModifierScheme $scheme, array $bindings): array
     {
-        $comboKey = array_filter($bindings, fn ($binding) => $binding->keyCombo !== null);
-        $taken = array_map(fn ($binding) => $binding->keyCombo->code, $comboKey);
+        $taken = $this->reservedCodes($bindings);
+        $keptCodes = [];
         $result = [];
+
         foreach ($bindings as $binding) {
             if ($binding->keyCombo !== null) {
+                $code = $binding->keyCombo->code;
+                if (in_array($code, $keptCodes, true)) {
+                    continue; // a later binding on an already-claimed key — drop the duplicate
+                }
+                $keptCodes[] = $code;
                 $result[] = $binding;
 
                 continue;
             }
+
             $code = $this->pickCode($binding->letterHint, $taken);
             if ($code === null) {
-                // nothing left to assign
-                $result[] = $binding;
-
-                continue;
+                continue; // pool has outgrown the 26 letters — leave this one keyless (dropped)
             }
+
             $taken[] = $code;
             $result[] = new ShortcutBinding(
                 $binding->target,
@@ -37,24 +51,29 @@ class LetterAssigner
         }
 
         return $result;
-
     }
 
-    private function pickCode($hint, array $taken): ?string
+    /** Codes already fixed on bindings, so auto-assignment routes around forced keys. */
+    private function reservedCodes(array $bindings): array
     {
-        preg_match_all('/[a-z]/', strtolower($hint), $matches);
-        $fromHint = $matches[0];
-
-        foreach ($fromHint as $latter) {
-            $code = 'Key' . strtoupper($latter);
-            if (! in_array($code, $taken)) {
-                return $code;
+        $codes = [];
+        foreach ($bindings as $binding) {
+            if ($binding->keyCombo !== null && ! in_array($binding->keyCombo->code, $codes, true)) {
+                $codes[] = $binding->keyCombo->code;
             }
         }
+
+        return $codes;
+    }
+
+    private function pickCode(?string $hint, array $taken): ?string
+    {
+        preg_match_all('/[a-z]/', strtolower($hint ?? ''), $matches);
         $candidates = array_merge($matches[0], range('a', 'z'));
+
         foreach ($candidates as $letter) {
             $code = 'Key' . strtoupper($letter);
-            if (! in_array($code, $taken)) {
+            if (! in_array($code, $taken, true)) {
                 return $code;
             }
         }

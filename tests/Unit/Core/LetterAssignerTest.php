@@ -106,3 +106,35 @@ it('preserves target, source and hint on the returned binding', function () {
     expect($result[0]->target->identity())->toBe('navigation:products')
         ->and($result[0]->letterHint)->toBe('Products');
 });
+
+it('drops bindings once the 26 letters are exhausted', function () {
+    $bindings = [];
+    for ($i = 0; $i < 27; $i++) {
+        $bindings[] = binding("item{$i}", 'Item');
+    }
+
+    $result = (new LetterAssigner)->assign(ModifierScheme::altShift(), $bindings);
+
+    expect($result)->toHaveCount(26);
+    foreach ($result as $binding) {
+        expect($binding->keyCombo)->not->toBeNull();
+    }
+});
+
+it('drops a later binding whose forced key duplicates an earlier one', function () {
+    $result = (new LetterAssigner)->assign(ModifierScheme::altShift(), [
+        binding('products', 'Products', KeyCombo::parse('alt+shift+r')),
+        binding('reports', 'Reports', KeyCombo::parse('alt+shift+r')),
+    ]);
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]->target->structureKey)->toBe('products');
+});
+
+it('assigns from the alphabet when the hint is null', function () {
+    $binding = new ShortcutBinding(new ShortcutTarget('navigation', 'x'), null, letterHint: null);
+
+    $result = (new LetterAssigner)->assign(ModifierScheme::altShift(), [$binding]);
+
+    expect($result[0]->keyCombo->equals(KeyCombo::parse('alt+shift+a')))->toBeTrue();
+});
