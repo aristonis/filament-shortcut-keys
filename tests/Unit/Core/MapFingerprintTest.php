@@ -7,6 +7,7 @@ function fingerprint(array $overrides = []): string
     $args = array_merge([
         'panelId' => 'admin',
         'navVersionToken' => 'nav-v1',
+        'pageContextToken' => 'page-a',
         'authType' => 'App\\Models\\User',
         'authId' => '1',
         'activeMapVersion' => 1,
@@ -27,6 +28,11 @@ it('changes when the panel changes', function () {
 
 it('changes when the navigation version token changes', function () {
     expect(fingerprint())->not->toBe(fingerprint(['navVersionToken' => 'nav-v2']));
+});
+
+it('changes when the page context changes', function () {
+    // the resolved map differs per page (page actions, table presence) — the key must too
+    expect(fingerprint())->not->toBe(fingerprint(['pageContextToken' => 'page-b']));
 });
 
 it('changes when the user identity changes', function () {

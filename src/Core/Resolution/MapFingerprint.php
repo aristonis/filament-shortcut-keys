@@ -14,6 +14,7 @@ final class MapFingerprint
     public static function for(
         string $panelId,
         string $navVersionToken,
+        string $pageContextToken,
         string $authType,
         string $authId,
         int $activeMapVersion,
@@ -23,10 +24,11 @@ final class MapFingerprint
         return hash('xxh128', implode('|', [
             $panelId,
             $navVersionToken,
+            $pageContextToken,
             $authType,
             $authId,
             (string) $activeMapVersion,
-            md5(json_encode($overlay)),
+            md5(json_encode($overlay, JSON_THROW_ON_ERROR)),
             $locale,
         ]));
     }
