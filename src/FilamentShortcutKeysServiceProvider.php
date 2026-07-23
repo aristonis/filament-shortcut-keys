@@ -22,6 +22,12 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
          */
         $package->name(static::$name);
 
+        $package->hasMigrations([
+            'create_shortcut_maps_table',
+            'create_shortcut_map_entries_table',
+            'create_shortcut_map_selections_table',
+        ]);
+
         if (file_exists($package->basePath('/../resources/lang'))) {
             $package->hasTranslations();
         }
