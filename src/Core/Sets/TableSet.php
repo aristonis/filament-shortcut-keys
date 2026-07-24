@@ -13,6 +13,12 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 /** Table shortcuts: fixed bare keys (search, row/page movement, row actions), active only when the page has a table. */
 final class TableSet implements ShortcutSet
 {
+    /**
+     * Built-in row actions this set binds to fixed keys (edit=Enter, delete=Delete). The custom
+     * RowActionSet excludes these names so a dev can't auto-letter a key that's already reserved.
+     */
+    public const RESERVED_RECORD_ACTIONS = ['edit', 'delete'];
+
     public function key(): string
     {
         return 'table';
