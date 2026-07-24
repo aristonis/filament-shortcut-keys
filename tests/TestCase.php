@@ -3,6 +3,7 @@
 namespace Aristonis\FilamentShortcutKeys\Tests;
 
 use Aristonis\FilamentShortcutKeys\FilamentShortcutKeysServiceProvider;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Panel\AdminPanelProvider;
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
 use Filament\Actions\ActionsServiceProvider;
@@ -56,12 +57,18 @@ class TestCase extends Orchestra
 
         sort($providers);
 
+        // Appended after sort, so the test admin panel registers once Filament's own
+        // providers have booted (it depends on the Filament panel manager being available).
+        $providers[] = AdminPanelProvider::class;
+
         return $providers;
     }
 
     public function getEnvironmentSetUp($app): void
     {
         $app['config']->set('database.default', 'testing');
+        // Mounting Livewire/Filament pages boots a full request, which needs an app key.
+        $app['config']->set('app.key', 'base64:' . base64_encode(str_repeat('a', 32)));
     }
 
     protected function defineDatabaseMigrations(): void
