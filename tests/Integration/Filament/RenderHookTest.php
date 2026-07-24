@@ -37,3 +37,15 @@ it('binds a navigation shortcut for each registered resource', function () {
 
     expect($targets)->toContain('navigation:' . OrderResource::class);
 });
+
+it('carries the handler and a navigate activation on each navigation binding', function () {
+    $html = (string) $this->get('/admin')->assertOk()->getContent();
+
+    $navigation = collect(injectedKeymap($html))->firstWhere('set', 'navigation');
+    $binding = collect($navigation['bindings'])->firstWhere('target', 'navigation:' . OrderResource::class);
+
+    expect($navigation['handler'])->toBe('navigation')
+        ->and($binding['code'])->toStartWith('Key')
+        ->and($binding['activation']['kind'])->toBe('navigate')
+        ->and($binding['activation']['url'])->toContain('/admin');
+});
