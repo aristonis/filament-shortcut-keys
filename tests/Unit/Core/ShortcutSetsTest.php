@@ -46,7 +46,7 @@ it('the navigation set discovers one convention binding per sidebar item, letter
         ->and($bindings[0]->target->set)->toBe('navigation')
         ->and($bindings[0]->target->structureKey)->toBe('App\\Filament\\Resources\\ProductResource')
         ->and($bindings[0]->keyCombo)->toBeNull()
-        ->and($bindings[0]->letterHint)->toBe('Products')   // label drives the letter (FR-4)
+        ->and($bindings[0]->letterHint)->toBe('Products')   // label drives the letter
         ->and($bindings[0]->source)->toBe(BindingSource::CONVENTION);
 });
 
@@ -70,7 +70,7 @@ it('the global set discovers one convention binding per page action, letter unas
         ->and($bindings[0]->target->set)->toBe('global')
         ->and($bindings[0]->target->structureKey)->toBe('create')
         ->and($bindings[0]->keyCombo)->toBeNull()
-        ->and($bindings[0]->letterHint)->toBe('create')   // action name drives the letter (FR-7)
+        ->and($bindings[0]->letterHint)->toBe('create')   // action name drives the letter
         ->and($bindings[0]->source)->toBe(BindingSource::CONVENTION);
 });
 
@@ -114,13 +114,13 @@ it('the table set reserves pagination on the left and right arrow keys', functio
         ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowRight')))->toBeTrue();
 });
 
-// --- Page set (D34: registered but dormant until SG-8) ---------------------
+// --- Page set: registered but dormant until page discovery is wired ---------------------
 
 it('the page set is keyed "page"', function () {
     expect((new PageSet)->key())->toBe('page');
 });
 
-it('the page set discovers nothing in SG-3 (source wired in SG-8)', function () {
+it('the page set discovers nothing until page discovery is wired', function () {
     expect((new PageSet)->discover(nav([]), page(actions: [
         new ActionTarget('create', 'Create', '#create'),
     ], hasTable: true), 'admin'))->toBe([]);

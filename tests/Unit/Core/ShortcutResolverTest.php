@@ -120,7 +120,7 @@ it('keeps sets with different modifier schemes in separate clash pools', functio
         ->and($groups[1]->bindings[0]->keyCombo->equals(KeyCombo::parse('alt+p')))->toBeTrue();
 });
 
-it('forces a config-overlay letter and frees the convention letter for others (AC-13)', function () {
+it('forces a config-overlay letter and frees the convention letter for others', function () {
     // products would convention to P; overlay forces it to R, so payments is free to take P.
     $registry = new ShortcutSetRegistry;
     $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
@@ -138,7 +138,7 @@ it('forces a config-overlay letter and frees the convention letter for others (A
         ->and($payments->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue();
 });
 
-it('drops a config-overlay disabled shortcut from the resolved map (AC-13)', function () {
+it('drops a config-overlay disabled shortcut from the resolved map', function () {
     $registry = new ShortcutSetRegistry;
     $registry->register(resolverSet('global', ModifierScheme::alt(), [
         convention('global', 'export', 'Export'),
@@ -151,7 +151,7 @@ it('drops a config-overlay disabled shortcut from the resolved map (AC-13)', fun
         ->and(bindingFor($groups, 'global', 'print'))->not->toBeNull();
 });
 
-it('applies a user active-map remap and frees the convention letter (AC-9)', function () {
+it('applies a user active-map remap and frees the convention letter', function () {
     // products would convention to P; the user's map remaps it to Z, freeing P for payments.
     $registry = new ShortcutSetRegistry;
     $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
@@ -169,7 +169,7 @@ it('applies a user active-map remap and frees the convention letter (AC-9)', fun
         ->and($payments->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue();
 });
 
-it('drops a user active-map disabled shortcut from the resolved map (AC-9)', function () {
+it('drops a user active-map disabled shortcut from the resolved map', function () {
     $registry = new ShortcutSetRegistry;
     $registry->register(resolverSet('global', ModifierScheme::alt(), [
         convention('global', 'export', 'Export'),
@@ -182,7 +182,7 @@ it('drops a user active-map disabled shortcut from the resolved map (AC-9)', fun
         ->and(bindingFor($groups, 'global', 'export'))->not->toBeNull();
 });
 
-it('falls through to convention for targets the user map does not mention (FR-26)', function () {
+it('falls through to convention for targets the user map does not mention', function () {
     // map only touches products; payments is untouched → still convention-assigned.
     $registry = new ShortcutSetRegistry;
     $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [

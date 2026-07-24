@@ -45,7 +45,7 @@ final class FilamentNavigationProvider implements NavigationProvider
     private function urlFor($target): string
     {
         return is_subclass_of($target, Resource::class)
-            ? $target::getIndexUrl()   // it's a Resource
-            : $target::getUrl();        // it's a Page
+            ? $target::getIndexUrl()
+            : $target::getUrl();
     }
 }

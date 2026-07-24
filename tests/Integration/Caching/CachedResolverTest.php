@@ -78,7 +78,7 @@ it('serves the second identical call from cache without recomputing', function (
     expect($inner->calls)->toBe(1);
 });
 
-it('shares one cache entry for two users resolving to the same active map (D39)', function () {
+it('shares one cache entry for two users resolving to the same active map', function () {
     [$cache, $nav, $page] = cachingFixtures();
     $inner = countingInner();
     // Both users resolve to the identical shared system map (same type, id, version),

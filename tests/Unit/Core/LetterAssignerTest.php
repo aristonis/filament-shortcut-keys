@@ -24,7 +24,7 @@ it('assigns the first letter of the hint, built from the given modifier scheme',
     expect($result[0]->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue();
 });
 
-it('falls through to the next free letter of the hint on a clash (AC-2)', function () {
+it('falls through to the next free letter of the hint on a clash', function () {
     // Products -> P; Payments wants P (taken) -> next hint char 'a'
     $result = (new LetterAssigner)->assign(
         ModifierScheme::altShift(),

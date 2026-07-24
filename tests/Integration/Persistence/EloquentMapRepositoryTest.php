@@ -86,7 +86,7 @@ it('maps mixed letter and disabled entry rows into the correct entries shape', f
         ->and($active->entries['navigation:orders'])->toBe(['disabled' => true]);
 });
 
-it('keeps selections independent across panels for the same owner (AC-14)', function () {
+it('keeps selections independent across panels for the same owner', function () {
     [$repo, $user] = repoAndUser();
 
     $adminDefault = ShortcutMap::factory()->default('admin')->create();
@@ -122,7 +122,7 @@ it('keeps selections independent across panels for the same owner (AC-14)', func
         ->and($blog->entries)->toBe([]);
 });
 
-it('forks the active map exactly once when called repeatedly (AC-19)', function () {
+it('forks the active map exactly once when called repeatedly', function () {
     [$repo, $user] = repoAndUser();
 
     $default = ShortcutMap::factory()->default('admin')->create(['modifiers' => ['navigation' => ['mod']]]);
