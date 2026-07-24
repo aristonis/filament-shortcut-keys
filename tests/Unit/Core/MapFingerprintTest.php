@@ -7,10 +7,7 @@ function fingerprint(array $overrides = []): string
     $args = array_merge([
         'panelId' => 'admin',
         'navVersionToken' => 'nav-v1',
-        'pageContextToken' => 'page-a',
-        'authType' => 'App\\Models\\User',
-        'authId' => '1',
-        'activeMapVersion' => 1,
+        'mapIdentity' => 'system:1:1',
         'overlay' => [],
         'locale' => 'en',
     ], $overrides);
@@ -30,18 +27,10 @@ it('changes when the navigation version token changes', function () {
     expect(fingerprint())->not->toBe(fingerprint(['navVersionToken' => 'nav-v2']));
 });
 
-it('changes when the page context changes', function () {
-    // the resolved map differs per page (page actions, table presence) — the key must too
-    expect(fingerprint())->not->toBe(fingerprint(['pageContextToken' => 'page-b']));
-});
-
-it('changes when the user identity changes', function () {
-    expect(fingerprint())->not->toBe(fingerprint(['authId' => '2']))
-        ->and(fingerprint())->not->toBe(fingerprint(['authType' => 'App\\Models\\Admin']));
-});
-
-it('changes when the active map version changes', function () {
-    expect(fingerprint())->not->toBe(fingerprint(['activeMapVersion' => 2]));
+it('changes when the active map identity changes', function () {
+    // A different type, row id, or version all shift the identity string, so the key must move.
+    expect(fingerprint())->not->toBe(fingerprint(['mapIdentity' => 'custom:2:1']))
+        ->and(fingerprint())->not->toBe(fingerprint(['mapIdentity' => 'system:1:2']));
 });
 
 it('changes when the config overlay changes', function () {

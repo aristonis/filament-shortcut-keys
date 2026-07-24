@@ -199,6 +199,7 @@ final class EloquentMapRepository implements MapRepository
             modifiers: $map->modifiers,
             entries: $entries,
             version: $map->version,
+            id: $map->id,
         );
     }
 

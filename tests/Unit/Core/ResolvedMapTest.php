@@ -63,3 +63,25 @@ it('serializes bare table keys with an empty modifier', function () {
         ->and($group['modifier'])->toBe('')
         ->and($group['bindings'][0]['code'])->toBe('Slash');
 });
+
+it('merges another map by concatenating groups in order', function () {
+    $nav = new ResolvedMap([navGroup()]);
+    $page = new ResolvedMap([tableGroup()]);
+
+    $merged = $nav->merge($page);
+
+    expect($merged->groups())->toHaveCount(2)
+        ->and($merged->groups()[0]->setKey)->toBe('navigation')
+        ->and($merged->groups()[1]->setKey)->toBe('table');
+});
+
+it('leaves both operands unmutated when merging', function () {
+    $nav = new ResolvedMap([navGroup()]);
+    $page = new ResolvedMap([tableGroup()]);
+
+    $merged = $nav->merge($page);
+
+    expect($merged)->not->toBe($nav)
+        ->and($nav->groups())->toHaveCount(1)
+        ->and($page->groups())->toHaveCount(1);
+});
