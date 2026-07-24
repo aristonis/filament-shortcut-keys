@@ -1,9 +1,9 @@
 import { eventModifier, isReservedOverlayKey, isTyping } from './keymap.js'
 
 // When two sets bind the same physical key, the more specific context wins: a page shortcut beats a
-// table one, which beats a global one, which beats navigation. The first handler that fires stops the
-// search.
-const PRECEDENCE = ['page', 'table', 'global', 'navigation']
+// user's custom binding, which beats table, global, then navigation. The first handler that fires
+// stops the search.
+const PRECEDENCE = ['page', 'custom', 'table', 'global', 'navigation']
 
 function groupByHandler(groups) {
     const byHandler = {}

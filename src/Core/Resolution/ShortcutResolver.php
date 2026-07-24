@@ -2,6 +2,7 @@
 
 namespace Aristonis\FilamentShortcutKeys\Core\Resolution;
 
+use Aristonis\FilamentShortcutKeys\Core\Contracts\AcceptsCustomBindings;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
@@ -11,6 +12,7 @@ use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 use Aristonis\FilamentShortcutKeys\Exceptions\UnknownShortcutSetException;
 
 final readonly class ShortcutResolver implements Resolver
@@ -23,9 +25,12 @@ final readonly class ShortcutResolver implements Resolver
 
     public function resolve(NavigationProvider $nav, PageContextProvider $page, string $panelId, string $authType = '', string $authId = ''): ResolvedMap
     {
+        $entries = $this->maps?->activeMap($authType, $authId, $panelId)->entries ?? [];
+
         $bindings = $this->registry->discover($nav, $page, $panelId);
         $bindings = $this->applyOverlay($bindings);
-        $bindings = $this->applyActiveMap($bindings, $panelId, $authType, $authId);
+        $bindings = $this->applyActiveMap($bindings, $entries);
+        $bindings = $this->addCustomBindings($bindings, $entries);
         $bindings = $this->keepEnabled($bindings);
         $bindings = $this->assignLetters($bindings);
 
@@ -69,13 +74,8 @@ final readonly class ShortcutResolver implements Resolver
      * within its set's own modifier scheme; a disable is flagged (removed later by keepEnabled).
      * Targets the map does not mention fall through to convention unchanged.
      */
-    private function applyActiveMap(array $bindings, string $panelId, string $authType = '', string $authId = ''): array
+    private function applyActiveMap(array $bindings, array $entries): array
     {
-        if ($this->maps === null) {
-            return $bindings;
-        }
-
-        $entries = $this->maps->activeMap($authType, $authId, $panelId)->entries;
         $bindingsMapped = [];
         foreach ($bindings as $binding) {
             $entry = $entries[$binding->target->identity()] ?? null;
@@ -98,6 +98,44 @@ final readonly class ShortcutResolver implements Resolver
         }
 
         return $bindingsMapped;
+    }
+
+    /**
+     * Adds the user's custom bindings: active-map entries that carry a payload whose set accepts them.
+     * They point at a target with no convention shortcut, so they are new keys rather than overrides.
+     * The accepting set lives in only one of the two registries, so the split never double-adds one.
+     */
+    private function addCustomBindings(array $bindings, array $entries): array
+    {
+        $present = [];
+        foreach ($bindings as $binding) {
+            $present[$binding->target->identity()] = true;
+        }
+
+        foreach ($entries as $identity => $entry) {
+            if (isset($present[$identity]) || ! isset($entry['payload'])) {
+                continue;
+            }
+
+            [$set, $structureKey] = array_pad(explode(':', (string) $identity, 2), 2, '');
+            if (! $this->registry->get($set) instanceof AcceptsCustomBindings) {
+                continue; // only a custom-binding set accepts a payload entry
+            }
+
+            $letter = $entry['letter'] ?? null;
+            $combo = is_string($letter) ? $this->forcedCombo($this->schemeFor($set), $letter) : null;
+
+            $bindings[] = new ShortcutBinding(
+                new ShortcutTarget($set, $structureKey),
+                $combo,
+                true,
+                BindingSource::USER,
+                $structureKey,
+                $entry['payload'],
+            );
+        }
+
+        return $bindings;
     }
 
     private function keepEnabled(array $bindings): array
@@ -140,7 +178,7 @@ final readonly class ShortcutResolver implements Resolver
 
     private function disabled(ShortcutBinding $binding, BindingSource $source): ShortcutBinding
     {
-        return new ShortcutBinding($binding->target, $binding->keyCombo, false, $source, $binding->letterHint);
+        return new ShortcutBinding($binding->target, $binding->keyCombo, false, $source, $binding->letterHint, $binding->payload);
     }
 
     /** Forces a shortcut onto a specific letter, or returns it unchanged if the letter is unusable. */
@@ -151,7 +189,7 @@ final readonly class ShortcutResolver implements Resolver
             return $binding;
         }
 
-        return new ShortcutBinding($binding->target, $combo, $binding->enabled, $source, $binding->letterHint);
+        return new ShortcutBinding($binding->target, $combo, $binding->enabled, $source, $binding->letterHint, $binding->payload);
     }
 
     /** A letter forced onto a set's scheme, or null if the letter isn't a–z or the set has no modifier. */

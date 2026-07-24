@@ -47,6 +47,7 @@ final readonly class LetterAssigner
                 $binding->enabled,
                 $binding->source,
                 $binding->letterHint,
+                $binding->payload,
             );
         }
 

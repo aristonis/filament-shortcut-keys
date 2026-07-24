@@ -45,4 +45,20 @@ export const handlers = {
 
         return clickSelector(activation.selector)
     },
+
+    // A user's custom binding carries its own action: navigate a route or click a selector.
+    custom(binding) {
+        const activation = binding.activation
+
+        if (activation?.kind === 'navigate') {
+            navigate(activation.url)
+            return true
+        }
+
+        if (activation?.kind === 'click') {
+            return clickSelector(activation.selector)
+        }
+
+        return false
+    },
 }

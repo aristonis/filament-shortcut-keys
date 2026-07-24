@@ -5,6 +5,7 @@ namespace Aristonis\FilamentShortcutKeys\Filament;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 
 /**
  * Turns a resolved map into the JSON the browser needs. The pure map carries only keys and target
@@ -43,13 +44,7 @@ final readonly class ClientMapSerializer
                     fn ($binding) => [
                         'target' => $binding->target->identity(),
                         'code' => $binding->keyCombo->code,
-                        'activation' => $this->activation(
-                            $group->setKey,
-                            $binding->target->structureKey,
-                            $binding->target->identity(),
-                            $urls,
-                            $selectors,
-                        ),
+                        'activation' => $this->activation($binding, $group->setKey, $urls, $selectors),
                     ],
                     $group->bindings,
                 ),
@@ -63,13 +58,35 @@ final readonly class ClientMapSerializer
      * @param  array<string, string>  $selectors
      * @return array<string, string>|null
      */
-    private function activation(string $set, string $structureKey, string $identity, array $urls, array $selectors): ?array
+    private function activation(ShortcutBinding $binding, string $set, array $urls, array $selectors): ?array
     {
+        $identity = $binding->target->identity();
+
         return match ($set) {
             'navigation' => isset($urls[$identity]) ? ['kind' => 'navigate', 'url' => $urls[$identity]] : null,
-            'table' => ['kind' => 'table', 'behavior' => $structureKey],
+            'table' => ['kind' => 'table', 'behavior' => $binding->target->structureKey],
+            'custom' => $this->customActivation($binding->payload),
             default => isset($selectors[$identity]) ? ['kind' => 'click', 'selector' => $selectors[$identity]] : null,
         };
+    }
+
+    /**
+     * A custom binding carries its own action: a route to navigate or a selector to click.
+     *
+     * @param  array{selector: string}|array{route: string}|null  $payload
+     * @return array<string, string>|null
+     */
+    private function customActivation(?array $payload): ?array
+    {
+        if (isset($payload['route'])) {
+            return ['kind' => 'navigate', 'url' => $payload['route']];
+        }
+
+        if (isset($payload['selector'])) {
+            return ['kind' => 'click', 'selector' => $payload['selector']];
+        }
+
+        return null;
     }
 
     /**

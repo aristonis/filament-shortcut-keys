@@ -83,6 +83,10 @@ final class EloquentMapRepository implements MapEditor, MapRepository
                 ['letter' => $edit->letter, 'disabled' => $edit->disabled, 'payload' => $edit->payload],
             );
 
+            // Every content change bumps the version so the cache key (keyed on map id + version)
+            // busts. The fork only bumps once, so later edits to an existing custom map need this.
+            ShortcutMap::query()->whereKey($map->id)->increment('version');
+
             return $map->id;
         });
     }
@@ -93,6 +97,7 @@ final class EloquentMapRepository implements MapEditor, MapRepository
             $map = $this->forkForEdit($authType, $authId, $panelId);
 
             $map->entries()->where('target', $target)->delete();
+            ShortcutMap::query()->whereKey($map->id)->increment('version');
 
             return $map->id;
         });
@@ -199,6 +204,7 @@ final class EloquentMapRepository implements MapEditor, MapRepository
                 'target' => $entry->target,
                 'letter' => $entry->letter,
                 'disabled' => $entry->disabled,
+                'payload' => $entry->payload,
             ])
             ->all();
 
@@ -214,10 +220,20 @@ final class EloquentMapRepository implements MapEditor, MapRepository
         $entries = [];
 
         foreach ($map->entries as $entry) {
+            $data = [];
+
             if ($entry->letter !== null) {
-                $entries[$entry->target] = ['letter' => $entry->letter];
-            } elseif ($entry->disabled) {
-                $entries[$entry->target] = ['disabled' => true];
+                $data['letter'] = $entry->letter;
+            }
+            if ($entry->disabled) {
+                $data['disabled'] = true;
+            }
+            if ($entry->payload !== null) {
+                $data['payload'] = $entry->payload;
+            }
+
+            if ($data !== []) {
+                $entries[$entry->target] = $data;
             }
         }
 

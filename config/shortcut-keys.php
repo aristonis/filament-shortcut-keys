@@ -32,6 +32,7 @@ return [
         'global' => ['alt'],
         'table' => [],
         'row-action' => [],
+        'custom' => ['alt', 'shift'],
     ],
 
     /*

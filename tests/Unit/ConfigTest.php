@@ -14,5 +14,6 @@ it('publishes a config array with the documented keys and defaults', function ()
             'global' => ['alt'],
             'table' => [],
             'row-action' => [],
+            'custom' => ['alt', 'shift'],
         ]);
 });

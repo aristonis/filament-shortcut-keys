@@ -62,3 +62,35 @@ it('removes an override, reverting the target to convention', function () {
 
     expect(ShortcutMapEntry::where('map_id', $mapId)->where('target', 'global:export')->exists())->toBeFalse();
 });
+
+it('preserves a payload entry when forking a source map', function () {
+    [$repo, $user] = editorRepoAndUser();
+    $default = ShortcutMap::factory()->default('admin')->create();
+    ShortcutMapEntry::create([
+        'map_id' => $default->id,
+        'target' => 'custom:reports',
+        'letter' => 'j',
+        'disabled' => false,
+        'payload' => ['route' => '/admin/reports'],
+    ]);
+
+    // First edit on an unrelated target forks the system map into the user's custom map.
+    $mapId = $repo->saveEntry($user->getMorphClass(), (string) $user->getKey(), 'admin', new MapEntryEdit('navigation:orders', 'o', false));
+
+    $forked = ShortcutMapEntry::where('map_id', $mapId)->where('target', 'custom:reports')->firstOrFail();
+    expect($forked->payload)->toBe(['route' => '/admin/reports']);
+});
+
+it('bumps the map version on every edit so the cache busts', function () {
+    [$repo, $user] = editorRepoAndUser();
+    ShortcutMap::factory()->default('admin')->create();
+    $auth = [$user->getMorphClass(), (string) $user->getKey(), 'admin'];
+
+    $mapId = $repo->saveEntry(...$auth, edit: new MapEntryEdit('navigation:orders', 'o', false));
+    $afterFirst = ShortcutMap::findOrFail($mapId)->version;
+
+    $repo->saveEntry(...$auth, edit: new MapEntryEdit('custom:deploy', 'd', false, ['selector' => '#deploy']));
+    $afterSecond = ShortcutMap::findOrFail($mapId)->version;
+
+    expect($afterSecond)->toBeGreaterThan($afterFirst);
+});

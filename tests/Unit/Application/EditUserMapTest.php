@@ -76,7 +76,19 @@ it('rejects a custom binding whose payload is not exactly one of selector or rou
     'empty selector' => [['selector' => '  ']],
     'non-string route' => [['route' => 123]],
     'empty payload' => [[]],
+    'javascript route' => [['route' => 'javascript:alert(1)']],
+    'external route' => [['route' => 'https://evil.example/phish']],
+    'protocol-relative route' => [['route' => '//evil.example']],
 ]);
+
+it('rejects a custom binding whose target is not namespaced custom:', function () {
+    $editor = new InMemoryMapEditor;
+
+    expect(fn () => personalEditor($editor)->addCustomBinding('App\\User', '1', 'admin', 'global:export', 'x', ['selector' => '#x']))
+        ->toThrow(InvalidCustomBindingException::class);
+
+    expect($editor->saved)->toBeEmpty();
+});
 
 it('blocks every edit in locked mode', function () {
     $editor = new InMemoryMapEditor;

@@ -49,6 +49,11 @@ final readonly class EditUserMap
     public function addCustomBinding(string $authType, string $authId, string $panelId, string $target, string $letter, array $payload): int
     {
         $this->guard($panelId);
+
+        if (! str_starts_with($target, 'custom:')) {
+            throw InvalidCustomBindingException::forReason("target must be namespaced 'custom:'");
+        }
+
         $this->validatePayload($payload);
 
         return $this->editor->saveEntry($authType, $authId, $panelId, new MapEntryEdit($target, $letter, false, $payload));
@@ -79,6 +84,12 @@ final readonly class EditUserMap
 
         if (! is_string($value) || trim($value) === '') {
             throw InvalidCustomBindingException::forReason("{$keys[0]} must be a non-empty string");
+        }
+
+        // A route is navigated by the client, so it must stay in-app: a same-host absolute path. This
+        // blocks off-site redirects and javascript: URIs regardless of the host app's own route guards.
+        if ($keys[0] === 'route' && (! str_starts_with($value, '/') || str_starts_with($value, '//'))) {
+            throw InvalidCustomBindingException::forReason('route must be a host-relative path starting with a single /');
         }
     }
 }

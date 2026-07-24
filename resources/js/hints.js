@@ -24,7 +24,7 @@ function hostFor(group, binding) {
         return document.querySelector(`a[href="${activation.url}"]`)
     }
 
-    if (group.handler === 'global' && activation?.kind === 'click') {
+    if (activation?.kind === 'click' && (group.handler === 'global' || group.handler === 'custom')) {
         return document.querySelector(activation.selector)
     }
 

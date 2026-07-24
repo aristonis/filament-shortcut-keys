@@ -7,6 +7,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\CompositeResolver;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ShortcutResolver;
+use Aristonis\FilamentShortcutKeys\Core\Sets\CustomSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\GlobalSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\NavigationSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\PageSet;
@@ -57,6 +58,7 @@ class FilamentShortcutKeysPlugin implements Plugin
     {
         $panelWideSets = new ShortcutSetRegistry;
         $panelWideSets->register(new NavigationSet);
+        $panelWideSets->register(new CustomSet);
 
         $pageSets = new ShortcutSetRegistry;
         $pageSets->register(new GlobalSet);
@@ -98,8 +100,12 @@ class FilamentShortcutKeysPlugin implements Plugin
                 $payload = (new ClientMapSerializer($navigation, $pageContext, $handlerBySet))
                     ->serialize($map, $panelId);
 
+                // Escape tags/quotes so a selector or route value can never break out of the script
+                // block, independent of json_encode's default slash-escaping.
+                $json = json_encode($payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+
                 return '<script type="application/json" id="filament-shortcut-keys-map">'
-                    . json_encode($payload)
+                    . $json
                     . '</script>';
             },
         );

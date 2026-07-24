@@ -6,6 +6,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\ShortcutSet;
 use Aristonis\FilamentShortcutKeys\Core\Enums\BindingSource;
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ShortcutResolver;
+use Aristonis\FilamentShortcutKeys\Core\Sets\CustomSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapData;
@@ -235,4 +236,55 @@ it('resolves a pool larger than the alphabet without emitting a null key', funct
     foreach ($groups[0]->bindings as $binding) {
         expect($binding->keyCombo)->not->toBeNull();
     }
+});
+
+it('adds a user custom binding from the active map', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(new CustomSet);
+
+    $groups = resolveWithMap($registry, [
+        'custom:deploy' => ['letter' => 'd', 'payload' => ['selector' => '#deploy']],
+    ]);
+
+    $binding = bindingFor($groups, 'custom', 'deploy');
+    expect($binding)->not->toBeNull()
+        ->and($binding->keyCombo->code)->toBe('KeyD')
+        ->and($binding->keyCombo->modifiers->toString())->toBe('alt+shift')
+        ->and($binding->payload)->toBe(['selector' => '#deploy'])
+        ->and($binding->source)->toBe(BindingSource::USER);
+});
+
+it('ignores a payload entry whose set this resolver does not own', function () {
+    $registry = new ShortcutSetRegistry; // no CustomSet registered here
+
+    $groups = resolveWithMap($registry, [
+        'custom:deploy' => ['letter' => 'd', 'payload' => ['selector' => '#x']],
+    ]);
+
+    expect(bindingFor($groups, 'custom', 'deploy'))->toBeNull();
+});
+
+it('shares one letter pool so a custom binding cannot steal a nav letter', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [convention('navigation', 'orders', 'orders')]));
+    $registry->register(new CustomSet);
+
+    $groups = resolveWithMap($registry, [
+        'custom:special' => ['letter' => 'o', 'payload' => ['route' => '/x']],
+    ]);
+
+    expect(bindingFor($groups, 'custom', 'special')->keyCombo->code)->toBe('KeyO')
+        ->and(bindingFor($groups, 'navigation', 'orders')->keyCombo->code)->not->toBe('KeyO');
+});
+
+it('ignores a payload entry whose set does not accept custom bindings', function () {
+    // A set keyed 'custom' but without the AcceptsCustomBindings marker must not receive the payload.
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('custom', ModifierScheme::altShift(), []));
+
+    $groups = resolveWithMap($registry, [
+        'custom:deploy' => ['letter' => 'd', 'payload' => ['selector' => '#x']],
+    ]);
+
+    expect(bindingFor($groups, 'custom', 'deploy'))->toBeNull();
 });
