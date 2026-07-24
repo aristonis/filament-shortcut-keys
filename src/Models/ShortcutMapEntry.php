@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $target
  * @property string|null $letter
  * @property bool $disabled
+ * @property array|null $payload
  * @property-read ShortcutMap $map
  */
 final class ShortcutMapEntry extends Model
@@ -30,10 +31,12 @@ final class ShortcutMapEntry extends Model
         'target',
         'letter',
         'disabled',
+        'payload',
     ];
 
     protected $casts = [
         'disabled' => 'boolean',
+        'payload' => 'array',
     ];
 
     /** @return BelongsTo<ShortcutMap, $this> */

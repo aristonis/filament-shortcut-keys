@@ -2,17 +2,19 @@
 
 namespace Aristonis\FilamentShortcutKeys\Persistence;
 
+use Aristonis\FilamentShortcutKeys\Core\Contracts\MapEditor;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapData;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapSelection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
-/** Eloquent-backed {@see MapRepository}: resolves the active map and forks it for editing. */
-final class EloquentMapRepository implements MapRepository
+/** Eloquent-backed {@see MapRepository} and {@see MapEditor}: resolves the active map and writes a user's overrides. */
+final class EloquentMapRepository implements MapEditor, MapRepository
 {
     public function activeMap(string $authType, string $authId, string $panelId): MapData
     {
@@ -68,6 +70,31 @@ final class EloquentMapRepository implements MapRepository
             }
 
             return $this->claimExistingSelection($selection, $active, $authType, $authId, $panelId);
+        });
+    }
+
+    public function saveEntry(string $authType, string $authId, string $panelId, MapEntryEdit $edit): int
+    {
+        return DB::transaction(function () use ($authType, $authId, $panelId, $edit): int {
+            $map = $this->forkForEdit($authType, $authId, $panelId);
+
+            $map->entries()->updateOrCreate(
+                ['target' => $edit->target],
+                ['letter' => $edit->letter, 'disabled' => $edit->disabled, 'payload' => $edit->payload],
+            );
+
+            return $map->id;
+        });
+    }
+
+    public function removeEntry(string $authType, string $authId, string $panelId, string $target): int
+    {
+        return DB::transaction(function () use ($authType, $authId, $panelId, $target): int {
+            $map = $this->forkForEdit($authType, $authId, $panelId);
+
+            $map->entries()->where('target', $target)->delete();
+
+            return $map->id;
         });
     }
 

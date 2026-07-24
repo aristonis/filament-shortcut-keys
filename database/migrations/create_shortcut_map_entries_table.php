@@ -14,6 +14,9 @@ return new class extends Migration
             $table->string('target');
             $table->string('letter')->nullable();
             $table->boolean('disabled')->default(false);
+            // A custom binding's action: exactly one of {selector} or {route}. Null for a plain
+            // remap/disable override of an existing convention shortcut.
+            $table->json('payload')->nullable();
 
             // UNIQUE(map_id, target) also serves map_id-only lookups via its leftmost
             // prefix, so no standalone map_id index is needed here.
