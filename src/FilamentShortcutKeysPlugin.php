@@ -5,6 +5,7 @@ namespace Aristonis\FilamentShortcutKeys;
 use Aristonis\FilamentShortcutKeys\Caching\CachedResolver;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\CompositeResolver;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
@@ -19,6 +20,7 @@ use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
 use Aristonis\FilamentShortcutKeys\Filament\ClientMapSerializer;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentPageContextProvider;
 use Aristonis\FilamentShortcutKeys\Filament\NullPageContextProvider;
+use Aristonis\FilamentShortcutKeys\Filament\OverlayCatalog;
 use Aristonis\FilamentShortcutKeys\Filament\Pages\ShortcutReference;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
@@ -104,9 +106,11 @@ class FilamentShortcutKeysPlugin implements Plugin
                 // block, independent of json_encode's default slash-escaping.
                 $json = json_encode($payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
-                return '<script type="application/json" id="filament-shortcut-keys-map">'
+                $script = '<script type="application/json" id="filament-shortcut-keys-map">'
                     . $json
                     . '</script>';
+
+                return $script . $this->renderOverlay($map, $navigation, $pageContext, $panelId);
             },
         );
     }
@@ -193,6 +197,46 @@ class FilamentShortcutKeysPlugin implements Plugin
         }
 
         return $handlers;
+    }
+
+    private function renderOverlay(ResolvedMap $map, NavigationProvider $navigation, PageContextProvider $pageContext, string $panelId): string
+    {
+        $groups = OverlayCatalog::build(
+            $map,
+            $this->navigationLabels($navigation, $panelId),
+            $this->actionLabels($pageContext),
+            (array) trans('filament-shortcut-keys::shortcut-keys.table_behaviors'),
+        );
+
+        return view('filament-shortcut-keys::overlay', [
+            'groups' => $groups,
+            'referenceUrl' => ShortcutReference::getUrl(),
+        ])->render();
+    }
+
+    /** @return array<string, string> */
+    private function navigationLabels(NavigationProvider $navigation, string $panelId): array
+    {
+        $labels = [];
+        foreach ($navigation->items($panelId) as $item) {
+            $labels[$item->structureKey] = $item->label;
+        }
+
+        return $labels;
+    }
+
+    /** @return array<string, string> */
+    private function actionLabels(PageContextProvider $pageContext): array
+    {
+        $labels = [];
+        foreach ($pageContext->actions() as $action) {
+            $labels['global:' . $action->name] = $action->label;
+        }
+        foreach ($pageContext->rowActions() as $action) {
+            $labels['row-action:' . $action->name] = $action->label;
+        }
+
+        return $labels;
     }
 
     public function boot(Panel $panel): void

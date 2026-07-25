@@ -2,6 +2,7 @@ import { createDispatcher } from './dispatcher.js'
 import { handlers as baseHandlers } from './handlers.js'
 import { paintHints } from './hints.js'
 import { readKeymap } from './keymap.js'
+import { initOverlay } from './overlay.js'
 import { createTableHandler } from './table.js'
 
 // The keydown listener is attached once to the document, which survives Livewire's SPA navigation.
@@ -22,6 +23,8 @@ function refreshKeymap() {
 function start() {
     const dispatcher = createDispatcher(() => currentGroups, handlers)
     document.addEventListener('keydown', dispatcher)
+
+    initOverlay()
 
     refreshKeymap()
     document.addEventListener('livewire:navigated', refreshKeymap)

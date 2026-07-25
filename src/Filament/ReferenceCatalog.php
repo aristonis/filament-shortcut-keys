@@ -3,7 +3,6 @@
 namespace Aristonis\FilamentShortcutKeys\Filament;
 
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
-use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\NavItem;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
@@ -14,20 +13,6 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
  */
 final class ReferenceCatalog
 {
-    private const MODIFIER_LABELS = ['ctrl' => 'Ctrl', 'alt' => 'Alt', 'shift' => 'Shift', 'meta' => 'Cmd'];
-
-    private const CODE_LABELS = [
-        'Slash' => '/',
-        'ArrowUp' => '↑',
-        'ArrowDown' => '↓',
-        'ArrowLeft' => '←',
-        'ArrowRight' => '→',
-        'Enter' => 'Enter',
-        'Space' => 'Space',
-        'Delete' => 'Del',
-        'Backspace' => 'Backspace',
-    ];
-
     /**
      * @param  NavItem[]  $navItems  used to resolve a navigation target's label from its structure key
      * @return array<int, array{set: string, rows: array<int, array{label: string, keys: string[]}>}>
@@ -52,7 +37,7 @@ final class ReferenceCatalog
 
                 $rows[] = [
                     'label' => self::labelFor($binding->target, $labels),
-                    'keys' => self::keys($group->modifier, $binding->keyCombo->code),
+                    'keys' => KeyLabel::tokens($group->modifier, $binding->keyCombo->code),
                 ];
             }
 
@@ -72,21 +57,5 @@ final class ReferenceCatalog
         }
 
         return $target->structureKey;
-    }
-
-    /** @return string[] */
-    private static function keys(ModifierScheme $modifier, string $code): array
-    {
-        $keys = [];
-
-        foreach (['ctrl', 'alt', 'shift', 'meta'] as $token) {
-            if ($modifier->{$token}) {
-                $keys[] = self::MODIFIER_LABELS[$token];
-            }
-        }
-
-        $keys[] = self::CODE_LABELS[$code] ?? (str_starts_with($code, 'Key') ? substr($code, 3) : $code);
-
-        return $keys;
     }
 }

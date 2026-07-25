@@ -9,10 +9,15 @@ use Filament\Resources\Resource;
 
 final class FilamentNavigationProvider implements NavigationProvider
 {
+    /** @var array<string, NavItem[]> */
+    private array $items = [];
+
     public function items(string $panelId): array
     {
-
-        return array_map(
+        // Building each NavItem calls getIndexUrl()/getUrl() per resource; this provider is a
+        // request singleton and both the keymap serializer and the overlay ask for the same list,
+        // so memoize it and pay that cost once per request.
+        return $this->items[$panelId] ??= array_map(
             fn ($target) => new NavItem(
                 $target,
                 $target::getNavigationLabel(),

@@ -16,6 +16,27 @@ return [
     'sets' => [
         'navigation' => 'Navigation',
         'custom' => 'Custom bindings',
+        'global' => 'Actions',
+        'table' => 'Table',
+        'row-action' => 'Row actions',
+        'page' => 'Page',
+    ],
+
+    'table_behaviors' => [
+        'search' => 'Search',
+        'row-up' => 'Move up a row',
+        'row-down' => 'Move down a row',
+        'select' => 'Select the row',
+        'edit' => 'Edit the row',
+        'delete' => 'Delete the row',
+        'page-prev' => 'Previous page',
+        'page-next' => 'Next page',
+    ],
+
+    'overlay' => [
+        'title' => 'Keyboard shortcuts',
+        'close' => 'Close',
+        'full_reference' => 'View full reference',
     ],
 
 ];
