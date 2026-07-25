@@ -6,8 +6,10 @@ use Aristonis\FilamentShortcutKeys\Authorization\AuthorityGate;
 use Aristonis\FilamentShortcutKeys\Authorization\ConfigAuthorityGate;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\SystemMapAuthor;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentNavigationProvider;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapRepository;
+use Aristonis\FilamentShortcutKeys\Persistence\EloquentSystemMapAuthor;
 use Aristonis\FilamentShortcutKeys\Testing\TestsFilamentShortcutKeys;
 use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Package;
@@ -47,6 +49,7 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
         // left unbound because it is page-specific, built per render from the current page.
         $this->app->singleton(NavigationProvider::class, FilamentNavigationProvider::class);
         $this->app->singleton(MapRepository::class, EloquentMapRepository::class);
+        $this->app->singleton(SystemMapAuthor::class, EloquentSystemMapAuthor::class);
         $this->app->singleton(AuthorityGate::class, ConfigAuthorityGate::class);
     }
 
