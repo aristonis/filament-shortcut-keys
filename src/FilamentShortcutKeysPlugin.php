@@ -21,6 +21,7 @@ use Aristonis\FilamentShortcutKeys\Filament\ClientMapSerializer;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentPageContextProvider;
 use Aristonis\FilamentShortcutKeys\Filament\NullPageContextProvider;
 use Aristonis\FilamentShortcutKeys\Filament\OverlayCatalog;
+use Aristonis\FilamentShortcutKeys\Filament\Pages\ManageShortcuts;
 use Aristonis\FilamentShortcutKeys\Filament\Pages\ShortcutReference;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
@@ -69,7 +70,7 @@ class FilamentShortcutKeysPlugin implements Plugin
         $resolver = $this->buildResolver($panelWideSets, $pageSets);
         $handlerBySet = $this->handlerBySet($panelWideSets, $pageSets);
 
-        $panel->pages([ShortcutReference::class]);
+        $panel->pages([ShortcutReference::class, ManageShortcuts::class]);
 
         $panel->assets([
             Js::make('filament-shortcut-keys', __DIR__ . '/../resources/dist/filament-shortcut-keys.js'),

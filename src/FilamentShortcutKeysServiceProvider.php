@@ -4,10 +4,14 @@ namespace Aristonis\FilamentShortcutKeys;
 
 use Aristonis\FilamentShortcutKeys\Authorization\AuthorityGate;
 use Aristonis\FilamentShortcutKeys\Authorization\ConfigAuthorityGate;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\ListMaps;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\MapEditor;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\MapSelector;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\SystemMapAuthor;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentNavigationProvider;
+use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapCatalog;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapRepository;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentSystemMapAuthor;
 use Aristonis\FilamentShortcutKeys\Testing\TestsFilamentShortcutKeys;
@@ -49,8 +53,15 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
         // left unbound because it is page-specific, built per render from the current page.
         $this->app->singleton(NavigationProvider::class, FilamentNavigationProvider::class);
         $this->app->singleton(MapRepository::class, EloquentMapRepository::class);
+        // The read and the write side of a user's map are one Eloquent adapter, so share the instance.
+        $this->app->singleton(MapEditor::class, fn ($app) => $app->make(MapRepository::class));
         $this->app->singleton(SystemMapAuthor::class, EloquentSystemMapAuthor::class);
         $this->app->singleton(AuthorityGate::class, ConfigAuthorityGate::class);
+
+        // One catalog instance backs both the "what can I pick" and "make this active" ports.
+        $this->app->singleton(EloquentMapCatalog::class);
+        $this->app->singleton(ListMaps::class, fn ($app) => $app->make(EloquentMapCatalog::class));
+        $this->app->singleton(MapSelector::class, fn ($app) => $app->make(EloquentMapCatalog::class));
     }
 
     public function packageBooted(): void
