@@ -5,7 +5,9 @@ namespace Aristonis\FilamentShortcutKeys;
 use Aristonis\FilamentShortcutKeys\Caching\CachedResolver;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\CompositeResolver;
+use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ShortcutResolver;
 use Aristonis\FilamentShortcutKeys\Core\Sets\CustomSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\GlobalSet;
@@ -16,11 +18,14 @@ use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
 use Aristonis\FilamentShortcutKeys\Filament\ClientMapSerializer;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentPageContextProvider;
+use Aristonis\FilamentShortcutKeys\Filament\NullPageContextProvider;
+use Aristonis\FilamentShortcutKeys\Filament\Pages\ShortcutReference;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\Support\Assets\Js;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\LivewireManager;
@@ -56,18 +61,13 @@ class FilamentShortcutKeysPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $panelWideSets = new ShortcutSetRegistry;
-        $panelWideSets->register(new NavigationSet);
-        $panelWideSets->register(new CustomSet);
-
-        $pageSets = new ShortcutSetRegistry;
-        $pageSets->register(new GlobalSet);
-        $pageSets->register(new TableSet);
-        $pageSets->register(new RowActionSet($this->rowActions));
-        $pageSets->register(new PageSet);
+        $panelWideSets = $this->panelWideSets();
+        $pageSets = $this->pageSets();
 
         $resolver = $this->buildResolver($panelWideSets, $pageSets);
         $handlerBySet = $this->handlerBySet($panelWideSets, $pageSets);
+
+        $panel->pages([ShortcutReference::class]);
 
         $panel->assets([
             Js::make('filament-shortcut-keys', __DIR__ . '/../resources/dist/filament-shortcut-keys.js'),
@@ -112,15 +112,62 @@ class FilamentShortcutKeysPlugin implements Plugin
     }
 
     /**
+     * Resolve just the panel-wide shortcuts (navigation and the user's custom bindings) for the
+     * reference page, which lists them away from any live page. Built from the same sets, overlay,
+     * locale, and ttl as the render hook, so both land on the same cache-fingerprinted entry and the
+     * page can never disagree with the injected keymap.
+     */
+    public function resolvePanelWideMap(string $panelId, ?Authenticatable $user): ResolvedMap
+    {
+        return $this->panelWideResolver($this->panelWideSets())->resolve(
+            app(NavigationProvider::class),
+            new NullPageContextProvider,
+            $panelId,
+            $user instanceof Model ? $user->getMorphClass() : '',
+            (string) ($user?->getAuthIdentifier() ?? ''),
+        );
+    }
+
+    private function panelWideSets(): ShortcutSetRegistry
+    {
+        $sets = new ShortcutSetRegistry;
+        $sets->register(new NavigationSet);
+        $sets->register(new CustomSet);
+
+        return $sets;
+    }
+
+    private function pageSets(): ShortcutSetRegistry
+    {
+        $sets = new ShortcutSetRegistry;
+        $sets->register(new GlobalSet);
+        $sets->register(new TableSet);
+        $sets->register(new RowActionSet($this->rowActions));
+        $sets->register(new PageSet);
+
+        return $sets;
+    }
+
+    /**
      * The navigation map is page-independent, so it is cached once and shared across every page; the
      * page's own sets are cheap and page-specific, so they are resolved fresh and merged in.
      */
     private function buildResolver(ShortcutSetRegistry $panelWideSets, ShortcutSetRegistry $pageSets): CompositeResolver
     {
+        $overlay = config('shortcut-keys.overlay', []);
+
+        return new CompositeResolver(
+            $this->panelWideResolver($panelWideSets),
+            new ShortcutResolver($pageSets, $overlay, app(MapRepository::class)),
+        );
+    }
+
+    private function panelWideResolver(ShortcutSetRegistry $panelWideSets): Resolver
+    {
         $maps = app(MapRepository::class);
         $overlay = config('shortcut-keys.overlay', []);
 
-        $panelWide = new CachedResolver(
+        return new CachedResolver(
             new ShortcutResolver($panelWideSets, $overlay, $maps),
             app(CacheRepository::class),
             $maps,
@@ -128,8 +175,6 @@ class FilamentShortcutKeysPlugin implements Plugin
             app()->getLocale(),
             config('shortcut-keys.cache.ttl'),
         );
-
-        return new CompositeResolver($panelWide, new ShortcutResolver($pageSets, $overlay, $maps));
     }
 
     /**
