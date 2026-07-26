@@ -1,6 +1,7 @@
 <?php
 
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
+use Aristonis\FilamentShortcutKeys\Exceptions\InvalidModifierSchemeException;
 
 it('holds the four modifier flags', function () {
     $scheme = new ModifierScheme(ctrl: false, alt: true, shift: true, meta: false);
@@ -48,3 +49,22 @@ it('renders a canonical string in fixed modifier order', function () {
         ->and(ModifierScheme::alt()->toString())->toBe('alt')
         ->and(ModifierScheme::none()->toString())->toBe('');
 });
+
+it('builds a scheme from configured modifier tokens', function () {
+    $scheme = ModifierScheme::fromTokens(['alt', 'shift']);
+
+    expect($scheme->equals(ModifierScheme::altShift()))->toBeTrue();
+});
+
+it('reads an empty token list as bare keys', function () {
+    expect(ModifierScheme::fromTokens([])->equals(ModifierScheme::none()))->toBeTrue();
+});
+
+it('ignores the order the tokens are written in', function () {
+    expect(ModifierScheme::fromTokens(['shift', 'alt'])->equals(ModifierScheme::altShift()))->toBeTrue();
+});
+
+it('rejects a token it cannot map to a real modifier', function () {
+    // "mod" resolves differently per platform, so it cannot be decided on the server.
+    ModifierScheme::fromTokens(['alt', 'mod']);
+})->throws(InvalidModifierSchemeException::class);

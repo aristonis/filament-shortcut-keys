@@ -114,7 +114,7 @@ final class ManageShortcuts extends Page
         return Action::make('changeActiveMap')
             ->label(trans('filament-shortcut-keys::shortcut-keys.manage.change_active'))
             ->schema([
-                Select::make('map')->label(trans('filament-shortcut-keys::shortcut-keys.manage.map'))
+                Select::make('map')->label(self::fieldLabel('map'))
                     ->options($this->mapOptions())->required(),
             ])
             ->action(fn (array $data) => $this->run(function () use ($data): void {
@@ -129,8 +129,8 @@ final class ManageShortcuts extends Page
         return Action::make('remap')
             ->label(trans('filament-shortcut-keys::shortcut-keys.manage.remap'))
             ->schema([
-                Select::make('target')->options($this->targetOptions())->required(),
-                TextInput::make('letter')->required()->maxLength(1),
+                Select::make('target')->label(self::fieldLabel('target'))->options($this->targetOptions())->required(),
+                TextInput::make('letter')->label(self::fieldLabel('letter'))->required()->maxLength(1),
             ])
             ->action(fn (array $data) => $this->run(function () use ($data): void {
                 [$type, $id] = $this->owner();
@@ -142,7 +142,7 @@ final class ManageShortcuts extends Page
     {
         return Action::make('disable')
             ->label(trans('filament-shortcut-keys::shortcut-keys.manage.disable'))
-            ->schema([Select::make('target')->options($this->targetOptions())->required()])
+            ->schema([Select::make('target')->label(self::fieldLabel('target'))->options($this->targetOptions())->required()])
             ->action(fn (array $data) => $this->run(function () use ($data): void {
                 [$type, $id] = $this->owner();
                 $this->editor()->disable($type, $id, $this->panelId(), $data['target']);
@@ -153,7 +153,7 @@ final class ManageShortcuts extends Page
     {
         return Action::make('reset')
             ->label(trans('filament-shortcut-keys::shortcut-keys.manage.reset'))
-            ->schema([Select::make('target')->options($this->targetOptions())->required()])
+            ->schema([Select::make('target')->label(self::fieldLabel('target'))->options($this->targetOptions())->required()])
             ->action(fn (array $data) => $this->run(function () use ($data): void {
                 [$type, $id] = $this->owner();
                 $this->editor()->enable($type, $id, $this->panelId(), $data['target']);
@@ -165,10 +165,12 @@ final class ManageShortcuts extends Page
         return Action::make('addCustomBinding')
             ->label(trans('filament-shortcut-keys::shortcut-keys.manage.add_custom'))
             ->schema([
-                TextInput::make('name')->required()->maxLength(64),
-                TextInput::make('letter')->required()->maxLength(1),
-                Select::make('kind')->options(['route' => 'Route', 'selector' => 'Selector'])->default('route')->required(),
-                TextInput::make('value')->required(),
+                TextInput::make('name')->label(self::fieldLabel('name'))->required()->maxLength(64),
+                TextInput::make('letter')->label(self::fieldLabel('letter'))->required()->maxLength(1),
+                Select::make('kind')->label(self::fieldLabel('kind'))
+                    ->options((array) trans('filament-shortcut-keys::shortcut-keys.manage.kinds'))
+                    ->default('route')->required(),
+                TextInput::make('value')->label(self::fieldLabel('value'))->required(),
             ])
             ->action(fn (array $data) => $this->run(function () use ($data): void {
                 [$type, $id] = $this->owner();
@@ -194,7 +196,7 @@ final class ManageShortcuts extends Page
     {
         return Action::make('clonePreset')
             ->label(trans('filament-shortcut-keys::shortcut-keys.manage.clone_preset'))
-            ->schema([Select::make('source')->options($this->presetOptions())->required()])
+            ->schema([Select::make('source')->label(self::fieldLabel('source'))->options($this->presetOptions())->required()])
             ->action(fn (array $data) => $this->run(
                 fn () => $this->author()->clonePreset($this->user(), $this->panelId(), (int) $data['source']),
             ));
@@ -205,9 +207,9 @@ final class ManageShortcuts extends Page
         return Action::make('editPreset')
             ->label(trans('filament-shortcut-keys::shortcut-keys.manage.edit_preset'))
             ->schema([
-                Select::make('map')->options($this->presetOptions())->required(),
-                Select::make('target')->options($this->targetOptions())->required(),
-                TextInput::make('letter')->required()->maxLength(1),
+                Select::make('map')->label(self::fieldLabel('map'))->options($this->presetOptions())->required(),
+                Select::make('target')->label(self::fieldLabel('target'))->options($this->targetOptions())->required(),
+                TextInput::make('letter')->label(self::fieldLabel('letter'))->required()->maxLength(1),
                 Checkbox::make('confirmed')->label(trans('filament-shortcut-keys::shortcut-keys.manage.edit_preset_confirm'))->accepted()->required(),
             ])
             ->action(fn (array $data) => $this->run(function () use ($data): void {
@@ -219,6 +221,12 @@ final class ManageShortcuts extends Page
                     (bool) $data['confirmed'],
                 );
             }));
+    }
+
+    /** Without an explicit label Filament humanizes the field name, which is always English. */
+    private static function fieldLabel(string $field): string
+    {
+        return trans("filament-shortcut-keys::shortcut-keys.manage.fields.$field");
     }
 
     private function run(callable $write): void

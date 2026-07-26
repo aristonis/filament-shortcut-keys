@@ -29,7 +29,7 @@ export function eventModifier(event) {
     return parts.join('+')
 }
 
-// A bare-key shortcut (table set) must not fire while the user is typing, or "/" would never reach a
+// A shortcut with no modifier must not fire while the user is typing, or "/" would never reach a
 // search box. Modifier shortcuts are still allowed through; the dispatcher decides per group.
 export function isTyping(target) {
     if (!target) {

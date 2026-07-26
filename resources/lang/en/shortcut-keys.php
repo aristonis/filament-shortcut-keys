@@ -46,7 +46,6 @@ return [
         'active' => 'Active',
         'default' => 'Default',
         'change_active' => 'Change active map',
-        'map' => 'Map',
         'remap' => 'Remap a shortcut',
         'disable' => 'Disable a shortcut',
         'reset' => 'Reset to default',
@@ -62,6 +61,21 @@ return [
         'map_preset' => 'Preset :number',
         'locked_note' => 'This panel uses a single shared map, so personal customization is turned off.',
         'authoring_note' => 'You can author the shared system presets from the actions above.',
+
+        'fields' => [
+            'map' => 'Map',
+            'source' => 'Preset to copy',
+            'target' => 'Shortcut',
+            'letter' => 'Letter',
+            'name' => 'Name',
+            'kind' => 'Opens',
+            'value' => 'Destination',
+        ],
+
+        'kinds' => [
+            'route' => 'A page in this app',
+            'selector' => 'An element on the page',
+        ],
     ],
 
 ];

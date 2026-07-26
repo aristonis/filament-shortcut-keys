@@ -10,6 +10,9 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 /** Page-scoped shortcuts declared by an individual page. Registered for precedence; discovery returns none until a page can declare them. */
 final class PageSet implements ShortcutSet
 {
+    /** @param  ModifierScheme|null  $modifier  a developer-configured scheme; null keeps the convention */
+    public function __construct(private ?ModifierScheme $modifier = null) {}
+
     public function key(): string
     {
         return 'page';
@@ -17,7 +20,7 @@ final class PageSet implements ShortcutSet
 
     public function defaultModifier(): ModifierScheme
     {
-        return ModifierScheme::none();
+        return $this->modifier ?? ModifierScheme::none();
     }
 
     public function discover(NavigationProvider $navigationProvider, PageContextProvider $pageContextProvider, string $panelId): array

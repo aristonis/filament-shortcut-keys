@@ -17,6 +17,7 @@ use Aristonis\FilamentShortcutKeys\Core\Sets\PageSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\RowActionSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Filament\ClientMapSerializer;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentPageContextProvider;
 use Aristonis\FilamentShortcutKeys\Filament\NullPageContextProvider;
@@ -64,12 +65,6 @@ class FilamentShortcutKeysPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $panelWideSets = $this->panelWideSets();
-        $pageSets = $this->pageSets();
-
-        $resolver = $this->buildResolver($panelWideSets, $pageSets);
-        $handlerBySet = $this->handlerBySet($panelWideSets, $pageSets);
-
         $panel->pages([ShortcutReference::class, ManageShortcuts::class]);
 
         $panel->assets([
@@ -80,12 +75,20 @@ class FilamentShortcutKeysPlugin implements Plugin
         // the one place the current page (and its actions) can be read.
         $panel->renderHook(
             PanelsRenderHook::PAGE_END,
-            function () use ($resolver, $handlerBySet, $panel): string {
+            function () use ($panel): string {
                 $page = app(LivewireManager::class)->current();
 
                 if ($page === null) {
                     return '';
                 }
+
+                // The sets are assembled here rather than at registration because the panel's text
+                // direction depends on the request locale, which is only settled once the app's
+                // locale middleware has run — long after plugins register.
+                $panelWideSets = $this->panelWideSets();
+                $pageSets = $this->pageSets();
+                $resolver = $this->buildResolver($panelWideSets, $pageSets);
+                $handlerBySet = $this->handlerBySet($panelWideSets, $pageSets);
 
                 $user = Filament::auth()->user();
                 $navigation = app(NavigationProvider::class);
@@ -136,8 +139,8 @@ class FilamentShortcutKeysPlugin implements Plugin
     private function panelWideSets(): ShortcutSetRegistry
     {
         $sets = new ShortcutSetRegistry;
-        $sets->register(new NavigationSet);
-        $sets->register(new CustomSet);
+        $sets->register(new NavigationSet($this->configuredModifier('navigation')));
+        $sets->register(new CustomSet($this->configuredModifier('custom')));
 
         return $sets;
     }
@@ -145,12 +148,32 @@ class FilamentShortcutKeysPlugin implements Plugin
     private function pageSets(): ShortcutSetRegistry
     {
         $sets = new ShortcutSetRegistry;
-        $sets->register(new GlobalSet);
-        $sets->register(new TableSet);
-        $sets->register(new RowActionSet($this->rowActions));
-        $sets->register(new PageSet);
+        $sets->register(new GlobalSet($this->configuredModifier('global')));
+        $sets->register(new TableSet($this->panelIsRightToLeft(), $this->configuredModifier('table')));
+        $sets->register(new RowActionSet($this->rowActions, $this->configuredModifier('row-action')));
+        $sets->register(new PageSet($this->configuredModifier('page')));
 
         return $sets;
+    }
+
+    /**
+     * The modifier scheme a developer configured for a set, or null to keep the set's convention.
+     * A set the config never mentions is left alone, so removing a key restores the default rather
+     * than silently turning the shortcuts into bare letters.
+     */
+    private function configuredModifier(string $set): ?ModifierScheme
+    {
+        $modifiers = config('shortcut-keys.modifiers', []);
+
+        return array_key_exists($set, $modifiers)
+            ? ModifierScheme::fromTokens((array) $modifiers[$set])
+            : null;
+    }
+
+    /** The same key Filament reads to set the layout's `dir`, so shortcuts and chrome agree on direction. */
+    private function panelIsRightToLeft(): bool
+    {
+        return trans('filament-panels::layout.direction') === 'rtl';
     }
 
     /**

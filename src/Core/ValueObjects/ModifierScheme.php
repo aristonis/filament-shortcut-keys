@@ -2,8 +2,13 @@
 
 namespace Aristonis\FilamentShortcutKeys\Core\ValueObjects;
 
+use Aristonis\FilamentShortcutKeys\Exceptions\InvalidModifierSchemeException;
+
 final readonly class ModifierScheme
 {
+    /** The modifiers a browser reports per key event, and therefore the only ones a scheme can name. */
+    private const TOKENS = ['ctrl', 'alt', 'shift', 'meta'];
+
     public function __construct(
         public bool $ctrl,
         public bool $alt,
@@ -24,6 +29,29 @@ final readonly class ModifierScheme
     public static function altShift(): self
     {
         return new self(ctrl: false, alt: true, shift: true, meta: false);
+    }
+
+    /**
+     * Builds a scheme from the modifier tokens a developer configured for a set. An empty list is a
+     * valid answer (bare keys). An unrecognised token throws rather than being dropped, so a typo in
+     * config surfaces on the next page render instead of silently changing everyone's shortcuts.
+     *
+     * @param  string[]  $tokens
+     */
+    public static function fromTokens(array $tokens): self
+    {
+        foreach ($tokens as $token) {
+            if (! in_array($token, self::TOKENS, true)) {
+                throw InvalidModifierSchemeException::forToken((string) $token);
+            }
+        }
+
+        return new self(
+            ctrl: in_array('ctrl', $tokens, true),
+            alt: in_array('alt', $tokens, true),
+            shift: in_array('shift', $tokens, true),
+            meta: in_array('meta', $tokens, true),
+        );
     }
 
     public function equals(self $other): bool

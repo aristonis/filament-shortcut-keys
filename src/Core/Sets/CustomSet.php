@@ -10,11 +10,14 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 
 /**
  * User-defined bindings. Nothing is discovered from the panel; the resolver adds them from the active
- * map. Registered so the map has a modifier scheme and client handler for them. Shares navigation's
- * Alt+Shift scheme so the two land in one clash pool and never collide on a letter.
+ * map. Registered so the map has a modifier scheme and client handler for them. Defaults to the same
+ * scheme as navigation, which puts both in one clash pool so a custom key can never shadow a nav one.
  */
 final class CustomSet implements AcceptsCustomBindings, ShortcutSet
 {
+    /** @param  ModifierScheme|null  $modifier  a developer-configured scheme; null keeps the convention */
+    public function __construct(private ?ModifierScheme $modifier = null) {}
+
     public function key(): string
     {
         return 'custom';
@@ -22,7 +25,7 @@ final class CustomSet implements AcceptsCustomBindings, ShortcutSet
 
     public function defaultModifier(): ModifierScheme
     {
-        return ModifierScheme::altShift();
+        return $this->modifier ?? ModifierScheme::altShift();
     }
 
     public function discover(NavigationProvider $navigationProvider, PageContextProvider $pageContextProvider, string $panelId): array

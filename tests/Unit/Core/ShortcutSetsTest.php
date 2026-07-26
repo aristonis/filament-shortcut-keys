@@ -114,6 +114,22 @@ it('the table set reserves pagination on the left and right arrow keys', functio
         ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowRight')))->toBeTrue();
 });
 
+it('the table set mirrors the pagination arrows in a right-to-left panel', function () {
+    $byKey = collect((new TableSet(rightToLeft: true))->discover(nav([]), page(hasTable: true), 'admin'))
+        ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
+
+    expect($byKey['page-prev']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowRight')))->toBeTrue()
+        ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowLeft')))->toBeTrue();
+});
+
+it('the table set leaves the row arrows alone in a right-to-left panel', function () {
+    $byKey = collect((new TableSet(rightToLeft: true))->discover(nav([]), page(hasTable: true), 'admin'))
+        ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
+
+    expect($byKey['row-up']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowUp')))->toBeTrue()
+        ->and($byKey['row-down']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowDown')))->toBeTrue();
+});
+
 // --- Page set: registered but dormant until page discovery is wired ---------------------
 
 it('the page set is keyed "page"', function () {

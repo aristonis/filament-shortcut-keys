@@ -10,9 +10,12 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
-/** Global shortcuts: one per page action, Alt + a letter from the action name. */
+/** Global shortcuts: one per page action, keyed on a letter from the action name. */
 final class GlobalSet implements ShortcutSet
 {
+    /** @param  ModifierScheme|null  $modifier  a developer-configured scheme; null keeps the convention */
+    public function __construct(private ?ModifierScheme $modifier = null) {}
+
     public function key(): string
     {
         return 'global';
@@ -20,7 +23,7 @@ final class GlobalSet implements ShortcutSet
 
     public function defaultModifier(): ModifierScheme
     {
-        return ModifierScheme::alt();
+        return $this->modifier ?? ModifierScheme::alt();
     }
 
     public function discover(NavigationProvider $navigationProvider, PageContextProvider $pageContextProvider, string $panelId): array

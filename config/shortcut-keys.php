@@ -18,12 +18,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Per-set modifier defaults
+    | Per-set modifiers
     |--------------------------------------------------------------------------
     |
-    | The default modifier scheme applied to each shortcut set. An empty array
-    | means bare keys (no modifier), e.g. table search on "/". Values are
-    | modifier tokens ('alt', 'shift', 'ctrl', 'meta', 'mod').
+    | The modifier scheme applied to each shortcut set. An empty array means
+    | bare keys (no modifier), e.g. table search on "/". Values are modifier
+    | tokens: 'ctrl', 'alt', 'shift', 'meta'. Remove a set from this list to
+    | put it back on its built-in scheme; an unknown token throws.
+    |
+    | Two sets sharing a scheme share one letter pool, so they can never be
+    | assigned the same key.
     |
     */
 

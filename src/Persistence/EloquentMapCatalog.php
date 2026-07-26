@@ -40,7 +40,7 @@ final class EloquentMapCatalog implements ListMaps, MapSelector
     public function select(string $authType, string $authId, string $panelId, int $mapId): int
     {
         // Scope the lookup so an owner can only select a system preset or their OWN custom map in
-        // this panel; anything else (another panel, another user's map) is simply not found.
+        // this panel; anything else (another panel, another user's map) comes back as not found.
         $map = $this->selectableMaps($authType, $authId, $panelId)->whereKey($mapId)->firstOrFail();
 
         ShortcutMapSelection::query()->updateOrCreate(

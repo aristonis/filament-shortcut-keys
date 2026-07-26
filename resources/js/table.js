@@ -10,11 +10,10 @@ function rows() {
     return [...document.querySelectorAll(ROW_SELECTOR)]
 }
 
+// Match on rel, which Filament emits on both the simple and the numbered pagination. The visible
+// label and the aria-label are translated, so matching on those breaks in any non-English panel.
 function paginationLink(direction) {
-    const label = direction === 'prev' ? 'previous' : 'next'
-    return document.querySelector(
-        `.fi-pagination a[aria-label*="${label}" i], .fi-pagination button[aria-label*="${label}" i]`,
-    )
+    return document.querySelector(`.fi-pagination [rel="${direction}"]`)
 }
 
 export function createTableHandler() {
@@ -79,6 +78,8 @@ export function createTableHandler() {
                 return clickInRow('[wire\\:click^="mountAction(\'delete\'"]')
             case 'page-prev':
             case 'page-next': {
+                // Which arrow key carries which direction is decided server-side (mirrored in an
+                // RTL panel); by the time it reaches here the behavior is already the real one.
                 const link = paginationLink(behavior === 'page-prev' ? 'prev' : 'next')
                 if (!link) return false
                 link.click()

@@ -41,7 +41,7 @@ final readonly class ShortcutResolver implements Resolver
      * Applies developer config overrides. A forced letter is set as a fixed combo now, before
      * letter assignment, so LetterAssigner keeps it and routes other keys around it. A disable is
      * only flagged here; keepEnabled() removes it before assignment. An invalid forced letter is
-     *  ignored, so one bad config value can't take down the whole map.
+     * ignored, so one bad config value can't take down the whole map.
      */
     private function applyOverlay(array $bindings): array
     {

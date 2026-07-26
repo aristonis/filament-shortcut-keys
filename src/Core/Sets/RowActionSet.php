@@ -18,8 +18,11 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
  */
 final class RowActionSet implements ShortcutSet
 {
-    /** @param string[] $registeredNames dev-registered custom row-action names */
-    public function __construct(private array $registeredNames) {}
+    /**
+     * @param  string[]  $registeredNames  dev-registered custom row-action names
+     * @param  ModifierScheme|null  $modifier  a developer-configured scheme; null keeps the convention
+     */
+    public function __construct(private array $registeredNames, private ?ModifierScheme $modifier = null) {}
 
     public function key(): string
     {
@@ -28,7 +31,7 @@ final class RowActionSet implements ShortcutSet
 
     public function defaultModifier(): ModifierScheme
     {
-        return ModifierScheme::none();
+        return $this->modifier ?? ModifierScheme::none();
     }
 
     public function discover(NavigationProvider $navigationProvider, PageContextProvider $pageContextProvider, string $panelId): array
@@ -46,7 +49,7 @@ final class RowActionSet implements ShortcutSet
 
         // Letters are assigned over the FULL registered list, then filtered to what the page has,
         // so a name keeps the same key whether or not its siblings are present on a given page.
-        $assigned = (new LetterAssigner)->assign(ModifierScheme::none(), $bindings);
+        $assigned = (new LetterAssigner)->assign($this->defaultModifier(), $bindings);
 
         $present = array_map(fn (ActionTarget $action) => $action->name, $pageContextProvider->rowActions());
 

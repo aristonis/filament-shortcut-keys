@@ -4,6 +4,7 @@ namespace Aristonis\FilamentShortcutKeys;
 
 use Aristonis\FilamentShortcutKeys\Authorization\AuthorityGate;
 use Aristonis\FilamentShortcutKeys\Authorization\ConfigAuthorityGate;
+use Aristonis\FilamentShortcutKeys\Commands\PruneOrphanedEntriesCommand;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\ListMaps;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapEditor;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
@@ -30,6 +31,8 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
         $package->name(static::$name);
 
         $package->hasConfigFile('shortcut-keys');
+
+        $package->hasCommand(PruneOrphanedEntriesCommand::class);
 
         $package->hasMigrations([
             'create_shortcut_maps_table',
