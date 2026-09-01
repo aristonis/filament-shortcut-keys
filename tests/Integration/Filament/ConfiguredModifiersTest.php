@@ -33,6 +33,16 @@ it('applies a configured modifier scheme to a set', function () {
         ->and($modifiers['global'])->toBe('alt');
 });
 
+it('moves the global set onto a new modifier without disturbing the others', function () {
+    config()->set('shortcut-keys.modifiers.global', ['ctrl', 'alt']);
+
+    $modifiers = injectedModifiers((string) $this->get('/admin/orders')->assertOk()->getContent());
+
+    expect($modifiers['global'])->toBe('ctrl+alt')
+        ->and($modifiers['navigation'])->toBe('alt+shift')
+        ->and($modifiers['table'])->toBe('');
+});
+
 it('keeps a set on its built-in scheme when config does not mention it', function () {
     config()->set('shortcut-keys.modifiers', ['navigation' => ['ctrl']]);
 

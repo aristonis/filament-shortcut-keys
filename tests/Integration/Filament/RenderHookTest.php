@@ -1,5 +1,6 @@
 <?php
 
+use Aristonis\FilamentShortcutKeys\Filament\Pages\ManageShortcuts;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
 
 it('injects the resolved keymap as a JSON script block on a panel page', function () {
@@ -22,6 +23,21 @@ it('binds a navigation shortcut for each registered resource', function () {
     $targets = array_column($navigation['bindings'], 'target');
 
     expect($targets)->toContain('navigation:' . OrderResource::class);
+});
+
+it('keeps a page the current user cannot open in the keymap', function () {
+    // The manager refuses this visitor, but the keymap is public by design: it is built from every
+    // registered page so all users share one cacheable map. Access is enforced when the key fires.
+    config()->set('shortcut-keys.customization', 'locked');
+    config()->set('shortcut-keys.authorize', null);
+
+    $this->get(ManageShortcuts::getUrl())->assertForbidden();
+
+    $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))
+        ->firstWhere('set', 'navigation');
+
+    expect(array_column($navigation['bindings'], 'target'))
+        ->toContain('navigation:' . ManageShortcuts::class);
 });
 
 it('carries the handler and a navigate activation on each navigation binding', function () {
