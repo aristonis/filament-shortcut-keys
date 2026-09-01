@@ -77,12 +77,21 @@ return [
     |--------------------------------------------------------------------------
     |
     | Time-to-live, in seconds, for the cached panel-wide (navigation) keymap.
-    | Use null to cache forever; the cache key already busts on any input change.
+    |
+    | Freshness does not depend on this. The cache key is a fingerprint of everything that shapes the
+    | map, so changing the navigation, the active map, the overlay or the locale already produces a
+    | different key. What the fingerprint cannot do is remove the entry it moved away from, and
+    | nothing else in this package deletes it either: every edit and every deploy that touches
+    | navigation leaves its predecessor behind. The lifetime is what reclaims those, which matters
+    | most on a store that never expires anything on its own.
+    |
+    | null caches forever. Only choose it on a store you actively manage, and expect the keyspace to
+    | grow with the number of edits your admins make.
     |
     */
 
     'cache' => [
-        'ttl' => null,
+        'ttl' => 86400,
     ],
 
 ];

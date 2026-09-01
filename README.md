@@ -147,10 +147,16 @@ return [
         'global:export' => ['disabled' => true],
     ],
 
-    // Seconds to cache the panel-wide keymap. null caches until an input changes.
-    'cache' => ['ttl' => null],
+    // Seconds to cache the panel-wide keymap.
+    'cache' => ['ttl' => 86400],
 ];
 ```
+
+The cache key already covers freshness: it is a fingerprint of the navigation, the admin's active map
+and its version, the overlay and the locale, so a change to any of them resolves to a different key.
+The lifetime exists to reclaim the keys left behind by that rotation, since every edit and every
+deploy that touches navigation strands its predecessor. Setting it to `null` caches forever, which is
+only sensible on a store you actively manage.
 
 An `overlay` entry wins over both the conventions and an admin's own edit, and needs no database
 rows, which makes it the right tool for a key you need to pin in code.

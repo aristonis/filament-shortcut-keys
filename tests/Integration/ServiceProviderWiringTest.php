@@ -9,7 +9,7 @@ use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapRepository;
 
 it('merges the package config so shortcut-keys.* resolves through the container', function () {
     expect(config('shortcut-keys.customization'))->toBe('personal')
-        ->and(config('shortcut-keys.cache.ttl'))->toBeNull();
+        ->and(config('shortcut-keys.cache.ttl'))->toBe(86400);
 });
 
 it('binds the navigation port to the Filament adapter', function () {
