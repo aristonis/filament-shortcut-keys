@@ -75,4 +75,7 @@ jobs:
         run: composer show -D
 
       - name: Execute tests
-        run: vendor/bin/pest --ci
+        # --no-coverage because this job installs no coverage driver (see coverage: none above).
+        # Without it Pest sees the coverage reports configured in phpunit.xml.dist, finds no driver,
+        # and exits 1 — which is why this workflow had never once passed.
+        run: vendor/bin/pest --ci --no-coverage
