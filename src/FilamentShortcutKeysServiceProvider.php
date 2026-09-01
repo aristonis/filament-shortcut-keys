@@ -34,10 +34,14 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
 
         $package->hasCommand(PruneOrphanedEntriesCommand::class);
 
+        // Prefixed so the filenames sort into dependency order: both child tables carry a foreign key
+        // to shortcut_maps, and a plain `create_shortcut_map_entries_table` sorts BEFORE
+        // `create_shortcut_maps_table`. Publishing strips the prefix and stamps its own, so a host's
+        // migrations directory still gets clean names.
         $package->hasMigrations([
-            'create_shortcut_maps_table',
-            'create_shortcut_map_entries_table',
-            'create_shortcut_map_selections_table',
+            '2026_01_01_000001_create_shortcut_maps_table',
+            '2026_01_01_000002_create_shortcut_map_entries_table',
+            '2026_01_01_000003_create_shortcut_map_selections_table',
         ]);
 
         if (file_exists($package->basePath('/../resources/lang'))) {
