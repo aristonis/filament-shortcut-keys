@@ -46,8 +46,10 @@ final class EloquentMapRepository implements MapEditor, MapRepository
     {
         return DB::transaction(function () use ($authType, $authId, $panelId): ShortcutMap {
             // Lock the selection row if it exists so a concurrent fork blocks until we commit.
-            // A lockForUpdate over a non-existent row locks nothing — which is exactly why the
-            // no-selection branch relies on the unique constraint, not the lock.
+            // On PostgreSQL a lockForUpdate over a non-existent row locks nothing, which is why the
+            // no-selection branch relies on the unique constraint rather than the lock. InnoDB
+            // differs: it gap-locks the range, so there the competing insert simply waits. Both
+            // converge on one map, by different mechanisms.
             $lockedId = ShortcutMapSelection::query()
                 ->where('authenticatable_type', $authType)
                 ->where('authenticatable_id', $authId)
@@ -125,6 +127,13 @@ final class EloquentMapRepository implements MapEditor, MapRepository
      * serialization point. We create the custom map, then claim the slot with a plain
      * create(); if a concurrent fork inserted first, that create() throws, we drop our
      * now-redundant map, and converge on the winner's map.
+     *
+     * The claim gets its own savepoint (a nested transaction) because PostgreSQL aborts the WHOLE
+     * transaction on a failed statement: without it, the recovery below — dropping the redundant map
+     * and reading the winner — runs inside a poisoned transaction and every statement fails with
+     * "current transaction is aborted", turning a converge into a 500 that also loses the edit.
+     * Rolling back to the savepoint clears that state and leaves the outer transaction usable.
+     * MySQL tolerates the unguarded version, so this only ever reproduced on pgsql.
      */
     private function claimNewSelection(string $authType, string $authId, string $panelId): ShortcutMap
     {
@@ -132,12 +141,14 @@ final class EloquentMapRepository implements MapEditor, MapRepository
         $custom = $this->replicateAsCustom($source, $authType, $authId, $panelId);
 
         try {
-            ShortcutMapSelection::query()->create([
-                'authenticatable_type' => $authType,
-                'authenticatable_id' => $authId,
-                'panel_id' => $panelId,
-                'map_id' => $custom->id,
-            ]);
+            DB::transaction(function () use ($authType, $authId, $panelId, $custom): void {
+                ShortcutMapSelection::query()->create([
+                    'authenticatable_type' => $authType,
+                    'authenticatable_id' => $authId,
+                    'panel_id' => $panelId,
+                    'map_id' => $custom->id,
+                ]);
+            });
         } catch (QueryException $exception) {
             if (! $this->isUniqueViolation($exception)) {
                 throw $exception;
