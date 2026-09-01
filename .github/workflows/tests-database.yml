@@ -1,0 +1,81 @@
+name: database matrix
+
+# The main tests workflow covers PHP and Laravel versions on sqlite. This one covers the DRIVERS,
+# because the plugin ships migrations and a fork/selection race whose losing branch is unreachable on
+# sqlite: it serialises everything through one connection. One PHP/Laravel pair is enough — this is
+# testing database behaviour, not language versions — so it stays a short matrix instead of
+# multiplying the main one.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        driver: [pgsql, mysql]
+
+    name: ${{ matrix.driver }}
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: fsk_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: fsk_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -psecret"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: 8.3
+          extensions: pdo, pdo_mysql, pdo_pgsql, dom, curl, libxml, mbstring, zip
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        env:
+          FSK_DB_DRIVER: ${{ matrix.driver }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: ${{ matrix.driver == 'pgsql' && '5432' || '3306' }}
+          DB_DATABASE: fsk_test
+          DB_USERNAME: ${{ matrix.driver == 'pgsql' && 'postgres' || 'root' }}
+          DB_PASSWORD: secret
+        run: vendor/bin/pest --no-coverage
