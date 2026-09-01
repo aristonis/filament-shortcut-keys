@@ -185,10 +185,15 @@ the page.
 
 ## Translations
 
-The package ships English and Arabic and renders correctly right to left. In an RTL panel the
-pagination arrows are mirrored to match Filament's own flipped buttons, so `←` moves forward.
+The package ships English. Every string it renders goes through Laravel's translator, so publishing
+the files and adding your own locale gets you a fully translated panel — nothing is hardcoded.
 
-Publish the files to change the wording:
+In a right-to-left panel the pagination arrows are mirrored to match Filament's own flipped buttons,
+so `←` moves forward. Panel direction comes from Filament's translations rather than this package's,
+so that applies whatever language you run. The mirroring is covered by tests, but the right-to-left
+experience as a whole has not been verified in a browser, so treat it as working-but-unproven.
+
+Publish the files to change the wording or add a locale:
 
 ```bash
 php artisan vendor:publish --tag="filament-shortcut-keys-translations"

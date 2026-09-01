@@ -14,8 +14,10 @@ function translationKeys(string $file): array
 }
 
 it('ships the locales the package promises', function () use ($langPath) {
+    // English only in v1. A second language is a promise to keep it in step with every future copy
+    // change, and one that was authored but never read by a native speaker is worse than none.
     expect(array_map('basename', glob($langPath . '/*', GLOB_ONLYDIR)))
-        ->toEqualCanonicalizing(['ar', 'en']);
+        ->toEqualCanonicalizing(['en']);
 });
 
 it('translates every english key in each other locale', function () use ($langPath) {
