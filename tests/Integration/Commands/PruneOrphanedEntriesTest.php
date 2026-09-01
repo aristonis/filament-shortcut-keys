@@ -6,6 +6,11 @@ use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
 use Filament\Panel;
 use Filament\PanelRegistry;
 
+// Two tests below flip the app into production to reach the destructive-command guard. Without this
+// the flip leaks into whatever test runs next, where any command that confirms before proceeding then
+// prompts unexpectedly — an order-dependent failure that only shows on some seeds.
+afterEach(fn () => app()['env'] = 'testing');
+
 /** A map carrying one override per case the audit has to tell apart. */
 function mapWithMixedEntries(): ShortcutMap
 {

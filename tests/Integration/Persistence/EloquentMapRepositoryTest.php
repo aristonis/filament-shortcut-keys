@@ -163,7 +163,7 @@ it('forks the active map exactly once when called repeatedly', function () {
 it('rejects a second default system map for the same panel', function () {
     ShortcutMap::factory()->default('admin')->create();
 
-    expect(fn () => ShortcutMap::factory()->default('admin')->create())
+    expect(violatesConstraint(fn () => ShortcutMap::factory()->default('admin')->create()))
         ->toThrow(QueryException::class);
 });
 
@@ -179,7 +179,7 @@ it('rejects a duplicate selection for the same owner and panel', function () {
     ];
     ShortcutMapSelection::create($payload);
 
-    expect(fn () => ShortcutMapSelection::create($payload))->toThrow(QueryException::class);
+    expect(violatesConstraint(fn () => ShortcutMapSelection::create($payload)))->toThrow(QueryException::class);
 });
 
 it('rejects a duplicate entry for the same map and target', function () {
@@ -188,7 +188,7 @@ it('rejects a duplicate entry for the same map and target', function () {
 
     ShortcutMapEntry::create(['map_id' => $map->id, 'target' => 'navigation:products', 'letter' => 'x']);
 
-    expect(fn () => ShortcutMapEntry::create(['map_id' => $map->id, 'target' => 'navigation:products', 'letter' => 'y']))
+    expect(violatesConstraint(fn () => ShortcutMapEntry::create(['map_id' => $map->id, 'target' => 'navigation:products', 'letter' => 'y'])))
         ->toThrow(QueryException::class);
 });
 
