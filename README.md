@@ -220,11 +220,29 @@ admin's map.
 - Shortcuts inside a closed action dropdown are not reachable.
 - Single combos only. There are no multi-key sequences or macros.
 
+## How it works inside
+
+The README covers using the plugin. If you are changing it, or want to know why something is built the
+way it is, the design notes live in [`docs/`](docs):
+
+- [Architecture](docs/architecture.md) — layers, the ports each adapter implements, what happens on a
+  page render, and why the keymap is public rather than filtered per user.
+- [Domain model](docs/domain-model.md) — the three tables, the constraints holding them together, and
+  how a first edit forks a shared map without losing a concurrent one.
+- [Resolution](docs/resolution.md) — the pipeline turning registered resources into a keymap, how
+  letters are assigned, and what the browser actually receives.
+
+These ship with the repository but not with the released package.
+
 ## Testing
 
 ```bash
 composer test
 ```
+
+The suite runs on sqlite by default. Set `FSK_DB_DRIVER` to `pgsql` or `mysql` to run it against a
+real driver, which CI does on every push — a few behaviours, including the fork race above, cannot be
+observed on a single-connection database.
 
 ## Changelog
 

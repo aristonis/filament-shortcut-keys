@@ -42,9 +42,6 @@ Thumbs.db
 npm-debug.log*
 yarn-error.log
 
-# Docs build
-docs
-
 # Local e2e / dev-serve harness (kept local, never shipped)
 /workbench
 /tests/Support/DevServeProvider.php
