@@ -11,6 +11,9 @@ namespace Aristonis\FilamentShortcutKeys\Core\Resolution;
  * resolving to the same map (e.g. the shared system default) shares one entry, while two forks of the
  * same source stay distinct because their row ids differ. Permission is deliberately absent: the
  * keymap is public and identical regardless of what a given user can access.
+ *
+ * The stored payload's format version is part of the key, so an upgrade that changes that shape reads
+ * a miss instead of an entry it would misparse. Nothing has to clear the cache on deploy.
  */
 final class MapFingerprint
 {
@@ -22,6 +25,7 @@ final class MapFingerprint
         string $locale,
     ): string {
         return hash('xxh128', implode('|', [
+            'v' . ResolvedMap::CACHE_FORMAT,
             $panelId,
             $navVersionToken,
             $mapIdentity,

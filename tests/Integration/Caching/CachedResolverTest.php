@@ -5,14 +5,20 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
+use Aristonis\FilamentShortcutKeys\Core\Enums\BindingSource;
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedGroup;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapData;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
+use Aristonis\FilamentShortcutKeys\Tests\Fakes\ClassRestrictedCacheStore;
 use Aristonis\FilamentShortcutKeys\Tests\Fakes\InMemoryMapRepository;
 use Aristonis\FilamentShortcutKeys\Tests\Fakes\InMemoryNavigationProvider;
 use Aristonis\FilamentShortcutKeys\Tests\Fakes\InMemoryPageContextProvider;
+use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 
@@ -55,6 +61,96 @@ function cachingFixtures(): array
         new InMemoryPageContextProvider([], false),
     ];
 }
+
+/**
+ * A cache that serializes and refuses to hydrate any class, which is what Laravel 13 ships: the
+ * `cache.serializable_classes` default is an empty allowlist, so a stored object graph comes back as
+ * __PHP_Incomplete_Class. The default array store keeps live objects in memory and hides that
+ * entirely, which is why the bug reached a release with this file green.
+ */
+function classRestrictedCache(): Repository
+{
+    return new CacheRepository(new ClassRestrictedCacheStore);
+}
+
+/** An inner Resolver returning a map that uses every field a binding can carry. */
+function populatedInner(): Resolver
+{
+    return new class implements Resolver
+    {
+        public int $calls = 0;
+
+        public function resolve(
+            NavigationProvider $nav,
+            PageContextProvider $page,
+            string $panelId,
+            string $authType = '',
+            string $authId = ''
+        ): ResolvedMap {
+            $this->calls++;
+
+            return new ResolvedMap([
+                new ResolvedGroup('navigation', ModifierScheme::altShift(), [
+                    new ShortcutBinding(
+                        new ShortcutTarget('navigation', 'App\\Filament\\Resources\\ProductResource'),
+                        KeyCombo::parse('alt+shift+p'),
+                        letterHint: 'Products',
+                    ),
+                    new ShortcutBinding(
+                        new ShortcutTarget('navigation', 'App\\Filament\\Resources\\OrderResource'),
+                        keyCombo: null,
+                        enabled: false,
+                        source: BindingSource::USER,
+                    ),
+                ]),
+                new ResolvedGroup('custom', ModifierScheme::altShift(), [
+                    new ShortcutBinding(
+                        new ShortcutTarget('custom', 'open-docs'),
+                        KeyCombo::parse('alt+shift+d'),
+                        source: BindingSource::USER,
+                        payload: ['route' => '/admin/docs'],
+                    ),
+                ]),
+            ]);
+        }
+    };
+}
+
+/** Every field of a map, flattened, so a round-trip comparison cannot silently drop one. */
+function mapShape(ResolvedMap $map): array
+{
+    return array_map(
+        fn (ResolvedGroup $group): array => [
+            'set' => $group->setKey,
+            'modifier' => $group->modifier->toString(),
+            'bindings' => array_map(
+                fn (ShortcutBinding $binding): array => [
+                    'identity' => $binding->target->identity(),
+                    'combo' => $binding->keyCombo?->toString(),
+                    'enabled' => $binding->enabled,
+                    'source' => $binding->source->value,
+                    'letterHint' => $binding->letterHint,
+                    'payload' => $binding->payload,
+                ],
+                $group->bindings,
+            ),
+        ],
+        $map->groups(),
+    );
+}
+
+it('returns a usable map from a cache that refuses to unserialize classes', function () {
+    [, $nav, $page] = cachingFixtures();
+    $inner = populatedInner();
+    $resolver = new CachedResolver($inner, classRestrictedCache(), repoForMap(MapType::SYSTEM, 1, 1), [], 'en');
+
+    $first = $resolver->resolve($nav, $page, 'admin', 'App\\Models\\User', '1');
+    $second = $resolver->resolve($nav, $page, 'admin', 'App\\Models\\User', '1');
+
+    expect($inner->calls)->toBe(1)
+        ->and($second)->toBeInstanceOf(ResolvedMap::class)
+        ->and(mapShape($second))->toBe(mapShape($first));
+});
 
 it('computes on the first call and stores the result', function () {
     [$cache, $nav, $page] = cachingFixtures();

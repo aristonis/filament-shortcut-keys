@@ -58,10 +58,16 @@ final readonly class CachedResolver implements Resolver
             $this->locale,
         );
 
-        $compute = fn (): ResolvedMap => $this->inner->resolve($nav, $page, $panelId, $authType, $authId);
+        // Stored as plain arrays, not as the map itself: a serializing cache store hands its value to
+        // unserialize(), which Laravel 13 restricts to an allowlist that is empty by default, so a
+        // cached object graph would come back as __PHP_Incomplete_Class and 500 the panel on the
+        // second request. See ResolvedMap::toCache().
+        $compute = fn (): array => $this->inner->resolve($nav, $page, $panelId, $authType, $authId)->toCache();
 
-        return $this->ttl === null
+        $cached = $this->ttl === null
             ? $this->cache->rememberForever($key, $compute)
             : $this->cache->remember($key, $this->ttl, $compute);
+
+        return ResolvedMap::fromCache($cached);
     }
 }
