@@ -7,6 +7,21 @@ description: Diagnose why a keyboard shortcut from aristonis/filament-shortcut-k
 
 Work top down. Most reports end at the first three, and most of those are the design working.
 
+## 0. No key at all works, anywhere
+
+Almost always a missing `php artisan filament:assets`. The keymap is rendered server-side, so it is in
+the page either way and everything looks installed — but the script that reads it was never published.
+
+```bash
+curl -I https://your-panel.test/js/filament-shortcut-keys/filament-shortcut-keys.js
+```
+
+A 404 confirms it. Run `php artisan filament:assets` and reload. This needs re-running after each
+deploy and after any `composer update` that touches the package.
+
+If the file is a 200 and still nothing fires, the map may be absent from the page entirely — check for
+`filament-shortcut-keys-map` in the source before going further.
+
 ## 1. Is the key in the keymap at all?
 
 The server injects the map into every panel page as a JSON block with id
@@ -88,6 +103,24 @@ feel backwards, check the panel's direction rather than the plugin: it reads Fil
 `filament-panels::layout.direction`.
 
 Row-movement arrows are **not** mirrored — up is up in any direction.
+
+## 8. The key works but shows no badge
+
+Only shortcuts that map to one stable element get a badge: navigation links, header actions and
+custom bindings. Table keys and row actions never do, because a table key has no single element and a
+row action repeats per row. Both are listed in the `Shift` + `/` cheatsheet instead.
+
+If a shortcut that should carry one does not, the element the badge attaches to was not found, and
+where to look depends on how the shortcut fires.
+
+A shortcut that fires by clicking uses one selector for both jobs, so a missing badge means a dead
+key as well: go to section 3.
+
+A shortcut that fires by navigating is different. The handler only calls `Livewire.navigate(url)` and
+never queries the page, while the badge looks for an `a[href]` matching that url exactly. So the key
+can work perfectly and still show no badge, which means the href Filament rendered is not
+character-for-character the url in the keymap. Compare the two in the browser: read the url from the
+`filament-shortcut-keys-map` script block and the `href` from the link itself.
 
 ## What is not supported
 

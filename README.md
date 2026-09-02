@@ -43,6 +43,16 @@ public function panel(Panel $panel): Panel
 }
 ```
 
+Publish the plugin's script, as with any Filament plugin that ships one:
+
+```bash
+php artisan filament:assets
+```
+
+Skipping this is the most common reason nothing happens when you press a key. The keymap still renders
+into the page, so there is no error to read — the script that listens for the keys is simply missing.
+Run it again after every deploy and after any `composer update` that touches the package.
+
 If you use a custom Filament theme, add the plugin's views to your theme's css file so its classes
 survive Tailwind's purge:
 
@@ -75,6 +85,21 @@ panel-wide shortcuts also lives on its own page in the sidebar.
 Letters are picked from each item's own label first, then from the rest of the alphabet. Two
 shortcuts in the same modifier group never share a letter, so moving one set onto another set's
 modifiers via the `modifiers` config merges their letter pools rather than creating a clash.
+
+### Key hints
+
+Where a shortcut maps to one stable element on the page, the plugin paints a small key badge on that
+element, so the key is visible where it is used and not only in the cheatsheet. Navigation links,
+header actions and an admin's own custom bindings all get one, whether the shortcut fires by
+following a link or by clicking a control.
+
+Table keys and row actions get none, on purpose. A table key is a behaviour with no single element
+behind it, and a row action repeats on every row, so a badge per row would be noise rather than a
+hint. Both stay in the cheatsheet.
+
+The badge is a `span` carrying the class `fi-hotkey-hint`, styled inline so the package ships no
+stylesheet of its own. It is marked `aria-hidden`, so a screen reader reads the control's own label
+and nothing else. Restyle it from your panel's stylesheet if the inline look does not suit the theme.
 
 ### Row actions
 
@@ -248,6 +273,20 @@ composer test
 The suite runs on sqlite by default. Set `FSK_DB_DRIVER` to `pgsql` or `mysql` to run it against a
 real driver, which CI does on every push — a few behaviours, including the fork race above, cannot be
 observed on a single-connection database.
+
+`composer test` skips coverage so it runs anywhere. For a coverage report, install pcov or Xdebug and
+run `composer test:coverage`.
+
+The browser half has its own suite:
+
+```bash
+npm test
+```
+
+It runs on node alone — the tests import `resources/js` directly and stub the DOM, so there is nothing
+to install and nothing to build first. Selectors resolve by exact string against a registry each test
+supplies, which checks what a module asks for and what it does with the answer; whether a selector
+matches Filament's real markup is asserted separately, against captured HTML, on the PHP side.
 
 ## Changelog
 
