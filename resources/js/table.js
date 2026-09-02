@@ -72,10 +72,13 @@ export function createTableHandler() {
                 return moveFocus(1)
             case 'select':
                 return clickInRow('input[type="checkbox"]')
+            // Keyed on wire:key, not wire:click: an Edit action on a resource that registers an edit
+            // page renders as an anchor with no wire:click, while a modal Edit renders as a button.
+            // wire:key is emitted for a record action in either shape, with the record hash appended.
             case 'edit':
-                return clickInRow('[wire\\:click^="mountAction(\'edit\'"]')
+                return clickInRow('[wire\\:key*=".actions.edit."]')
             case 'delete':
-                return clickInRow('[wire\\:click^="mountAction(\'delete\'"]')
+                return clickInRow('[wire\\:key*=".actions.delete."]')
             case 'page-prev':
             case 'page-next': {
                 // Which arrow key carries which direction is decided server-side (mirrored in an

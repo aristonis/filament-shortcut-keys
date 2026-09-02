@@ -28,6 +28,11 @@ Each registered name gets a letter, assigned across the **full** registered list
 That is deliberate: `approve` keeps the same key whether or not `reject` happens to be on the current
 table, so the key does not move as you navigate.
 
+The array is ordered data, not a set. Each name takes the first letter of its own label that is still
+free, so whoever comes first picks first — `['reject', 'refund']` gives `R` and `E`, and swapping the
+two gives `R` and `J`. Alphabetising the array during a cleanup silently rekeys the panel. If a letter
+has to survive a reordering, pin it in the config overlay rather than relying on the position.
+
 On any given page, a binding is emitted only when that page's table actually exposes a record action
 of that name. Everywhere else it is neither bound nor listed in the cheatsheet, so there are no dead
 keys advertised to the user.

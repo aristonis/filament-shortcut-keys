@@ -5,6 +5,7 @@ namespace Aristonis\FilamentShortcutKeys\Filament;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ActionTarget;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 
 /**
@@ -33,7 +34,7 @@ final readonly class ClientMapSerializer
     public function serialize(ResolvedMap $map, string $panelId): array
     {
         $urls = $this->navigationUrls($panelId);
-        $selectors = $this->actionSelectors();
+        $actions = $this->actionActivations();
 
         return array_map(
             fn ($group) => [
@@ -44,7 +45,7 @@ final readonly class ClientMapSerializer
                     fn ($binding) => [
                         'target' => $binding->target->identity(),
                         'code' => $binding->keyCombo->code,
-                        'activation' => $this->activation($binding, $group->setKey, $urls, $selectors),
+                        'activation' => $this->activation($binding, $group->setKey, $urls, $actions),
                     ],
                     $group->bindings,
                 ),
@@ -55,10 +56,10 @@ final readonly class ClientMapSerializer
 
     /**
      * @param  array<string, string>  $urls
-     * @param  array<string, string>  $selectors
+     * @param  array<string, array<string, string>>  $actions
      * @return array<string, string>|null
      */
-    private function activation(ShortcutBinding $binding, string $set, array $urls, array $selectors): ?array
+    private function activation(ShortcutBinding $binding, string $set, array $urls, array $actions): ?array
     {
         $identity = $binding->target->identity();
 
@@ -66,7 +67,7 @@ final readonly class ClientMapSerializer
             'navigation' => isset($urls[$identity]) ? ['kind' => 'navigate', 'url' => $urls[$identity]] : null,
             'table' => ['kind' => 'table', 'behavior' => $binding->target->structureKey],
             'custom' => $this->customActivation($binding->payload),
-            default => isset($selectors[$identity]) ? ['kind' => 'click', 'selector' => $selectors[$identity]] : null,
+            default => $actions[$identity] ?? null,
         };
     }
 
@@ -103,18 +104,34 @@ final readonly class ClientMapSerializer
     }
 
     /**
-     * @return array<string, string> target identity => element selector
+     * @return array<string, array<string, string>> target identity => how the client fires it
      */
-    private function actionSelectors(): array
+    private function actionActivations(): array
     {
-        $selectors = [];
+        $activations = [];
+
         foreach ($this->page->actions() as $action) {
-            $selectors['global:' . $action->name] = $action->selector;
-        }
-        foreach ($this->page->rowActions() as $action) {
-            $selectors['row-action:' . $action->name] = $action->selector;
+            $activations['global:' . $action->name] = $this->actionActivation($action);
         }
 
-        return $selectors;
+        foreach ($this->page->rowActions() as $action) {
+            $activations['row-action:' . $action->name] = $this->actionActivation($action);
+        }
+
+        return array_filter($activations);
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    private function actionActivation(ActionTarget $action): ?array
+    {
+        if ($action->url !== null) {
+            return ['kind' => 'navigate', 'url' => $action->url];
+        }
+
+        return $action->selector === null
+            ? null
+            : ['kind' => 'click', 'selector' => $action->selector];
     }
 }

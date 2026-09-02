@@ -36,14 +36,21 @@ export const handlers = {
         return true
     },
 
+    // A header action is either a Livewire control to click or an anchor to a page. Filament gives
+    // Create, Edit and View a url whenever the resource registers that page, so both arrive here.
     global(binding) {
         const activation = binding.activation
 
-        if (!activation || activation.kind !== 'click') {
-            return false
+        if (activation?.kind === 'navigate') {
+            navigate(activation.url)
+            return true
         }
 
-        return clickSelector(activation.selector)
+        if (activation?.kind === 'click') {
+            return clickSelector(activation.selector)
+        }
+
+        return false
     },
 
     // A user's custom binding carries its own action: navigate a route or click a selector.
