@@ -33,7 +33,7 @@ cursor is live the arrows move it and page the table; otherwise they scroll the 
 cursor holds real focus and follows the record, so a sort, a search or a refresh never points a row
 key at a different record.
 
-**Keys go where the user's attention is.** No shortcut fires while typing in a field, while a modal,
+**Keys go where the user's attention is.** No bare or `G` shortcut fires while typing in a field, while a modal,
 an open select, a dropdown, a menu or a tab list has the keyboard, or with `Enter`/`Space` on a focused
 button. A held key acts once, keys typed through an input method are ignored, and a key pressed while
 a shortcut's modal is still loading waits for it.
@@ -54,8 +54,9 @@ page. Those two shapes are the whole surface, which is what keeps a binding from
 reach something you could not otherwise reach.
 
 **Gated authoring of shared maps.** An authority gate you supply, denying by default, can let a
-trusted admin create a preset, clone one, or edit a shared map in place. Editing in place asks for
-explicit confirmation, because it changes the map for everyone using it.
+trusted admin create a preset, clone one, edit a shared map in place, or make a preset the panel
+default that every admin without their own map uses (everyone, in `locked` mode). Editing in place and
+changing the default ask for explicit confirmation, because both change keys for other admins.
 
 **Discoverability.** A reference page lists every panel-wide shortcut, `?` opens a cheatsheet of what
 is active on the current page, and a small key badge sits on each link and action that has a key.
@@ -82,8 +83,8 @@ MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
 ### Requirements
 
 - PHP 8.2 or newer
-- Laravel 12 or newer
-- Filament 5.0 or newer
+- Laravel 12 or 13
+- Filament 5.x
 - MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column)
 - `php artisan filament:assets` after install and after each update; without it no key fires
 
@@ -97,8 +98,8 @@ MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
   tables.
 - **Keys are chosen per deployment, not per admin.** Configured once for everyone; each admin can only
   switch single-key shortcuts off for themselves.
-- **Customization covers navigation shortcuts.** Table keys and row actions are uniform by design and
-  are not remappable.
+- **Admins customize navigation only.** The manage page does not offer table or row-action keys; a
+  developer can still move them with the config overlay.
 - **Automatic letters follow sidebar order.** Adding a screen can move a later letter; pin the ones
   people rely on in the config overlay.
 - **An action whose only modal is a form schema counts as instant** and gets no default bare key,
@@ -108,6 +109,9 @@ MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
 - **The keymap is public.** It is built from every registered page without a permission check, so it
   reveals which pages exist, not what an admin may do. Access is enforced when the key fires. A page
   whose existence is itself sensitive does not belong in a panel's navigation.
+- **Header and row actions cannot share navigation's keys.** The two groups are lettered by
+  separate resolvers, so a configuration that puts them on the same scheme is refused rather than
+  allowed to hand one key to two shortcuts.
 - **One fixed leader per set is the only sequence.** No user-defined sequences, and no command
   palette.
 

@@ -9,7 +9,8 @@ Two different permissions are easy to confuse:
 
 - **Personal customization** is controlled by `customization` (`personal` or `locked`). It lets an
   admin change their *own* keys and touches nobody else.
-- **Authoring** is controlled by `authorize`. It lets someone change the map *every other admin sees*.
+- **Authoring** is controlled by `authorize`. It lets someone change shared presets and choose the
+  panel default, the map every admin without their own selection uses.
 
 This skill is about the second. It is denied by default, and it is not implied by being an admin.
 
@@ -21,15 +22,16 @@ This skill is about the second. It is denied by default, and it is not implied b
 // deny everyone (default)
 'authorize' => null,
 
-// a closure
-'authorize' => fn (?Authenticatable $user, string $panelId) => $user?->isDeveloper() ?? false,
-
-// or the name of a Gate ability you defined
+// the name of a Gate ability you defined (recommended)
 'authorize' => 'manage-shortcut-keys',
+
+// or a closure; needs `use Illuminate\Contracts\Auth\Authenticatable;` at the top of the file
+'authorize' => fn (?Authenticatable $user, string $panelId) => $user?->isDeveloper() ?? false,
 ```
 
-The closure receives the user (possibly null) and the panel id, so one config can answer differently
-per panel.
+Prefer the Gate ability: a closure in a config file cannot be serialized, so `php artisan
+config:cache` fails while one is there. The closure receives the user (possibly null) and the panel
+id, so one config can answer differently per panel.
 
 A string is checked as `Gate::forUser($user)->allows($ability, $panelId)`. Define the ability yourself;
 an unauthenticated visitor is denied before the gate is consulted.
@@ -39,7 +41,10 @@ an unauthenticated visitor is denied before the gate is consulted.
 - **Create a preset** — a new empty system map for the panel, not the default.
 - **Clone a preset** — copy an existing one, including its entries.
 - **Edit a preset in place** — change the map every admin on it is already using. The form requires an
-  explicit confirmation checkbox, because this is the one operation with blast radius beyond the actor.
+  explicit confirmation checkbox, because the change reaches beyond the actor.
+- **Set the panel default** — choose the preset every admin without their own selection uses; in
+  `locked` mode that is everyone. Also confirmed explicitly, and the previous default loses its mark
+  in the same transaction. Until a default is set, those admins get the plain conventions.
 
 What it does **not** allow: system maps never accept a custom binding's payload. Authoring is remap and
 disable only. Accepting a selector or route on a shared map would publish an unvalidated client
@@ -56,17 +61,17 @@ Anything other than null, a closure, or a string is treated as deny.
 
 Passing the gate does not let a manager reach another panel's maps. The persistence layer scopes every
 lookup by panel id and map type, so a manager for one panel passing another panel's map id gets a
-not-found rather than a cross-panel edit. Scope is checked before authorization, so the answer is 404
-rather than 403 — an unauthorized id should not be distinguishable from a nonexistent one.
+not-found rather than a cross-panel edit. The gate is checked first and the scope second; on the
+manage page both refusals surface as a notification rather than an HTTP error.
 
 ## When access is not what you expect
 
 - **The manage-shortcuts page is visible but authoring actions are missing.** Expected in `personal`
   mode with the gate denying: the page is reachable for personal edits, authoring buttons are not.
 - **The page 403s entirely.** `locked` mode plus a denying gate leaves nothing the visitor may do.
-- **The page still appears in the sidebar and cheatsheet for someone who cannot open it.** Also
-  expected. The keymap is public and unfiltered by permission; clicking through gets a 403. Only the
-  page's existence is visible, never a capability.
-- **A Gate ability seems to grant when it should not.** Make sure the ability is actually registered
-  with `Gate::define`. An unregistered ability name falls through to Laravel's implicit policy
-  resolution, which keys on the argument passed — the panel id.
+- **The page still appears in the keymap and cheatsheet for someone who cannot open it.** Also
+  expected. Filament hides it from the sidebar, but the keymap is public and unfiltered by
+  permission; pressing its key gets a 403. Only the page's existence is visible, never a capability.
+- **A Gate ability seems to grant when it should not.** Look for a `Gate::before` callback (a
+  super-admin rule, say). It runs before every ability, registered or not, and its `true` grants
+  authoring. Also check the ability is spelled the same in `Gate::define` and in the config.

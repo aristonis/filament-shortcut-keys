@@ -29,8 +29,10 @@ A single letter (`['g']`) is a leader key: press it, let go, then the letter. It
 other tokens. An empty array means bare keys. `ctrl`, `alt`, `shift` and `meta` hold modifiers
 instead; the defaults avoid them because the browser, the OS and keyboard layouts own many of those
 combinations. A leader key is reserved among bare keys, so no bare shortcut can take it. A leader
-cannot be a table key (`j`, `k` and the like), and global, table, row-action or page cannot share the
-navigation leader; either mistake throws on render. A page set may use a leader of its own, e.g.
+cannot be a table key (`j`, `k` and the like). Header actions (`global`) and row actions cannot use
+the same keys as navigation or custom bindings, whether a leader, held modifiers or bare keys: the two
+groups are lettered by separate resolvers, so a shared pool could give two shortcuts one key. Either
+mistake throws on render, naming the set or the key. A page set may use keys of its own, e.g.
 `'global' => ['a']`.
 
 Three rules that decide the outcome:
@@ -39,8 +41,9 @@ Three rules that decide the outcome:
   keys. Deleting a line is the safe way to undo a change.
 - **An unknown token throws** rather than being ignored, so a typo fails loudly at render instead of
   silently changing which keys fire.
-- **Two sets sharing a scheme share one letter pool.** Moving `global` onto `['g']` merges it with
-  navigation's pool rather than creating a clash — nothing ends up double-bound, but letters shift.
+- **Two sets sharing a scheme share one letter pool.** `global` and `row-action` share the bare pool
+  by default, so nothing ends up double-bound, but adding to one can shift letters in the other.
+  A leader token is one lowercase letter (`['G']` throws).
 
 `mod` is not supported. Whether it means ctrl or meta depends on the user's platform, which cannot be
 decided on the server, and the keymap is built server-side.
@@ -84,7 +87,8 @@ key on bare letters. Only pin such an action if a stray keystroke running it is 
 ```
 
 The lifetime is about **reclamation, not freshness**. The cache key is a fingerprint of the
-navigation, the active map and its version, the overlay and the locale, so any change already resolves
+navigation, the active map and its version, the overlay, the `modifiers` config, the reserved keys
+and the locale, so any change already resolves
 to a different key. What that cannot do is delete the entry it moved away from — every admin edit and
 every deploy touching navigation strands its predecessor.
 

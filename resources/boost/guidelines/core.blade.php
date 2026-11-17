@@ -9,9 +9,26 @@ a shortcut; there is nothing to register per item.
 - **Namespace:** `Aristonis\FilamentShortcutKeys\` (PSR-4, `src/`). Composer: `aristonis/filament-shortcut-keys`.
 - **Entry point:** `FilamentShortcutKeysPlugin::make()` registered on a panel with `->plugin(...)`.
   There is no facade; the host does not call the resolver directly.
-- **Config:** everything tunable lives under `config('shortcut-keys.*')`, read at call time.
-- **Two admin-facing pages** ship with the plugin and register themselves in the panel: a shortcut
-  reference page, and a manage-shortcuts page when personal customization is on.
+- **Requirements:** PHP 8.2+, Laravel 12 or 13, Filament 5.x. After installing or updating, run
+  `php artisan filament:assets`; without it the keymap is in the page but no key fires.
+- **Config:** `config('shortcut-keys.*')`, read at call time. The one setting that is not config is
+  `->rowActions([...])`, a fluent method on the plugin.
+- **Two admin-facing pages** ship with the plugin and are always registered: a shortcut reference
+  page, and a manage-shortcuts page that opens in `personal` mode, or in `locked` mode for a user the
+  authoring gate grants.
+
+## Default keys
+- **Navigation and custom bindings:** a leader key, `g` then a letter (config token `['g']`). The
+  letter must follow within about a second and a half; `Esc` cancels.
+- **Header actions:** bare letters, but only for actions that navigate or open a modal or
+  confirmation first. An action that runs on the click itself gets no default key on bare letters.
+- **Table:** `/` search, `j`/`k` start and move a row cursor, `Esc` releases it, `Space` select,
+  `Enter` edit, `Delete` delete; arrows move the cursor and page the table only while it is live.
+- **Row actions:** bare letters for names registered with `->rowActions([...])`, never on a key
+  reserved in their pool (`g`, `j`, `k`, the table keys).
+- Nothing holds `Alt`, `Ctrl` or `Cmd` by default; held modifiers are opt-in per set in `modifiers`.
+- Users can switch every single-key shortcut off in the `?` cheatsheet; the choice is kept per
+  browser under the local-storage key `filament-shortcut-keys:single-keys`.
 
 For task recipes, the matching skill (`filament-shortcut-keys-usage`,
 `filament-shortcut-keys-row-actions`, `filament-shortcut-keys-config`,
@@ -42,7 +59,8 @@ For task recipes, the matching skill (`filament-shortcut-keys-usage`,
   `Illuminate\` import in the core, what you need is a new port.
 - **Extend by registering a set, never by editing the resolver** (OCP). A new category of shortcut is
   a `ShortcutSet` implementation added to a registry, not a branch in the resolution pipeline.
-- **Transactions live in the persistence services**, never in models or callers.
+- **Atomic writes run in a transaction owned by the service doing the write** (the persistence
+  services, or the prune command for its deletes), never in a model.
 - **The panel-wide and page registries must share no set key.** Their results are concatenated, and
   that is only sound while the keys stay disjoint.
 
@@ -51,8 +69,11 @@ For task recipes, the matching skill (`filament-shortcut-keys-usage`,
   on a slug or label, so a stored override survives renaming and reordering.
 - **A stored map holds only differences.** Anything it does not mention falls through to the live
   conventions, which is what lets a newly added resource appear in an already-customized map.
-- **Bare-key sets cannot take a forced letter.** Table and row-action shortcuts have no modifier, so a
-  remap aimed at them is discarded at resolve time. Only sets with a modifier can be remapped.
+- **A forced letter works on any set unless its key is reserved in that pool** (`g`, `j`, `k`, the
+  table keys); then it is ignored and the shortcut keeps its automatic letter. A forced letter takes
+  its key from an automatically lettered shortcut, which moves on; two forced letters on one key keep
+  the first. Row actions are lettered before the overlay applies, so a pin onto a sibling row
+  action's letter is dropped. The manage page only offers navigation targets.
 - **Every content change bumps the map's version.** That is what busts the cache; an edit that skips
   the bump serves the pre-edit keymap.
 - **Keys match the physical key**, so they behave the same on any keyboard layout. Pagination arrows

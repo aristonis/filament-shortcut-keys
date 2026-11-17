@@ -15,8 +15,8 @@ everyone else starts from.
 ## Requirements
 
 - PHP 8.2 or newer
-- Laravel 12 or newer
-- Filament 5
+- Laravel 12 or 13
+- Filament 5.x
 - MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column)
 
 ## Installation
@@ -70,7 +70,8 @@ php artisan vendor:publish --tag="filament-shortcut-keys-config"
 ## The shortcuts
 
 Keys are matched on the physical key (`event.code`), so they behave the same on any keyboard layout.
-Nothing fires while an input, textarea, select, or contenteditable element has focus.
+No bare key or `G` sequence fires while an input, textarea, select, or contenteditable element has
+focus; shortcuts on held modifiers, if you configure any, still do.
 
 | Set | Keys | What it covers |
 | --- | --- | --- |
@@ -98,9 +99,9 @@ Anyone can turn single-key shortcuts off from the `Shift` + `/` cheatsheet. The 
 that browser and silences every bare key and every `G` sequence, which assistive technology and voice
 control users may need. Shortcuts on held modifiers, if you configured any, keep working.
 
-A leader cannot be a key the table already uses (`J`, `K`, `/` and the like), and a page set (global,
-table, row actions) cannot share the leader that navigation uses, because the two are lettered
-separately. Both mistakes throw on the next render with a message naming the key.
+A leader cannot be a key the table already uses (`J`, `K`, `/` and the like), and header or row
+actions cannot use the same keys as navigation or custom bindings, because the two groups are
+lettered separately. Both mistakes throw on the next render with a message naming the problem.
 
 The arrow keys scroll the page until `J` or `K` starts the row cursor, and again once you click
 somewhere else or press `Esc`, so a long page or a wide table still scrolls from the keyboard.
@@ -108,9 +109,9 @@ somewhere else or press `Esc`, so a long page or a wide table still scrolls from
 `Shift` + `/` opens a cheatsheet of everything active on the current page. A full listing of the
 panel-wide shortcuts also lives on its own page in the sidebar.
 
-Letters are picked from each item's own label first, then from the rest of the alphabet. Two
-shortcuts in the same modifier group never share a letter, so moving one set onto another set's
-modifiers via the `modifiers` config merges their letter pools rather than creating a clash.
+Letters are picked from the item's name first (the label for navigation, the action or binding name
+otherwise), then from the rest of the alphabet. Two shortcuts in the same pool never share a letter:
+header and row actions share the bare pool, navigation and custom bindings share the `G` pool.
 
 ### Key hints
 
@@ -150,7 +151,7 @@ they can remap a key, disable one, add a binding of their own, or switch between
 publish. The first edit copies the shared map into a private one, so later changes to the shared map
 still reach everyone who has not customized that particular key.
 
-Set `customization` to `locked` to turn all of that off. Everyone then uses the panel's system map.
+Set `customization` to `locked` to turn all of that off. Everyone uses the panel's default system map, which an authorized admin sets on the manage page; with none set, the conventions. An admin who selected a map while `personal` mode was on keeps that selection.
 
 A custom binding points at either a route in your app or a CSS selector on the page:
 
@@ -172,9 +173,11 @@ default. Grant it with a closure or a Gate ability:
 'authorize' => 'manage-shortcut-keys',
 ```
 
-Whoever passes the gate can create a preset, clone an existing one, or edit a preset in place. An
-in-place edit changes the map for every admin using it, so the form requires an explicit
-confirmation checkbox before it will save.
+Whoever passes the gate can create a preset, clone an existing one, edit a preset in place, or make a
+preset the panel default: the map every admin without their own selection uses, which in `locked`
+mode is everyone. Until a default is set, those admins get the plain conventions. An in-place edit or
+a new default changes keys for other admins, so both forms require an explicit confirmation checkbox
+before they will save.
 
 ## Configuration
 
@@ -280,7 +283,9 @@ admin's map.
   that had lost a clash. Pin anything you want to stay fixed with a config `overlay` entry, for
   example `'navigation:App\Filament\Resources\ProductResource' => ['letter' => 'p']`; a pinned
   letter never moves, whatever is added to the sidebar later.
-- Shortcuts inside a closed action dropdown are not reachable.
+- Header actions inside an action dropdown get no key. Row actions inside one are bound (Filament
+  flattens record-action groups), but whether the key reaches a control in a collapsed dropdown is
+  unverified.
 - One fixed leader key per set (`G`, then a letter) is the only sequence. There are no user-defined
   sequences or macros.
 

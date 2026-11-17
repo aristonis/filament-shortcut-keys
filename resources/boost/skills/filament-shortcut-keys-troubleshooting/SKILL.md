@@ -41,15 +41,15 @@ dispatch.
 
 ## 2. Nothing fires while typing
 
-By design. The listener ignores everything while an input, textarea, select or contenteditable element
-has focus. Bare-key sets additionally require their own context: table keys only act when the page has
+By design. Bare keys and `g` sequences are ignored while an input, textarea, select or contenteditable
+element has focus; shortcuts on held modifiers, if configured, still fire there. Bare-key sets additionally require their own context: table keys only act when the page has
 a table.
 
 If a bare key seems dead, check whether focus is sitting in the table's search box — that is the usual
 cause, and pressing a key there types rather than acts.
 
-A `G` shortcut is two presses: `G`, let go, then the letter within about a second and a half. Held
-together they do nothing, and a `G` typed into a field stays a `G`. Bare keys also stay quiet while a
+A `G` shortcut is two presses: `G`, then the letter within about a second and a half. A `G` typed
+into a field stays a `G`, and a press of `Alt`+`G` belongs to the browser. Bare keys also stay quiet while a
 modal, an open select, a dropdown or a menu has the keyboard.
 
 ## 3. The key fires but nothing happens
@@ -99,8 +99,8 @@ letters around — if keys shifted after a config change, that is why.
 
 ## 6. The keymap is stale
 
-The cache key is a fingerprint of the navigation, the active map and its version, the overlay and the
-locale. Any of those changing produces a different key, so a stale map almost always means a version
+The cache key is a fingerprint of the navigation, the active map and its version, the overlay, the
+`modifiers` config, the reserved keys and the locale. Any of those changing produces a different key, so a stale map almost always means a version
 that did not move:
 
 - **Wrote to the tables directly?** Every content change must bump the map's `version`. The application
@@ -142,8 +142,8 @@ character-for-character the url in the keymap. Compare the two in the browser: r
 
 Before investigating further, these never worked and are not bugs:
 
-- multi-key sequences (`g` then `d`) — single combinations only
+- user-defined sequences or macros; the only sequence is a set's leader key (`g` then a letter)
 - a command palette or fuzzy search
-- keying items inside a **closed** `ActionGroup` dropdown
+- header actions inside an `ActionGroup` dropdown
 - a page declaring its own shortcuts
 - per-admin modifier schemes — modifiers are configured per deployment

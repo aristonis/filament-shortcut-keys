@@ -28,13 +28,16 @@ Each registered name gets a letter, assigned across the **full** registered list
 That is deliberate: `approve` keeps the same key whether or not `reject` happens to be on the current
 table, so the key does not move as you navigate.
 
-The array is ordered data, not a set. Each name takes the first letter of its own label that is still
-free, so whoever comes first picks first — `['reject', 'refund']` gives reject `R` and refund `E`, and
+The array is ordered data, not a set. Each name takes the first letter of the name itself that is
+still free, so whoever comes first picks first — `['reject', 'refund']` gives reject `R` and refund `E`, and
 swapping the two gives refund `R` and reject `E`. Alphabetising the array during a cleanup silently rekeys the panel. If a letter
-has to survive a reordering, pin it in the config overlay rather than relying on the position.
+has to survive a reordering, pin it in the config overlay rather than relying on the position. One
+catch: row actions are lettered before the overlay applies, so pinning one onto a letter a sibling row
+action already holds drops the pinned one. Pin both, or pick a letter no sibling has.
 
-`J` and `K` are never assigned while row actions share the table's modifiers (the default): they
-start and move the row cursor. Configuring a different modifier for one of the two sets frees them.
+A row action never gets a key reserved in its pool. By default that is `G` (the navigation leader),
+`J` and `K` (they start and move the row cursor) and the other table keys. Putting row actions on
+modifiers of their own (`'row-action' => ['alt']`) frees those letters.
 
 On any given page, a binding is emitted only when that page's table actually exposes a record action
 of that name. Everywhere else it is neither bound nor listed in the cheatsheet, so there are no dead
@@ -60,8 +63,9 @@ In order of likelihood:
 1. **That table does not declare the action.** Page-filtering is working as intended.
 2. **The action is on the page but not as a record action.** Header actions belong to the actions set
    (bare letters shared with row actions), not the row-action set.
-3. **The action is inside a closed `ActionGroup`.** Items in a collapsed dropdown are not keyed until
-   the menu opens.
+3. **The action is inside an `ActionGroup`.** Filament flattens record-action groups, so a grouped row
+   action is still bound and listed; whether pressing its key reaches the control inside a collapsed
+   dropdown has not been verified. Header actions inside a group get no key at all.
 4. **The user is not authorized for it**, so Filament never rendered the control. The key exists and
    does nothing, which is the intended security model.
 
@@ -70,6 +74,6 @@ In order of likelihood:
 Row actions are bare keys — no modifier. Two consequences worth knowing:
 
 - They only fire when a table is present and you are not typing.
-- They **cannot be remapped** by an admin. A forced letter needs a modifier to attach to, so a remap
-  aimed at a row action is discarded during resolution. If you need a different letter, change the
-  action's name or use the developer overlay.
+- The manage page does not offer them. A developer can still move one with the config overlay (or
+  `EditUserMap::remap` from code), as long as the letter is not reserved in the pool (`g`, `j`, `k`, a
+  table key).

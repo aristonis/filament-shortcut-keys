@@ -9,14 +9,18 @@ Register the plugin on a panel and every resource, page, header action and table
 
 ## Install
 
+Requires PHP 8.2+, Laravel 12 or 13, and Filament 5.x.
+
 ```bash
 composer require aristonis/filament-shortcut-keys
 php artisan vendor:publish --tag="filament-shortcut-keys-migrations"
 php artisan migrate
+php artisan filament:assets
 ```
 
 Migrations are required even in `locked` mode: the shared system map, its overrides, and each admin's
-selection all live in those tables.
+selection all live in those tables. `filament:assets` publishes the client script; without it the
+keymap is in the page but no key fires. Re-run it after every update of the package.
 
 ## Register on the panel
 
@@ -66,10 +70,12 @@ no single element and a row action repeats per row. The badge is a `span.fi-hotk
 `aria-hidden` so screen readers still read only the control's own label; the key is announced
 through `aria-keyshortcuts` instead (not for `G` sequences, which that attribute cannot express).
 
-Letters come from each item's own label first, then the rest of the alphabet. Two shortcuts sharing a
-modifier never share a letter.
+Letters come from the item's name first, then the rest of the alphabet: the label for navigation, the
+action name for header and row actions, the binding name for custom bindings. Two shortcuts sharing a
+pool never share a letter.
 
-Nothing fires while an input, textarea, select, or contenteditable element has focus.
+No bare or `g` shortcut fires while an input, textarea, select, or contenteditable element has focus.
+Shortcuts on held modifiers, if you configure any, still do.
 
 ## Choose a mode
 
@@ -78,7 +84,7 @@ Nothing fires while an input, textarea, select, or contenteditable element has f
 - **`personal`** (default) — each admin gets a manage-shortcuts page to remap a key, disable one, add
   their own binding, or switch between presets. Their first edit copies the shared map into a private
   one, so later changes to the shared map still reach every key they have not touched.
-- **`locked`** — no per-admin editing at all. Everyone uses the panel's system map.
+- **`locked`** — no per-admin editing at all. Everyone uses the panel's default system map, which an authorized admin sets on the manage page; with none set, the conventions. An admin who selected a map while `personal` mode was on keeps that selection.
 
 Publish the config only if you need to change something:
 
@@ -103,5 +109,5 @@ Work down this list before changing anything:
 - Do not filter the keymap by permission. It is public by design; access is enforced when a key fires.
 - Do not bind a key to something the admin could not click anyway and expect it to be blocked at build
   time — the boundary is at trigger time.
-- Do not try to remap a table or row-action key. Those sets have no modifier, so a forced letter is
-  discarded during resolution.
+- Do not expect the manage page to remap table or row-action keys; it offers navigation only. Move
+  those through the config overlay, and never onto a reserved key (`g`, `j`, `k`, a table key).

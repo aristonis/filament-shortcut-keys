@@ -14,8 +14,12 @@ building your own UI on top.
 
 ```php
 use Aristonis\FilamentShortcutKeys\Application\EditUserMap;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\MapEditor;
+use App\Filament\Resources\OrderResource;
 
-$editor = app(EditUserMap::class);
+// The use case takes the customization mode as a plain string, so the container cannot build it
+// on its own; construct it the way the manage page does.
+$editor = new EditUserMap(app(MapEditor::class), config('shortcut-keys.customization'));
 
 $type = $user->getMorphClass();
 $id   = (string) $user->getKey();
@@ -66,19 +70,22 @@ it cannot displace a real shortcut.
 
 ## When a stored edit does nothing
 
-- **You remapped a table or row-action key.** Those sets are bare keys with no modifier, and a forced
-  letter needs a modifier to attach to, so the override is stored and then discarded at resolve time.
-  Only navigation, actions and custom bindings can be remapped.
-- **The forced letter is already taken in that modifier pool.** The remap is dropped rather than
-  displacing the existing shortcut.
-- **The letter is not a–z.** Rejected during resolution.
+- **The letter falls on a reserved key in that pool** (`g`, `j`, `k` or another table key among bare
+  keys). The override is stored but ignored, and the shortcut keeps its automatic letter.
+- **Another forced letter already holds that key** in the same pool. The first one wins and the other
+  shortcut is dropped. A forced letter does take its key from an automatically lettered shortcut,
+  which simply moves to another letter.
+- **The letter is not a–z.** Ignored during resolution; the shortcut keeps its automatic letter.
 - **The keymap looks stale.** Every write bumps the map version, which is what busts the cache. Writing
   to the tables directly without bumping serves the old map.
 
 ## Switching maps
 
 ```php
-app(\Aristonis\FilamentShortcutKeys\Application\SelectActiveMap::class)
+use Aristonis\FilamentShortcutKeys\Application\SelectActiveMap;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\MapSelector;
+
+(new SelectActiveMap(app(MapSelector::class), config('shortcut-keys.customization')))
     ->select($type, $id, 'admin', $mapId);
 ```
 

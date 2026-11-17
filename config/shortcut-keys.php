@@ -9,7 +9,9 @@ return [
     |
     | Whether end users may personalize their own shortcut maps.
     |
-    |   'locked'   — everyone uses the panel's system map; no personalization.
+    |   'locked'   — no personalization. Admins use the panel's default system
+    |                map (set on the manage page), or the conventions if none is
+    |                set; a selection made earlier in 'personal' mode is kept.
     |   'personal' — each user may fork and remap their own shortcuts.
     |
     */
@@ -37,6 +39,8 @@ return [
     |
     | Two sets sharing a scheme share one letter pool, so they can never be
     | assigned the same key. A leader key is reserved among bare keys.
+    | Header and row actions may not share navigation's or custom's scheme
+    | (they are lettered separately); that throws, naming the set.
     |
     */
 
@@ -71,7 +75,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | Force or disable specific shortcuts at the code level, keyed by target
-    | identity (e.g. 'navigation:products'). Each entry is one of:
+    | identity (e.g. 'navigation:App\Filament\Resources\ProductResource', or
+    | 'global:export' for a header action). Each entry is one of:
     |
     |   ['letter' => 'r']     — force this shortcut onto the letter R.
     |   ['disabled' => true]  — remove this shortcut from the keymap.
