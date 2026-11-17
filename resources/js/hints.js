@@ -11,6 +11,59 @@ const HINTED_HANDLERS = ['navigation', 'global', 'custom']
 
 const codeToKey = (code) => (code.startsWith('Key') ? code.slice(3) : code)
 
+// Spelled as aria-keyshortcuts requires: Control, not Ctrl.
+const ARIA_MODIFIERS = {
+    ctrl: 'Control',
+    alt: 'Alt',
+    shift: 'Shift',
+    meta: 'Meta',
+}
+
+// Marks an aria-keyshortcuts this script wrote, so a repaint takes back exactly those, including any
+// an earlier copy of the script left after an upgrade without a reload, and never one the host set.
+const OWNED = 'data-fsk-keyshortcuts'
+
+let annotated = []
+
+// Only letters have a spec name this can produce with certainty; anything else is left unannounced
+// rather than announced wrong.
+function ariaShortcut(modifier, code) {
+    if (!/^Key[A-Z]$/.test(code)) {
+        return null
+    }
+
+    const parts = (modifier ?? '')
+        .split('+')
+        .map((name) => ARIA_MODIFIERS[name])
+        .filter(Boolean)
+
+    return [...parts, codeToKey(code)].join('+')
+}
+
+function annotate(host, shortcut) {
+    if (shortcut === null) {
+        return
+    }
+
+    if (host.hasAttribute('aria-keyshortcuts') && !host.hasAttribute(OWNED)) {
+        return
+    }
+
+    host.setAttribute('aria-keyshortcuts', shortcut)
+    host.setAttribute(OWNED, '')
+    annotated.push(host)
+}
+
+function releaseAnnotations() {
+    const owned = [...annotated, ...document.querySelectorAll(`[${OWNED}]`)]
+
+    owned.forEach((host) => {
+        host.removeAttribute('aria-keyshortcuts')
+        host.removeAttribute(OWNED)
+    })
+    annotated = []
+}
+
 function badge(text) {
     const el = document.createElement('span')
     el.className = HINT_CLASS
@@ -56,13 +109,24 @@ function hostFor(group, binding, leader, singleKeys) {
 
 export function paintHints(groups, { leader = null, singleKeys = true } = {}) {
     document.querySelectorAll('.' + HINT_CLASS).forEach((el) => el.remove())
+    releaseAnnotations()
 
     for (const group of groups) {
         for (const binding of group.bindings) {
             const host = hostFor(group, binding, leader, singleKeys)
 
-            if (host && !host.querySelector('.' + HINT_CLASS)) {
+            if (!host) {
+                continue
+            }
+
+            if (!host.querySelector('.' + HINT_CLASS)) {
                 host.appendChild(badge(codeToKey(binding.code)))
+            }
+
+            // aria-keyshortcuts lists alternatives separated by spaces, so a g sequence cannot be
+            // written in it at all; the cheatsheet describes those instead.
+            if (!group.leader) {
+                annotate(host, ariaShortcut(group.modifier, binding.code))
             }
         }
     }

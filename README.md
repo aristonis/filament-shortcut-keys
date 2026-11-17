@@ -125,7 +125,10 @@ hint. Both stay in the cheatsheet.
 
 The badge is a `span` carrying the class `fi-hotkey-hint`, styled inline so the package ships no
 stylesheet of its own. It is marked `aria-hidden`, so a screen reader reads the control's own label
-and nothing else. Restyle it from your panel's stylesheet if the inline look does not suit the theme.
+and nothing else; the key itself is announced through `aria-keyshortcuts` on the control. A `G`
+sequence gets no `aria-keyshortcuts`, because that attribute reads spaces as alternatives (`G O`
+would mean "G or O"), so the cheatsheet is where those are listed. A value your app already put on
+the control is left alone. Restyle it from your panel's stylesheet if the inline look does not suit the theme.
 
 ### Row actions
 

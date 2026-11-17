@@ -63,7 +63,8 @@ panel-wide shortcuts gets its own sidebar page.
 Shortcuts that map to one stable element also carry a small key badge on that element: navigation
 links, header actions and custom bindings. Table keys and row actions do not, because a table key has
 no single element and a row action repeats per row. The badge is a `span.fi-hotkey-hint`, marked
-`aria-hidden` so screen readers still read only the control's own label.
+`aria-hidden` so screen readers still read only the control's own label; the key is announced
+through `aria-keyshortcuts` instead (not for `G` sequences, which that attribute cannot express).
 
 Letters come from each item's own label first, then the rest of the alphabet. Two shortcuts sharing a
 modifier never share a letter.

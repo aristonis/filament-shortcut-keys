@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+**Assistive technology hears the shortcut.** A control that carries a key badge now also carries
+`aria-keyshortcuts`, so a screen reader announces the key with the control. `G` sequences are left
+out because the attribute cannot express a sequence; the cheatsheet lists them. A value the host app
+set on the control is never overwritten.
+
 ### Changed
 
 **Default keys no longer hold `Alt`.** Navigation and custom bindings now use a leader key, `G` then

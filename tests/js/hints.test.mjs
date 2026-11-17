@@ -213,4 +213,103 @@ describe('paintHints', () => {
         assert.deepEqual(badgesOn(button), [])
         assert.deepEqual(badgesOn(anchor), ['O'])
     })
+
+    describe('aria-keyshortcuts', () => {
+        function host(attributes = {}) {
+            const element = createElement({ tagName: 'BUTTON', attributes })
+            installDocument({ selectors: { '#export': element } })
+            return element
+        }
+
+        function bound(modifier, code = 'KeyE', extra = {}) {
+            return {
+                handler: 'global',
+                modifier,
+                ...extra,
+                bindings: [
+                    {
+                        code,
+                        activation: { kind: 'click', selector: '#export' },
+                    },
+                ],
+            }
+        }
+
+        it('tells assistive technology about a single-key shortcut', () => {
+            const button = host()
+
+            paintHints([bound('')])
+
+            assert.equal(button.getAttribute('aria-keyshortcuts'), 'E')
+        })
+
+        it('names held modifiers the way the ARIA spec spells them', () => {
+            const button = host()
+
+            paintHints([bound('ctrl+alt+shift+meta')])
+
+            assert.equal(
+                button.getAttribute('aria-keyshortcuts'),
+                'Control+Alt+Shift+Meta+E',
+            )
+        })
+
+        it('leaves a g sequence out, since the attribute can only list alternatives', () => {
+            // "G O" would read as "G or O".
+            const button = host()
+
+            paintHints([bound('', 'KeyE', { leader: 'KeyG' })], {
+                leader: 'KeyG',
+            })
+
+            assert.equal(button.hasAttribute('aria-keyshortcuts'), false)
+        })
+
+        it('takes its attribute back once single-key shortcuts are off', () => {
+            const button = host()
+
+            paintHints([bound('')])
+            paintHints([bound('')], { singleKeys: false })
+
+            assert.equal(button.hasAttribute('aria-keyshortcuts'), false)
+        })
+
+        it('never overwrites shortcuts the host declared itself', () => {
+            const button = host({ 'aria-keyshortcuts': 'Control+S' })
+
+            paintHints([bound('')])
+            paintHints([bound('')], { singleKeys: false })
+
+            assert.equal(button.getAttribute('aria-keyshortcuts'), 'Control+S')
+        })
+
+        it('takes its attribute back when the shortcut is gone on the next paint', () => {
+            const button = host()
+
+            paintHints([bound('')])
+            paintHints([])
+
+            assert.equal(button.hasAttribute('aria-keyshortcuts'), false)
+        })
+
+        it('refreshes a value an earlier copy of the script left behind', () => {
+            // After an upgrade without a reload, the old copy's value would otherwise look like the host's.
+            const button = host({
+                'aria-keyshortcuts': 'Alt+E',
+                'data-fsk-keyshortcuts': '',
+            })
+
+            paintHints([bound('')])
+
+            assert.equal(button.getAttribute('aria-keyshortcuts'), 'E')
+        })
+
+        it('writes nothing for a key it cannot name the way the spec does', () => {
+            const button = host()
+
+            paintHints([bound('', 'Slash')])
+
+            assert.equal(button.hasAttribute('aria-keyshortcuts'), false)
+        })
+    })
 })
