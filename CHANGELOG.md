@@ -7,6 +7,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+**Default keys no longer hold `Alt`.** Navigation and custom bindings now use a leader key, `G` then
+a letter, and header actions use bare letters. `Alt`+letter clashed with the browser (`Alt`+`D` for
+the address bar, `Alt`+`F` for its menu), `Alt`+`Shift` is the Windows keyboard-layout switch, and on a
+Mac `Option`+letter types a character, so a shortcut could fire while typing. A page cannot tell which
+combinations the browser, the OS or the layout own; a bare key pressed on the page always reaches it.
+`G` waits about a second and a half for its letter, `Esc` cancels, and its badges appear only while it
+waits. Held modifiers are still available per set through the `modifiers` config, which now also
+accepts a single letter as a leader key. Changing that config now refreshes the cached keymap at
+once instead of after the cache lifetime.
+
+Upgrading: a config file published from an earlier build still lists `['alt', 'shift']` and `['alt']`
+and keeps those keys. Delete the `modifiers` entries, or republish the config, to take the new
+defaults.
+
+**Header actions are only keyed when a stray press is harmless.** With actions on bare letters, one
+accidental keystroke could run an action that does its work on the click. On bare letters such an
+action now gets no default key; actions that open a page, a modal or a confirmation keep theirs. A letter pinned in the
+`overlay` config still keys an instant action on purpose.
+
+**Single-key shortcuts can be switched off.** The cheatsheet has a switch that silences every bare key
+and `G` sequence in that browser, for people using assistive technology or voice control. Held-modifier
+shortcuts keep working.
+
 ### Fixed
 
 **Actions that render as links are reachable again.** Every keyable control was looked up by

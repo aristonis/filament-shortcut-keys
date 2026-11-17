@@ -40,7 +40,8 @@ final readonly class ClientMapSerializer
             fn ($group) => [
                 'set' => $group->setKey,
                 'handler' => $this->handlerBySet[$group->setKey] ?? $group->setKey,
-                'modifier' => $group->modifier->toString(),
+                'modifier' => $group->modifier->heldModifiers(),
+                'leader' => $group->modifier->leader,
                 'bindings' => array_map(
                     fn ($binding) => [
                         'target' => $binding->target->identity(),

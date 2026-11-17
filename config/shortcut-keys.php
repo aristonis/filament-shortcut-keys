@@ -21,22 +21,31 @@ return [
     | Per-set modifiers
     |--------------------------------------------------------------------------
     |
-    | The modifier scheme applied to each shortcut set. An empty array means
-    | bare keys (no modifier), e.g. table search on "/". Values are modifier
-    | tokens: 'ctrl', 'alt', 'shift', 'meta'. Remove a set from this list to
-    | put it back on its built-in scheme; an unknown token throws.
+    | How each shortcut set's letters are pressed. Values are tokens:
+    |
+    |   ['g']                  — a leader key: press g, release, then the letter.
+    |                            Any single letter works; it cannot be mixed
+    |                            with modifier tokens.
+    |   []                     — bare keys, e.g. table search on "/".
+    |   'ctrl', 'alt', 'shift', 'meta' — held modifiers, e.g. ['alt', 'shift'].
+    |
+    | The defaults avoid held modifiers on purpose: the browser, the OS and
+    | keyboard layouts already own many of them (Alt+D, Alt+F, the Alt+Shift
+    | layout switch, Option typing characters on a Mac), and a page cannot tell
+    | which. Remove a set from this list to put it back on its built-in scheme;
+    | an unknown token throws.
     |
     | Two sets sharing a scheme share one letter pool, so they can never be
-    | assigned the same key.
+    | assigned the same key. A leader key is reserved among bare keys.
     |
     */
 
     'modifiers' => [
-        'navigation' => ['alt', 'shift'],
-        'global' => ['alt'],
+        'navigation' => ['g'],
+        'global' => [],
         'table' => [],
         'row-action' => [],
-        'custom' => ['alt', 'shift'],
+        'custom' => ['g'],
     ],
 
     /*

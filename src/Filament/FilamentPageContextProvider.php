@@ -64,6 +64,7 @@ final class FilamentPageContextProvider implements PageContextProvider
             (string) $action->getLabel(),
             filled($url) ? null : $this->livewireSelector($action),
             filled($url) ? (string) $url : null,
+            ! filled($url) && ! $this->asksFirst($action),
         );
     }
 
@@ -82,6 +83,16 @@ final class FilamentPageContextProvider implements PageContextProvider
             (string) $action->getLabel(),
             '[wire\\:key*=".actions.' . $action->getName() . '."]',
         );
+    }
+
+    /**
+     * Whether clicking the action shows a confirmation or a modal before anything happens. Only the
+     * signals Filament exposes without mounting the action count: an action whose only modal trigger
+     * is a schema is not detected, so it is treated as running at once and gets no default key.
+     */
+    private function asksFirst(Action $action): bool
+    {
+        return $action->isConfirmationRequired() || $action->shouldOpenModal();
     }
 
     private function livewireSelector(Action $action): string

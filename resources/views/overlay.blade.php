@@ -41,10 +41,13 @@
         margin-inline-start: .25rem; padding: .1rem .35rem; border-radius: .25rem;
         border: 1px solid currentColor; font-family: monospace; font-size: .75rem; opacity: .8;
     }
+    #filament-shortcut-keys-overlay .fsk-then { margin-inline-start: .25rem; font-size: .75rem; opacity: .6; }
     #filament-shortcut-keys-overlay .fsk-foot {
         padding: .85rem 1.25rem; border-top: 1px solid rgba(0, 0, 0, .1); font-size: .875rem;
     }
     :where(.dark) #filament-shortcut-keys-overlay .fsk-foot { border-color: rgba(255, 255, 255, .1); }
+    #filament-shortcut-keys-overlay .fsk-switch { display: flex; gap: .5rem; align-items: flex-start; margin-bottom: .75rem; }
+    #filament-shortcut-keys-overlay .fsk-switch small { display: block; opacity: .7; }
 </style>
 
 <div id="filament-shortcut-keys-overlay" hidden>
@@ -62,6 +65,9 @@
                         <span>{{ $row['label'] }}</span>
                         <span>
                             @foreach ($row['keys'] as $key)
+                                @if ($row['sequence'] && ! $loop->first)
+                                    <span class="fsk-then">{{ trans('filament-shortcut-keys::shortcut-keys.overlay.then') }}</span>
+                                @endif
                                 <kbd>{{ $key }}</kbd>
                             @endforeach
                         </span>
@@ -73,6 +79,13 @@
         </div>
 
         <div class="fsk-foot">
+            <label class="fsk-switch">
+                <input type="checkbox" data-fsk-single-keys checked>
+                <span>
+                    {{ trans('filament-shortcut-keys::shortcut-keys.overlay.single_keys') }}
+                    <small>{{ trans('filament-shortcut-keys::shortcut-keys.overlay.single_keys_help') }}</small>
+                </span>
+            </label>
             <a href="{{ $referenceUrl }}">{{ trans('filament-shortcut-keys::shortcut-keys.overlay.full_reference') }}</a>
         </div>
     </div>

@@ -25,11 +25,8 @@ function page(array $actions = [], bool $hasTable = false): InMemoryPageContextP
 
 // --- Navigation set -------------------------------------------------------
 
-it('the navigation set is keyed "navigation" and defaults to Alt+Shift', function () {
-    $set = new NavigationSet;
-
-    expect($set->key())->toBe('navigation')
-        ->and($set->defaultModifier()->equals(ModifierScheme::altShift()))->toBeTrue();
+it('the navigation set is keyed "navigation"', function () {
+    expect((new NavigationSet)->key())->toBe('navigation');
 });
 
 it('the navigation set discovers one convention binding per sidebar item, letter unassigned', function () {
@@ -52,11 +49,8 @@ it('the navigation set discovers one convention binding per sidebar item, letter
 
 // --- Global set -----------------------------------------------------------
 
-it('the global set is keyed "global" and defaults to Alt', function () {
-    $set = new GlobalSet;
-
-    expect($set->key())->toBe('global')
-        ->and($set->defaultModifier()->equals(ModifierScheme::alt()))->toBeTrue();
+it('the global set is keyed "global"', function () {
+    expect((new GlobalSet)->key())->toBe('global');
 });
 
 it('the global set discovers one convention binding per page action, letter unassigned', function () {
@@ -149,4 +143,31 @@ it('the page set discovers nothing until page discovery is wired', function () {
     expect((new PageSet)->discover(nav([]), page(actions: [
         new ActionTarget('create', 'Create', '#create'),
     ], hasTable: true), 'admin'))->toBe([]);
+});
+
+it('puts navigation on the g leader by default, off any browser modifier', function () {
+    expect((new NavigationSet)->defaultModifier()->equals(ModifierScheme::leader('g')))->toBeTrue();
+});
+
+it('puts header actions on bare letters by default', function () {
+    expect((new GlobalSet)->defaultModifier()->equals(ModifierScheme::none()))->toBeTrue();
+});
+
+it('gives no default key to a header action that runs the moment it is pressed', function () {
+    $bindings = collect((new GlobalSet)->discover(nav([]), page(actions: [
+        new ActionTarget('export', 'Export', '#export'),
+        new ActionTarget('send', 'Send', '#send', runsImmediately: true),
+    ]), 'admin'))->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
+
+    expect($bindings['export']->enabled)->toBeTrue()
+        ->and($bindings['send']->enabled)->toBeFalse();
+});
+
+it('keeps an instant header action keyed when the set needs a held modifier or a leader', function () {
+    // Alt+letter or g then a letter is deliberate; only a bare key can be pressed by accident.
+    $instant = page(actions: [new ActionTarget('send', 'Send', '#send', runsImmediately: true)]);
+
+    foreach ([ModifierScheme::alt(), ModifierScheme::leader('a')] as $scheme) {
+        expect((new GlobalSet($scheme))->discover(nav([]), $instant, 'admin')[0]->enabled)->toBeTrue();
+    }
 });

@@ -33,6 +33,7 @@ final class OverlayCatalog
                 $rows[] = [
                     'label' => self::labelFor($group->setKey, $binding->target, $navLabels, $actionLabels, $behaviorLabels),
                     'keys' => KeyLabel::tokens($group->modifier, $binding->keyCombo->code),
+                    'sequence' => KeyLabel::isSequence($group->modifier),
                 ];
             }
 

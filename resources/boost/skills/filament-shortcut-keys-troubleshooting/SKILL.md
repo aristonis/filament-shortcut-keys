@@ -22,6 +22,10 @@ deploy and after any `composer update` that touches the package.
 If the file is a 200 and still nothing fires, the map may be absent from the page entirely — check for
 `filament-shortcut-keys-map` in the source before going further.
 
+If only bare keys and `G` sequences are dead, the user may have switched single-key shortcuts off in
+the cheatsheet. The choice is stored in that browser's local storage under
+`filament-shortcut-keys:single-keys`.
+
 ## 1. Is the key in the keymap at all?
 
 The server injects the map into every panel page as a JSON block with id
@@ -43,6 +47,10 @@ a table.
 
 If a bare key seems dead, check whether focus is sitting in the table's search box — that is the usual
 cause, and pressing a key there types rather than acts.
+
+A `G` shortcut is two presses: `G`, let go, then the letter within about a second and a half. Held
+together they do nothing, and a `G` typed into a field stays a `G`. Bare keys also stay quiet while a
+modal, an open select, a dropdown or a menu has the keyboard.
 
 ## 3. The key fires but nothing happens
 
@@ -70,6 +78,10 @@ behaving correctly.
 - **A page you expected** — navigation is built from registered resources and pages. If it is not
   registered on the panel, it has no shortcut.
 - **A shortcut you disabled in the overlay** — a disabled entry is removed before letters are assigned.
+- **A header action that runs on the click itself** — it gets no default key, so a stray keystroke
+  cannot run it. Give it a confirmation or a modal, or pin a letter for it in the `overlay` config.
+  An action whose only modal is a form schema counts as instant, because that is not knowable without
+  mounting it.
 - **A shortcut with a forced letter that collided** — an invalid or taken forced letter is dropped
   rather than displacing another shortcut.
 
@@ -95,8 +107,9 @@ that did not move:
   services do this; raw SQL does not.
 - **Changed navigation?** The nav version token is derived from the registered resources and pages, so
   adding or renaming one busts the key by itself.
-- **Changed config?** The overlay is hashed into the key. Editing the config file is enough — but a
-  cached config in production still needs `config:clear`.
+- **Changed config?** The overlay, the `modifiers` schemes and the reserved keys are hashed into the
+  key. Editing the config file is enough — but a cached config in production still needs
+  `config:clear`.
 
 ## 7. Right-to-left panels
 
@@ -109,7 +122,8 @@ Row-movement arrows are **not** mirrored — up is up in any direction.
 ## 8. The key works but shows no badge
 
 Only shortcuts that map to one stable element get a badge: navigation links, header actions and
-custom bindings. Table keys and row actions never do, because a table key has no single element and a
+custom bindings. Badges for `G` shortcuts appear only while `G` waits for its letter. Table keys and
+row actions never do, because a table key has no single element and a
 row action repeats per row. Both are listed in the `Shift` + `/` cheatsheet instead.
 
 If a shortcut that should carry one does not, the element the badge attaches to was not found, and

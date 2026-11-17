@@ -1,6 +1,7 @@
 <?php
 
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Exceptions\InvalidKeyComboException;
 
 it('parses modifiers and maps the letter to a physical key code', function () {
@@ -46,3 +47,7 @@ it('throws a domain exception on a modifier-only combo', function () {
 it('throws a domain exception on an empty combo', function () {
     KeyCombo::parse('   ');
 })->throws(InvalidKeyComboException::class);
+
+it('writes a leader combo as the two keys in order', function () {
+    expect((new KeyCombo(ModifierScheme::leader('g'), 'KeyO'))->toString())->toBe('g o');
+});

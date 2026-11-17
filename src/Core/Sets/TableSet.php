@@ -4,6 +4,7 @@ namespace Aristonis\FilamentShortcutKeys\Core\Sets;
 
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\ReservesKeys;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\ShortcutSet;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
@@ -11,7 +12,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
 /** Table shortcuts: a fixed key per behaviour (search, row/page movement, row actions), active only when the page has a table. */
-final class TableSet implements ShortcutSet
+final class TableSet implements ReservesKeys, ShortcutSet
 {
     /**
      * Built-in row actions this set binds to fixed keys (edit=Enter, delete=Delete). The custom
@@ -41,8 +42,8 @@ final class TableSet implements ShortcutSet
      */
     public function __construct(private bool $rightToLeft = false, private ?ModifierScheme $modifier = null) {}
 
-    /** @return string[] every key this set binds, so a set sharing its bare keys can route around them */
-    public static function reservedCodes(): array
+    /** @return string[] every key this set binds, so a set sharing its pool can route around them */
+    public function reservedCodes(): array
     {
         return array_values(self::CODES);
     }

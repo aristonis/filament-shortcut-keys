@@ -12,9 +12,9 @@ use Illuminate\Contracts\Cache\Repository;
 
 /**
  * Caches the panel-wide (navigation) map, which is page-independent and shared across every page of a
- * panel. The cache key is a fingerprint of every input that shapes the map — navigation version, user
- * identity, active map version, overlay and locale — so a changed input is a guaranteed cache miss and
- * a stale map is never served.
+ * panel. The cache key is a fingerprint of every input that shapes the map (navigation version, user
+ * identity, active map version, developer config and locale), so a changed input is a guaranteed cache
+ * miss and a stale map is never served.
  *
  * Only the panel-wide resolver is wrapped: page sets are cheap and page-specific, so they are always
  * resolved fresh (see CompositeResolver, which sits above this decorator).
@@ -23,14 +23,14 @@ final readonly class CachedResolver implements Resolver
 {
     /**
      * @param  Resolver  $inner  the panel-wide resolver whose result is cached
-     * @param  array<string, array<string, mixed>>  $overlay  developer force-letter/disable entries
+     * @param  array<string, mixed>  $developerConfig  config that shapes the map: overlay, modifier schemes, reserved keys
      * @param  int|null  $ttl  cache lifetime in seconds; null caches forever
      */
     public function __construct(
         private Resolver $inner,
         private Repository $cache,
         private MapRepository $maps,
-        private array $overlay,
+        private array $developerConfig,
         private string $locale,
         private ?int $ttl = null,
     ) {}
@@ -54,7 +54,7 @@ final readonly class CachedResolver implements Resolver
             $panelId,
             $navVersionToken,
             $mapIdentity,
-            $this->overlay,
+            $this->developerConfig,
             $this->locale,
         );
 

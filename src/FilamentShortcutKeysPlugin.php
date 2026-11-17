@@ -8,6 +8,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\CompositeResolver;
+use Aristonis\FilamentShortcutKeys\Core\Resolution\KeyReservations;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ShortcutResolver;
 use Aristonis\FilamentShortcutKeys\Core\Sets\CustomSet;
@@ -18,6 +19,7 @@ use Aristonis\FilamentShortcutKeys\Core\Sets\RowActionSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
+use Aristonis\FilamentShortcutKeys\Exceptions\InvalidModifierSchemeException;
 use Aristonis\FilamentShortcutKeys\Filament\ClientMapSerializer;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentPageContextProvider;
 use Aristonis\FilamentShortcutKeys\Filament\NullPageContextProvider;
@@ -147,14 +149,85 @@ class FilamentShortcutKeysPlugin implements Plugin
 
     private function pageSets(): ShortcutSetRegistry
     {
+        [$global, $table, $page] = $this->builtInPageSets();
+        $rowActionModifier = $this->configuredModifier('row-action');
+        $pool = (new RowActionSet([], $rowActionModifier))->defaultModifier()->toString();
+
+        // Row actions letter themselves before the resolver runs, so they also have to step around
+        // letters a developer pinned in the overlay for another set in their pool; otherwise the
+        // pinned shortcut is resolved first and the row action is dropped on every table page.
+        $unavailable = [...$this->keyReservations()[$pool] ?? [], ...$this->pinnedCodes($pool, except: 'row-action')];
+
         $sets = new ShortcutSetRegistry;
-        $sets->register(new GlobalSet($this->configuredModifier('global')));
-        $tableModifier = $this->configuredModifier('table');
-        $sets->register(new TableSet($this->panelIsRightToLeft(), $tableModifier));
-        $sets->register(new RowActionSet($this->rowActions, $this->configuredModifier('row-action'), $tableModifier));
-        $sets->register(new PageSet($this->configuredModifier('page')));
+        $sets->register($global);
+        $sets->register($table);
+        $sets->register(new RowActionSet($this->rowActions, $rowActionModifier, $unavailable));
+        $sets->register($page);
 
         return $sets;
+    }
+
+    /** @return array{GlobalSet, TableSet, PageSet} */
+    private function builtInPageSets(): array
+    {
+        return [
+            new GlobalSet($this->configuredModifier('global')),
+            new TableSet($this->panelIsRightToLeft(), $this->configuredModifier('table')),
+            new PageSet($this->configuredModifier('page')),
+        ];
+    }
+
+    /**
+     * Keys no letter may take, per pool, across both registries: the leader key belongs to the
+     * panel-wide sets but has to stay out of the bare pool the page sets share.
+     *
+     * @return array<string, string[]>
+     */
+    private function keyReservations(): array
+    {
+        $panelWide = $this->panelWideSets()->all();
+        $page = $this->builtInPageSets();
+
+        // The two registries are lettered by separate resolvers, so a leader pool split between them
+        // would hand out the same letter twice.
+        $panelWideLeaders = array_filter(array_map(fn ($set) => $set->defaultModifier()->leader, $panelWide));
+        foreach ($page as $set) {
+            $leader = $set->defaultModifier()->leader;
+            if ($leader !== null && in_array($leader, $panelWideLeaders, true)) {
+                throw InvalidModifierSchemeException::forSharedLeader($leader);
+            }
+        }
+
+        return KeyReservations::for([...$panelWide, ...$page]);
+    }
+
+    /**
+     * Letters the overlay pins onto other sets in a pool, as key codes.
+     *
+     * @return string[]
+     */
+    private function pinnedCodes(string $pool, string $except): array
+    {
+        $poolBySet = [];
+        foreach ([...$this->panelWideSets()->all(), ...$this->builtInPageSets()] as $set) {
+            $poolBySet[$set->key()] = $set->defaultModifier()->toString();
+        }
+
+        $codes = [];
+        foreach (config('shortcut-keys.overlay', []) as $identity => $rule) {
+            $set = strstr((string) $identity, ':', true);
+            $letter = ($rule['disabled'] ?? false) ? null : ($rule['letter'] ?? null);
+
+            if ($set === false || $set === $except || ($poolBySet[$set] ?? null) !== $pool || ! is_string($letter)) {
+                continue;
+            }
+
+            if (preg_match('/^[a-z]$/i', $letter)) {
+                $codes[] = 'Key' . strtoupper($letter);
+            }
+        }
+
+        return $codes;
     }
 
     /**
@@ -187,7 +260,7 @@ class FilamentShortcutKeysPlugin implements Plugin
 
         return new CompositeResolver(
             $this->panelWideResolver($panelWideSets),
-            new ShortcutResolver($pageSets, $overlay, app(MapRepository::class)),
+            new ShortcutResolver($pageSets, $overlay, app(MapRepository::class), $this->keyReservations()),
         );
     }
 
@@ -196,11 +269,13 @@ class FilamentShortcutKeysPlugin implements Plugin
         $maps = app(MapRepository::class);
         $overlay = config('shortcut-keys.overlay', []);
 
+        $reserved = $this->keyReservations();
+
         return new CachedResolver(
-            new ShortcutResolver($panelWideSets, $overlay, $maps),
+            new ShortcutResolver($panelWideSets, $overlay, $maps, $reserved),
             app(CacheRepository::class),
             $maps,
-            $overlay,
+            ['overlay' => $overlay, 'modifiers' => config('shortcut-keys.modifiers', []), 'reserved' => $reserved],
             app()->getLocale(),
             config('shortcut-keys.cache.ttl'),
         );

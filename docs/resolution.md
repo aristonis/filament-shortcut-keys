@@ -50,9 +50,9 @@ turns into JSON.
 
 | Set | Default scheme | Notes |
 |---|---|---|
-| `navigation` | `Alt+Shift` | shares a letter pool with `custom` |
-| `custom` | `Alt+Shift` | admin-defined bindings |
-| `global` | `Alt` | current page's actions |
+| `navigation` | leader `g` | shares a letter pool with `custom` |
+| `custom` | leader `g` | admin-defined bindings |
+| `global` | bare | current page's actions; shares the bare pool with `row-action` |
 | `table` | bare | fixed keys, no letters assigned |
 | `row-action` | bare | stable letters across the panel |
 | `page` | bare | registered, emits nothing in v1 |

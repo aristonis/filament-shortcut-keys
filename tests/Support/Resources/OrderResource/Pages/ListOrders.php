@@ -14,12 +14,14 @@ final class ListOrders extends ListRecords
     /**
      * Both header shapes on one page: Create picks up the resource's create-page url and renders as a
      * link, while `export` has no url and renders as a Livewire button. The adapter has to key both.
+     * `ping` runs the moment it is clicked, with no modal, which is the shape that gets no default key.
      */
     protected function getHeaderActions(): array
     {
         return [
             CreateAction::make(),
-            Action::make('export'),
+            Action::make('export')->requiresConfirmation(),
+            Action::make('ping'),
         ];
     }
 }

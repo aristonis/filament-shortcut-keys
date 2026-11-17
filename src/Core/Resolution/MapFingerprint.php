@@ -21,7 +21,7 @@ final class MapFingerprint
         string $panelId,
         string $navVersionToken,
         string $mapIdentity,
-        array $overlay,
+        array $developerConfig,
         string $locale,
     ): string {
         return hash('xxh128', implode('|', [
@@ -29,7 +29,7 @@ final class MapFingerprint
             $panelId,
             $navVersionToken,
             $mapIdentity,
-            md5(json_encode($overlay, JSON_THROW_ON_ERROR)),
+            md5(json_encode($developerConfig, JSON_THROW_ON_ERROR)),
             $locale,
         ]));
     }

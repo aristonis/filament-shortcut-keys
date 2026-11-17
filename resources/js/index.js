@@ -3,28 +3,38 @@ import { handlers as baseHandlers } from './handlers.js'
 import { paintHints } from './hints.js'
 import { readKeymap } from './keymap.js'
 import { initOverlay } from './overlay.js'
+import { singleKeysEnabled } from './preferences.js'
 import { createTableHandler } from './table.js'
 
 // The keydown listener is attached once to the document, which survives Livewire's SPA navigation.
 // Only the keymap it reads changes per page, so on each navigation we just re-read the freshly
 // injected map instead of rebinding the listener.
 let currentGroups = []
+let dispatcher = null
 
 const tableHandler = createTableHandler()
 const handlers = { ...baseHandlers, table: tableHandler }
 
+function repaint(leader = null) {
+    paintHints(currentGroups, { leader, singleKeys: singleKeysEnabled() })
+}
+
 function refreshKeymap() {
     currentGroups = readKeymap()
-    // The focused-row cursor belongs to the page that was left behind.
+    // The focused-row cursor and a pending g belong to the page that was left behind.
     tableHandler.reset()
-    paintHints(currentGroups)
+    dispatcher?.cancelLeader()
+    repaint()
 }
 
 function start(signal) {
-    const dispatcher = createDispatcher(() => currentGroups, handlers)
+    dispatcher = createDispatcher(() => currentGroups, handlers, {
+        onLeader: repaint,
+        singleKeysEnabled,
+    })
     document.addEventListener('keydown', dispatcher, { signal })
 
-    initOverlay(signal)
+    initOverlay(signal, { onSingleKeysChange: () => repaint() })
 
     refreshKeymap()
     document.addEventListener('livewire:navigated', refreshKeymap, { signal })

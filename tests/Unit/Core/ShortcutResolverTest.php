@@ -249,7 +249,7 @@ it('adds a user custom binding from the active map', function () {
     $binding = bindingFor($groups, 'custom', 'deploy');
     expect($binding)->not->toBeNull()
         ->and($binding->keyCombo->code)->toBe('KeyD')
-        ->and($binding->keyCombo->modifiers->toString())->toBe('alt+shift')
+        ->and($binding->keyCombo->modifiers->toString())->toBe('leader:g')
         ->and($binding->payload)->toBe(['selector' => '#deploy'])
         ->and($binding->source)->toBe(BindingSource::USER);
 });
@@ -266,7 +266,7 @@ it('ignores a payload entry whose set this resolver does not own', function () {
 
 it('shares one letter pool so a custom binding cannot steal a nav letter', function () {
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [convention('navigation', 'orders', 'orders')]));
+    $registry->register(resolverSet('navigation', ModifierScheme::leader('g'), [convention('navigation', 'orders', 'orders')]));
     $registry->register(new CustomSet);
 
     $groups = resolveWithMap($registry, [
@@ -287,4 +287,54 @@ it('ignores a payload entry whose set does not accept custom bindings', function
     ]);
 
     expect(bindingFor($groups, 'custom', 'deploy'))->toBeNull();
+});
+
+it('routes auto letters around keys reserved for their pool', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('global', ModifierScheme::none(), [convention('global', 'go-live', 'Go live')]));
+
+    $nav = new InMemoryNavigationProvider([], 'v1');
+    $page = new InMemoryPageContextProvider([], false);
+    $groups = (new ShortcutResolver($registry, reservedCodes: ['' => ['KeyG']]))->resolve($nav, $page, 'admin')->groups();
+
+    expect(bindingFor($groups, 'global', 'go-live')->keyCombo->code)->toBe('KeyO');
+});
+
+it('forces an overlay letter onto a bare set, so header-action pins keep working', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('global', ModifierScheme::none(), [convention('global', 'export', 'Export')]));
+
+    $groups = resolveGroups($registry, ['global:export' => ['letter' => 'x']]);
+
+    expect(bindingFor($groups, 'global', 'export')->keyCombo->code)->toBe('KeyX');
+});
+
+it('ignores an overlay letter that lands on a reserved key', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('global', ModifierScheme::none(), [convention('global', 'export', 'Export')]));
+
+    $nav = new InMemoryNavigationProvider([], 'v1');
+    $page = new InMemoryPageContextProvider([], false);
+    $groups = (new ShortcutResolver($registry, ['global:export' => ['letter' => 'g']], reservedCodes: ['' => ['KeyG']]))
+        ->resolve($nav, $page, 'admin')->groups();
+
+    expect(bindingFor($groups, 'global', 'export')->keyCombo->code)->toBe('KeyE');
+});
+
+it('forces a letter onto a leader set', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('navigation', ModifierScheme::leader('g'), [convention('navigation', 'orders', 'Orders')]));
+
+    $groups = resolveGroups($registry, ['navigation:orders' => ['letter' => 'x']]);
+
+    expect(bindingFor($groups, 'navigation', 'orders')->keyCombo->equals(new KeyCombo(ModifierScheme::leader('g'), 'KeyX')))->toBeTrue();
+});
+
+it('turns on a shortcut the set left off when the overlay pins a letter to it', function () {
+    $off = new ShortcutBinding(new ShortcutTarget('global', 'send'), null, false, letterHint: 'send');
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('global', ModifierScheme::none(), [$off]));
+
+    expect(bindingFor(resolveGroups($registry), 'global', 'send'))->toBeNull()
+        ->and(bindingFor(resolveGroups($registry, ['global:send' => ['letter' => 'x']]), 'global', 'send')->keyCombo->code)->toBe('KeyX');
 });

@@ -17,10 +17,14 @@ use Aristonis\FilamentShortcutKeys\Exceptions\UnknownShortcutSetException;
 
 final readonly class ShortcutResolver implements Resolver
 {
+    /**
+     * @param  array<string, string[]>  $reservedCodes  keys no letter may take, by pool (see KeyReservations)
+     */
     public function __construct(
         private ShortcutSetRegistry $registry,
         private array $overlay = [],
-        private ?MapRepository $maps = null
+        private ?MapRepository $maps = null,
+        private array $reservedCodes = [],
     ) {}
 
     public function resolve(NavigationProvider $nav, PageContextProvider $page, string $panelId, string $authType = '', string $authId = ''): ResolvedMap
@@ -61,8 +65,10 @@ final readonly class ShortcutResolver implements Resolver
                 continue;
             }
 
+            // A pinned letter is a developer asking for the key, so it also turns on a shortcut the
+            // set left off by default.
             $bindingsOverlaid[] = isset($rule['letter'])
-                ? $this->forced($binding, (string) $rule['letter'], BindingSource::OVERLAY)
+                ? $this->forced($binding, (string) $rule['letter'], BindingSource::OVERLAY, enable: true)
                 : $binding;
         }
 
@@ -154,8 +160,11 @@ final readonly class ShortcutResolver implements Resolver
 
         $assigner = new LetterAssigner;
         $result = [];
-        foreach ($pools as $pool) {
-            $result = array_merge($result, $assigner->assign($this->schemeFor($pool[0]->target->set), $pool));
+        foreach ($pools as $name => $pool) {
+            $result = array_merge(
+                $result,
+                $assigner->assign($this->schemeFor($pool[0]->target->set), $pool, $this->reservedCodes[$name] ?? []),
+            );
         }
 
         return $result;
@@ -182,24 +191,30 @@ final readonly class ShortcutResolver implements Resolver
     }
 
     /** Forces a shortcut onto a specific letter, or returns it unchanged if the letter is unusable. */
-    private function forced(ShortcutBinding $binding, string $letter, BindingSource $source): ShortcutBinding
+    private function forced(ShortcutBinding $binding, string $letter, BindingSource $source, bool $enable = false): ShortcutBinding
     {
         $combo = $this->forcedCombo($this->schemeFor($binding->target->set), $letter);
         if ($combo === null) {
             return $binding;
         }
 
-        return new ShortcutBinding($binding->target, $combo, $binding->enabled, $source, $binding->letterHint, $binding->payload);
+        return new ShortcutBinding($binding->target, $combo, $enable || $binding->enabled, $source, $binding->letterHint, $binding->payload);
     }
 
-    /** A letter forced onto a set's scheme, or null if the letter isn't a–z or the set has no modifier. */
+    /** A letter forced onto a set's scheme, or null if it isn't a–z or its key is reserved in that pool. */
     private function forcedCombo(ModifierScheme $scheme, string $letter): ?KeyCombo
     {
-        if ($scheme->toString() === '' || ! preg_match('/^[a-z]$/i', $letter)) {
+        if (! preg_match('/^[a-z]$/i', $letter)) {
             return null;
         }
 
-        return new KeyCombo($scheme, 'Key' . strtoupper($letter));
+        $code = 'Key' . strtoupper($letter);
+
+        if (in_array($code, $this->reservedCodes[$scheme->toString()] ?? [], true)) {
+            return null;
+        }
+
+        return new KeyCombo($scheme, $code);
     }
 
     private function schemeFor(string $set): ModifierScheme

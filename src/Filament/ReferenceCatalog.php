@@ -38,6 +38,7 @@ final class ReferenceCatalog
                 $rows[] = [
                     'label' => self::labelFor($binding->target, $labels),
                     'keys' => KeyLabel::tokens($group->modifier, $binding->keyCombo->code),
+                    'sequence' => KeyLabel::isSequence($group->modifier),
                 ];
             }
 

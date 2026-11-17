@@ -18,6 +18,9 @@
                             <td class="py-2 pe-4 text-gray-700 dark:text-gray-300">{{ $row['label'] }}</td>
                             <td class="py-2 text-end">
                                 @foreach ($row['keys'] as $key)
+                                    @if ($row['sequence'] && ! $loop->first)
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ trans('filament-shortcut-keys::shortcut-keys.overlay.then') }}</span>
+                                    @endif
                                     <kbd class="mx-0.5 rounded border border-gray-300 bg-gray-50 px-1.5 py-0.5 font-mono text-xs text-gray-700 dark:border-white/20 dark:bg-white/5 dark:text-gray-200">{{ $key }}</kbd>
                                 @endforeach
                             </td>

@@ -25,7 +25,7 @@ final class CustomSet implements AcceptsCustomBindings, ShortcutSet
 
     public function defaultModifier(): ModifierScheme
     {
-        return $this->modifier ?? ModifierScheme::altShift();
+        return $this->modifier ?? ModifierScheme::leader('g');
     }
 
     public function discover(NavigationProvider $navigationProvider, PageContextProvider $pageContextProvider, string $panelId): array

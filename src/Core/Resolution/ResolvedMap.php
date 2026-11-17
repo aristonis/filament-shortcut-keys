@@ -15,7 +15,7 @@ final readonly class ResolvedMap
      * Bumped whenever toCache()'s shape changes. It goes into the cache key, so an upgraded package
      * reads a miss rather than an entry written in a shape it no longer understands.
      */
-    public const CACHE_FORMAT = 1;
+    public const CACHE_FORMAT = 2;
 
     public function __construct(
         private array $groups
@@ -111,6 +111,7 @@ final readonly class ResolvedMap
             'alt' => $modifier->alt,
             'shift' => $modifier->shift,
             'meta' => $modifier->meta,
+            'leader' => $modifier->leader,
         ];
     }
 
@@ -121,6 +122,7 @@ final readonly class ResolvedMap
             alt: $modifier['alt'],
             shift: $modifier['shift'],
             meta: $modifier['meta'],
+            leader: $modifier['leader'] ?? null,
         );
     }
 
@@ -129,7 +131,8 @@ final readonly class ResolvedMap
         return array_map(
             fn ($group) => [
                 'set' => $group->setKey,
-                'modifier' => $group->modifier->toString(),
+                'modifier' => $group->modifier->heldModifiers(),
+                'leader' => $group->modifier->leader,
                 'bindings' => array_map(
                     fn ($binding) => [
                         'target' => $binding->target->identity(),

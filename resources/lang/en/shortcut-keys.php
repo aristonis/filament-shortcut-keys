@@ -40,6 +40,10 @@ return [
         'title' => 'Keyboard shortcuts',
         'close' => 'Close',
         'full_reference' => 'View full reference',
+        // Between the two keys of a sequence such as g then o.
+        'then' => 'then',
+        'single_keys' => 'Single-key shortcuts',
+        'single_keys_help' => 'Turn off to stop keys that fire without Ctrl, Alt or Cmd, such as g then a letter. Saved in this browser.',
     ],
 
     'manage' => [

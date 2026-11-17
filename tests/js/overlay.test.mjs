@@ -11,7 +11,8 @@ import {
 
 const OVERLAY_ID = 'filament-shortcut-keys-overlay'
 const FOCUSABLE =
-    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+const SWITCH = '[data-fsk-single-keys]'
 
 function cheatsheet({ open = false, focusables = [] } = {}) {
     return createElement({
@@ -201,5 +202,70 @@ describe('the cheatsheet overlay', () => {
         assert.doesNotThrow(() =>
             document.dispatch('click', { target: createElement() }),
         )
+    })
+
+    describe('the single-key switch', () => {
+        afterEach(() => {
+            delete globalThis.localStorage
+        })
+
+        function withSwitch() {
+            const toggle = createElement({
+                tagName: 'INPUT',
+                attributes: { type: 'checkbox' },
+            })
+            const overlay = createElement({
+                tagName: 'DIV',
+                attributes: { hidden: '' },
+                selectors: { [FOCUSABLE]: [toggle], [SWITCH]: toggle },
+            })
+            toggle.matches = [SWITCH]
+            const items = {}
+            globalThis.localStorage = {
+                getItem: (key) => items[key] ?? null,
+                setItem: (key, value) => {
+                    items[key] = value
+                },
+                removeItem: (key) => {
+                    delete items[key]
+                },
+            }
+            const changes = []
+            const document = installDocument({
+                elementsById: { [OVERLAY_ID]: overlay },
+            })
+            initOverlay(undefined, {
+                onSingleKeysChange: (on) => changes.push(on),
+            })
+
+            return { toggle, document, changes }
+        }
+
+        it('shows the saved setting when the cheatsheet opens', () => {
+            const { toggle, document } = withSwitch()
+            globalThis.localStorage.setItem(
+                'filament-shortcut-keys:single-keys',
+                'off',
+            )
+
+            document.dispatch('keydown', toggleKey())
+
+            assert.equal(toggle.checked, false)
+        })
+
+        it('saves the choice and reports it when the switch is flipped', () => {
+            const { toggle, document, changes } = withSwitch()
+
+            toggle.checked = false
+            document.dispatch('change', { target: toggle })
+
+            assert.deepEqual(changes, [false])
+            assert.equal(
+                globalThis.localStorage.getItem(
+                    'filament-shortcut-keys:single-keys',
+                ),
+                'off',
+            )
+        })
     })
 })

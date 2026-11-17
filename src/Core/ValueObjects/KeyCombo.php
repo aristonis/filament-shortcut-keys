@@ -76,7 +76,11 @@ final readonly class KeyCombo
 
     public function toString(): string
     {
-        $modifier = $this->modifiers->toString();
+        if ($this->modifiers->leader !== null) {
+            return strtolower(substr($this->modifiers->leader, 3)) . ' ' . self::toToken($this->code);
+        }
+
+        $modifier = $this->modifiers->heldModifiers();
         $token = self::toToken($this->code);
 
         return $modifier === '' ? $token : $modifier . '+' . $token;

@@ -508,4 +508,256 @@ describe('createDispatcher', () => {
             assert.equal(table.calls.length, 0)
         })
     })
+
+    describe('the g leader key', () => {
+        function leaderGroup(code = 'KeyO') {
+            return {
+                handler: 'navigation',
+                modifier: '',
+                leader: 'KeyG',
+                bindings: [
+                    { code, activation: { kind: 'navigate', url: '/orders' } },
+                ],
+            }
+        }
+
+        // A timer the test advances by hand, so the leader's timeout needs no real waiting.
+        function manualTimer() {
+            const timer = { pending: null }
+            timer.set = (callback) => {
+                timer.pending = callback
+                return 1
+            }
+            timer.clear = () => {
+                timer.pending = null
+            }
+            timer.fire = () => {
+                const callback = timer.pending
+                timer.pending = null
+                callback?.()
+            }
+            return timer
+        }
+
+        function setup(extraGroups = []) {
+            const navigation = recorder()
+            const timer = manualTimer()
+            const leaders = []
+            const dispatch = createDispatcher(
+                () => [leaderGroup(), ...extraGroups],
+                { navigation, table: recorder() },
+                {
+                    setTimer: timer.set,
+                    clearTimer: timer.clear,
+                    onLeader: (code) => leaders.push(code),
+                },
+            )
+            const body = () => createElement({ tagName: 'BODY' })
+            const press = (code, extra = {}) => {
+                const event = createKeyEvent({ code, target: body(), ...extra })
+                dispatch(event)
+                return event
+            }
+
+            return { navigation, timer, leaders, press }
+        }
+
+        it('fires the letter pressed after g', () => {
+            const { navigation, leaders, press } = setup()
+
+            const g = press('KeyG')
+            const o = press('KeyO')
+
+            assert.equal(g.defaultPrevented, true)
+            assert.equal(o.defaultPrevented, true)
+            assert.equal(navigation.calls.length, 1)
+            assert.deepEqual(leaders, ['KeyG', null])
+        })
+
+        it('does not fire the letter on its own', () => {
+            const { navigation, press } = setup()
+
+            press('KeyO')
+
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('waits for the next key only so long', () => {
+            const { navigation, timer, leaders, press } = setup()
+
+            press('KeyG')
+            timer.fire()
+            press('KeyO')
+
+            assert.equal(navigation.calls.length, 0)
+            assert.deepEqual(leaders, ['KeyG', null])
+        })
+
+        it('lets a key that completes nothing go to the page and ends the wait', () => {
+            const { navigation, press } = setup()
+
+            press('KeyG')
+            const x = press('KeyX')
+            press('KeyO')
+
+            assert.equal(x.defaultPrevented, false)
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('cancels the wait on Escape', () => {
+            const { navigation, press } = setup()
+
+            press('KeyG')
+            const escape = press('Escape')
+            press('KeyO')
+
+            assert.equal(escape.defaultPrevented, true)
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('types g into a field instead of starting the wait', () => {
+            const { navigation, press } = setup()
+
+            const g = press('KeyG', {
+                target: createElement({ tagName: 'INPUT' }),
+            })
+            press('KeyO')
+
+            assert.equal(g.defaultPrevented, false)
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('leaves Alt+G and other held combos to the browser', () => {
+            const { navigation, leaders, press } = setup()
+
+            const g = press('KeyG', { altKey: true })
+            press('KeyO')
+
+            assert.equal(g.defaultPrevented, false)
+            assert.deepEqual(leaders, [])
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('puts the letter after g through the same guards as any bare key', () => {
+            const { navigation, press } = setup()
+
+            press('KeyG')
+            press('KeyO', { target: createElement({ tagName: 'INPUT' }) })
+
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('keeps waiting while g is held down', () => {
+            const { navigation, press } = setup()
+
+            press('KeyG')
+            press('KeyG', { repeat: true })
+            press('KeyO')
+
+            assert.equal(navigation.calls.length, 1)
+        })
+    })
+
+    describe('while g waits, and the single-key switch', () => {
+        function leaderGroup() {
+            return {
+                handler: 'navigation',
+                modifier: '',
+                leader: 'KeyG',
+                bindings: [
+                    {
+                        code: 'KeyO',
+                        activation: { kind: 'navigate', url: '/orders' },
+                    },
+                ],
+            }
+        }
+
+        function setup({ singleKeys = true, groups = [leaderGroup()] } = {}) {
+            const navigation = recorder()
+            const global = recorder()
+            const leaders = []
+            const dispatch = createDispatcher(
+                () => groups,
+                { navigation, global },
+                {
+                    setTimer: () => 1,
+                    clearTimer: () => {},
+                    onLeader: (code) => leaders.push(code),
+                    singleKeysEnabled: () => singleKeys,
+                },
+            )
+            const press = (code, extra = {}) => {
+                const event = createKeyEvent({
+                    code,
+                    target: createElement({ tagName: 'BODY' }),
+                    ...extra,
+                })
+                dispatch(event)
+                return event
+            }
+
+            return { navigation, global, leaders, dispatch, press }
+        }
+
+        it('keeps waiting through a press of Shift on its own', () => {
+            const { navigation, press } = setup()
+
+            press('KeyG')
+            press('ShiftLeft', { key: 'Shift', shiftKey: true })
+            press('KeyO')
+
+            assert.equal(navigation.calls.length, 1)
+        })
+
+        it('stops waiting when the cheatsheet key is pressed', () => {
+            const { navigation, leaders, press } = setup()
+
+            press('KeyG')
+            press('Slash', { key: '?', shiftKey: true })
+            press('KeyO')
+
+            assert.deepEqual(leaders, ['KeyG', null])
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('stops waiting when the page changes underneath it', () => {
+            const { navigation, leaders, dispatch, press } = setup()
+
+            press('KeyG')
+            dispatch.cancelLeader()
+            press('KeyO')
+
+            assert.deepEqual(leaders, ['KeyG', null])
+            assert.equal(navigation.calls.length, 0)
+        })
+
+        it('silences g and every bare key once single-key shortcuts are off', () => {
+            const bareExport = group('global', { code: 'KeyE' })
+            const { navigation, global, leaders, press } = setup({
+                singleKeys: false,
+                groups: [leaderGroup(), bareExport],
+            })
+
+            const g = press('KeyG')
+            press('KeyO')
+            press('KeyE')
+
+            assert.equal(g.defaultPrevented, false)
+            assert.deepEqual(leaders, [])
+            assert.equal(navigation.calls.length, 0)
+            assert.equal(global.calls.length, 0)
+        })
+
+        it('still fires held-modifier shortcuts with single-key shortcuts off', () => {
+            const { global, press } = setup({
+                singleKeys: false,
+                groups: [group('global', { modifier: 'alt+shift' })],
+            })
+
+            press('KeyE', { altKey: true, shiftKey: true })
+
+            assert.equal(global.calls.length, 1)
+        })
+    })
 })

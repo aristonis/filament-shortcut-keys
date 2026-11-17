@@ -1,10 +1,12 @@
 import { isReservedOverlayKey, isTyping } from './keymap.js'
+import { setSingleKeysEnabled, singleKeysEnabled } from './preferences.js'
 
 // The cheatsheet the server injects on every page. Listeners live on the document so they survive
 // Livewire navigation; the element itself is re-rendered per page, so it is always queried fresh.
 const OVERLAY_ID = 'filament-shortcut-keys-overlay'
 const FOCUSABLE =
-    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+const SINGLE_KEYS_SWITCH = '[data-fsk-single-keys]'
 
 let lastFocused = null
 
@@ -19,6 +21,13 @@ function isOpen(element) {
 function open(element) {
     // Remember where focus was so closing can return the user to exactly where they were.
     lastFocused = document.activeElement
+
+    // The markup always renders the switch on; the saved choice is only known in the browser.
+    const toggle = element.querySelector(SINGLE_KEYS_SWITCH)
+    if (toggle) {
+        toggle.checked = singleKeysEnabled()
+    }
+
     element.removeAttribute('hidden')
     element.querySelector(FOCUSABLE)?.focus()
 }
@@ -92,7 +101,19 @@ function onClick(event) {
 
 // Listeners live on the document so they survive Livewire navigation; the signal lets a newer
 // evaluation of the bundle take them down.
-export function initOverlay(signal) {
+export function initOverlay(signal, { onSingleKeysChange = () => {} } = {}) {
     document.addEventListener('keydown', onKeydown, { signal })
     document.addEventListener('click', onClick, { signal })
+    document.addEventListener(
+        'change',
+        (event) => {
+            if (!event.target?.closest?.(SINGLE_KEYS_SWITCH)) {
+                return
+            }
+
+            setSingleKeysEnabled(event.target.checked)
+            onSingleKeysChange(event.target.checked)
+        },
+        { signal },
+    )
 }

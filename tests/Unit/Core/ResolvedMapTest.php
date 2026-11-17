@@ -42,6 +42,7 @@ it('serializes to a client array grouped by set with a shared modifier', functio
         [
             'set' => 'navigation',
             'modifier' => 'alt+shift',
+            'leader' => null,
             'bindings' => [
                 [
                     'target' => 'navigation:products',
@@ -84,4 +85,18 @@ it('leaves both operands unmutated when merging', function () {
     expect($merged)->not->toBe($nav)
         ->and($nav->groups())->toHaveCount(1)
         ->and($page->groups())->toHaveCount(1);
+});
+
+it('keeps a leader scheme through the cache round trip', function () {
+    $leader = ModifierScheme::leader('g');
+    $map = new ResolvedMap([
+        new ResolvedGroup('navigation', $leader, [
+            new ShortcutBinding(new ShortcutTarget('navigation', 'orders'), new KeyCombo($leader, 'KeyO')),
+        ]),
+    ]);
+
+    $restored = ResolvedMap::fromCache($map->toCache());
+
+    expect($restored->groups()[0]->modifier->equals($leader))->toBeTrue()
+        ->and($restored->groups()[0]->bindings[0]->keyCombo->equals(new KeyCombo($leader, 'KeyO')))->toBeTrue();
 });

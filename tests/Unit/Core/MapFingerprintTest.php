@@ -8,7 +8,7 @@ function fingerprint(array $overrides = []): string
         'panelId' => 'admin',
         'navVersionToken' => 'nav-v1',
         'mapIdentity' => 'system:1:1',
-        'overlay' => [],
+        'developerConfig' => [],
         'locale' => 'en',
     ], $overrides);
 
@@ -33,8 +33,8 @@ it('changes when the active map identity changes', function () {
         ->and(fingerprint())->not->toBe(fingerprint(['mapIdentity' => 'system:1:2']));
 });
 
-it('changes when the config overlay changes', function () {
-    expect(fingerprint())->not->toBe(fingerprint(['overlay' => ['nav:products' => ['letter' => 'R']]]));
+it('changes when the developer config changes', function () {
+    expect(fingerprint())->not->toBe(fingerprint(['developerConfig' => ['overlay' => ['nav:products' => ['letter' => 'R']]]]));
 });
 
 it('changes when the locale changes', function () {

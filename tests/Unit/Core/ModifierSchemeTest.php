@@ -68,3 +68,27 @@ it('rejects a token it cannot map to a real modifier', function () {
     // "mod" resolves differently per platform, so it cannot be decided on the server.
     ModifierScheme::fromTokens(['alt', 'mod']);
 })->throws(InvalidModifierSchemeException::class);
+
+it('reads a single letter token as a leader key pressed before the letter', function () {
+    $scheme = ModifierScheme::fromTokens(['g']);
+
+    expect($scheme->leader)->toBe('KeyG')
+        ->and($scheme->equals(ModifierScheme::leader('g')))->toBeTrue()
+        ->and($scheme->equals(ModifierScheme::none()))->toBeFalse();
+});
+
+it('names a leader scheme apart from bare keys, but holds no modifier', function () {
+    $scheme = ModifierScheme::leader('g');
+
+    expect($scheme->toString())->toBe('leader:g')
+        ->and($scheme->heldModifiers())->toBe('')
+        ->and(ModifierScheme::altShift()->heldModifiers())->toBe('alt+shift');
+});
+
+it('rejects a leader key mixed with held modifiers', function () {
+    ModifierScheme::fromTokens(['alt', 'g']);
+})->throws(InvalidModifierSchemeException::class);
+
+it('rejects a leader token that is not one letter', function () {
+    ModifierScheme::fromTokens(['5']);
+})->throws(InvalidModifierSchemeException::class);

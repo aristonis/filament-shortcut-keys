@@ -43,11 +43,19 @@ Tailwind's purge:
 
 | Set | Keys | Covers |
 | --- | --- | --- |
-| Navigation | `Alt` + `Shift` + letter | every registered resource and page |
-| Actions | `Alt` + letter | the current page's header actions |
+| Navigation | `G`, then a letter | every registered resource and page |
+| Actions | bare letter | the current page's header actions |
 | Table | bare keys | `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` selects, `Enter` edits, `Delete` deletes; while the cursor is live the arrows move it (up/down) and paginate (left/right) |
 | Row actions | bare letters | only the record actions you register by name |
-| Custom | `Alt` + `Shift` + letter | bindings an admin adds for themselves |
+| Custom | `G`, then a letter | bindings an admin adds for themselves |
+
+Nothing is held down by default, so no shortcut fights the browser for `Alt` or `Ctrl` combinations.
+`G` waits about a second and a half for its letter; `Esc` cancels.
+
+On bare letters, a header action gets a default key only if pressing it by accident is harmless: it opens a page, a
+modal or a confirmation. An action that runs on the click itself gets none; pin a letter in the
+`overlay` config to key it deliberately. Users can switch all single-key shortcuts off from the
+cheatsheet; the choice is kept per browser.
 
 `Shift` + `/` opens a cheatsheet of what is active on the current page, and a full listing of the
 panel-wide shortcuts gets its own sidebar page.

@@ -72,3 +72,30 @@ it('labels a page action in the overlay by its action label', function () {
         ->toContain('Actions')   // the global set heading
         ->toContain('Export');   // the action's resolved label
 });
+
+it('tells the client a navigation key waits for the g leader and needs no held modifier', function () {
+    $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))
+        ->firstWhere('set', 'navigation');
+
+    expect($navigation['modifier'])->toBe('')
+        ->and($navigation['leader'])->toBe('KeyG');
+});
+
+it('serves a fresh keymap after the modifiers config changes', function () {
+    $this->get('/admin')->assertOk();
+
+    config()->set('shortcut-keys.modifiers.navigation', ['alt', 'shift']);
+
+    $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))
+        ->firstWhere('set', 'navigation');
+
+    expect($navigation['modifier'])->toBe('alt+shift')
+        ->and($navigation['leader'])->toBeNull();
+});
+
+it('writes a g shortcut in the cheatsheet as g then the letter', function () {
+    // Livewire wraps every Blade conditional in comment markers, which are not part of what users see.
+    $html = preg_replace('/<!--.*?-->/s', '', (string) $this->get('/admin')->assertOk()->getContent());
+
+    expect($html)->toMatch('#<kbd>g</kbd>\\s*<span class="fsk-then">then</span>\\s*<kbd>[a-z]</kbd>#');
+});

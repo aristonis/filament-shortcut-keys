@@ -121,3 +121,12 @@ it('matches the table set built-in edit and delete controls', function () {
             ->toBeGreaterThan(0, "the table set's '{$behavior}' key has no control to click");
     }
 });
+
+it('flags a header action that runs the moment it is clicked', function () {
+    $actions = collect((new FilamentPageContextProvider(Livewire::test(ListOrders::class)->instance()))->actions())
+        ->keyBy('name');
+
+    expect($actions['ping']->runsImmediately)->toBeTrue()
+        ->and($actions['export']->runsImmediately)->toBeFalse()   // asks for confirmation first
+        ->and($actions['create']->runsImmediately)->toBeFalse();  // navigates
+});

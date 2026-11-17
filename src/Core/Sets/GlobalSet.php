@@ -23,14 +23,20 @@ final class GlobalSet implements ShortcutSet
 
     public function defaultModifier(): ModifierScheme
     {
-        return $this->modifier ?? ModifierScheme::alt();
+        return $this->modifier ?? ModifierScheme::none();
     }
 
     public function discover(NavigationProvider $navigationProvider, PageContextProvider $pageContextProvider, string $panelId): array
     {
+        // On bare keys, an action that runs on the click itself starts switched off, since one stray
+        // keystroke would run it; a developer who wants it keyed pins a letter in the overlay. A held
+        // modifier or a leader is deliberate, so it keeps every action.
+        $bare = $this->defaultModifier()->toString() === '';
+
         return array_map(fn (ActionTarget $target) => new ShortcutBinding(
             new ShortcutTarget('global', $target->name),
             null,
+            ! ($bare && $target->runsImmediately),
             letterHint: $target->name,
         ), $pageContextProvider->actions());
     }

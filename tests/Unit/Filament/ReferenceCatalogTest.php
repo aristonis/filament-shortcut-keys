@@ -71,3 +71,16 @@ it('skips disabled and unassigned bindings, dropping a group left empty', functi
 
     expect(ReferenceCatalog::build($map, []))->toBe([]);
 });
+
+it('marks a g shortcut as a sequence so the page can say "then"', function () {
+    $leader = ModifierScheme::leader('g');
+    $map = new ResolvedMap([
+        new ResolvedGroup('navigation', $leader, [
+            new ShortcutBinding(new ShortcutTarget('navigation', 'App\\OrderResource'), new KeyCombo($leader, 'KeyO'), true, BindingSource::CONVENTION),
+        ]),
+    ]);
+
+    $groups = ReferenceCatalog::build($map, [new NavItem('App\\OrderResource', 'Orders', '/admin/orders')]);
+
+    expect($groups[0]['rows'][0])->toMatchArray(['keys' => ['g', 'o'], 'sequence' => true]);
+});

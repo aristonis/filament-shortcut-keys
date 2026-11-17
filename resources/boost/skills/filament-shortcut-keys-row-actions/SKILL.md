@@ -59,7 +59,7 @@ In order of likelihood:
 
 1. **That table does not declare the action.** Page-filtering is working as intended.
 2. **The action is on the page but not as a record action.** Header actions belong to the actions set
-   (`Alt` + letter), not the row-action set.
+   (bare letters shared with row actions), not the row-action set.
 3. **The action is inside a closed `ActionGroup`.** Items in a collapsed dropdown are not keyed until
    the menu opens.
 4. **The user is not authorized for it**, so Filament never rendered the control. The key exists and

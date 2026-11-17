@@ -25,10 +25,21 @@ function badge(text) {
 // to click or an anchor to a page depending on whether the resource registers that page, so Create,
 // Edit and View arrive here as `navigate` under the global handler and would otherwise go unbadged
 // while still firing on the key.
-function hostFor(group, binding) {
+function hostFor(group, binding, leader, singleKeys) {
     const activation = binding.activation
 
     if (!HINTED_HANDLERS.includes(group.handler)) {
+        return null
+    }
+
+    // With single-key shortcuts off, a badge would advertise a key that does nothing.
+    if (!singleKeys && (group.modifier ?? '') === '') {
+        return null
+    }
+
+    // A g shortcut's badge appears only while g waits for its letter, so the sidebar is not covered
+    // in letters the rest of the time.
+    if ((group.leader ?? null) !== null && group.leader !== leader) {
         return null
     }
 
@@ -43,12 +54,12 @@ function hostFor(group, binding) {
     return null
 }
 
-export function paintHints(groups) {
+export function paintHints(groups, { leader = null, singleKeys = true } = {}) {
     document.querySelectorAll('.' + HINT_CLASS).forEach((el) => el.remove())
 
     for (const group of groups) {
         for (const binding of group.bindings) {
-            const host = hostFor(group, binding)
+            const host = hostFor(group, binding, leader, singleKeys)
 
             if (host && !host.querySelector('.' + HINT_CLASS)) {
                 host.appendChild(badge(codeToKey(binding.code)))

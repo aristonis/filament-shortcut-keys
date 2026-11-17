@@ -52,3 +52,28 @@ it('falls back to the structure key when a label is missing', function () {
 
     expect($groups[0]['rows'][0]['label'])->toBe('export');
 });
+
+it('shows a g shortcut as two keys pressed one after the other', function () {
+    $leader = ModifierScheme::leader('g');
+    $map = new ResolvedMap([
+        new ResolvedGroup('navigation', $leader, [
+            new ShortcutBinding(new ShortcutTarget('navigation', 'App\\OrderResource'), new KeyCombo($leader, 'KeyO'), true, BindingSource::CONVENTION),
+        ]),
+        new ResolvedGroup('global', ModifierScheme::alt(), [overlayBinding('global', 'export', 'KeyE')]),
+    ]);
+
+    $groups = OverlayCatalog::build($map, ['App\\OrderResource' => 'Orders'], ['global:export' => 'Export'], []);
+
+    expect(overlayGroup($groups, 'navigation')['rows'][0])->toMatchArray(['keys' => ['g', 'o'], 'sequence' => true])
+        ->and(overlayGroup($groups, 'global')['rows'][0])->toMatchArray(['keys' => ['Alt', 'E'], 'sequence' => false]);
+});
+
+it('labels the Escape key the way keyboards print it', function () {
+    $map = new ResolvedMap([
+        new ResolvedGroup('table', ModifierScheme::none(), [overlayBinding('table', 'cursor-release', 'Escape')]),
+    ]);
+
+    $groups = OverlayCatalog::build($map, [], [], ['cursor-release' => 'Leave the row cursor']);
+
+    expect(overlayGroup($groups, 'table')['rows'][0]['keys'])->toBe(['Esc']);
+});

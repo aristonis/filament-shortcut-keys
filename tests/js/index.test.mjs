@@ -13,7 +13,8 @@ const KEYMAP = [
     {
         set: 'navigation',
         handler: 'navigation',
-        modifier: 'alt+shift',
+        modifier: '',
+        leader: 'KeyG',
         bindings: [
             {
                 target: 'orders',
@@ -46,15 +47,15 @@ describe('index entry', () => {
         await loadEntry()
         await loadEntry()
 
-        document.dispatch(
-            'keydown',
-            createKeyEvent({
-                code: 'KeyO',
-                altKey: true,
-                shiftKey: true,
-                target: createElement({ tagName: 'BODY' }),
-            }),
-        )
+        for (const code of ['KeyG', 'KeyO']) {
+            document.dispatch(
+                'keydown',
+                createKeyEvent({
+                    code,
+                    target: createElement({ tagName: 'BODY' }),
+                }),
+            )
+        }
 
         assert.deepEqual(window.location.assigned, ['/admin/orders'])
     })

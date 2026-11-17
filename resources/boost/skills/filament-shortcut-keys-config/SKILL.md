@@ -17,15 +17,21 @@ Everything is read at call time, so a change takes effect on the next render.
 
 ```php
 'modifiers' => [
-    'navigation' => ['alt', 'shift'],
-    'global' => ['alt'],
+    'navigation' => ['g'],
+    'global' => [],
     'table' => [],
     'row-action' => [],
-    'custom' => ['alt', 'shift'],
+    'custom' => ['g'],
 ],
 ```
 
-Tokens are `ctrl`, `alt`, `shift`, `meta`. An empty array means bare keys.
+A single letter (`['g']`) is a leader key: press it, let go, then the letter. It cannot be mixed with
+other tokens. An empty array means bare keys. `ctrl`, `alt`, `shift` and `meta` hold modifiers
+instead; the defaults avoid them because the browser, the OS and keyboard layouts own many of those
+combinations. A leader key is reserved among bare keys, so no bare shortcut can take it. A leader
+cannot be a table key (`j`, `k` and the like), and global, table, row-action or page cannot share the
+navigation leader; either mistake throws on render. A page set may use a leader of its own, e.g.
+`'global' => ['a']`.
 
 Three rules that decide the outcome:
 
@@ -33,7 +39,7 @@ Three rules that decide the outcome:
   keys. Deleting a line is the safe way to undo a change.
 - **An unknown token throws** rather than being ignored, so a typo fails loudly at render instead of
   silently changing which keys fire.
-- **Two sets sharing a scheme share one letter pool.** Moving `global` onto `alt+shift` merges it with
+- **Two sets sharing a scheme share one letter pool.** Moving `global` onto `['g']` merges it with
   navigation's pool rather than creating a clash — nothing ends up double-bound, but letters shift.
 
 `mod` is not supported. Whether it means ctrl or meta depends on the user's platform, which cannot be

@@ -10,11 +10,11 @@ it('publishes a config array with the documented keys and defaults', function ()
         ->and($config['overlay'])->toBe([])
         ->and($config['cache'])->toBe(['ttl' => 86400])
         ->and($config['modifiers'])->toBe([
-            'navigation' => ['alt', 'shift'],
-            'global' => ['alt'],
+            'navigation' => ['g'],
+            'global' => [],
             'table' => [],
             'row-action' => [],
-            'custom' => ['alt', 'shift'],
+            'custom' => ['g'],
         ]);
 });
 

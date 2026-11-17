@@ -155,4 +155,62 @@ describe('paintHints', () => {
 
         assert.equal(stale.removed, true)
     })
+
+    it('badges a g shortcut only while g is waiting for its letter', () => {
+        const anchor = createElement({ tagName: 'A' })
+        installDocument({ selectors: { 'a[href="/orders"]': anchor } })
+        const navigation = {
+            handler: 'navigation',
+            leader: 'KeyG',
+            bindings: [
+                {
+                    code: 'KeyO',
+                    activation: { kind: 'navigate', url: '/orders' },
+                },
+            ],
+        }
+
+        paintHints([navigation])
+        assert.deepEqual(badgesOn(anchor), [])
+
+        paintHints([navigation], { leader: 'KeyG' })
+        assert.deepEqual(badgesOn(anchor), ['O'])
+    })
+
+    it('paints no single-key badges while single-key shortcuts are off', () => {
+        const anchor = createElement({ tagName: 'A' })
+        const button = createElement({ tagName: 'BUTTON' })
+        installDocument({
+            selectors: { 'a[href="/orders"]': anchor, '#export': button },
+        })
+
+        paintHints(
+            [
+                {
+                    handler: 'global',
+                    modifier: '',
+                    bindings: [
+                        {
+                            code: 'KeyE',
+                            activation: { kind: 'click', selector: '#export' },
+                        },
+                    ],
+                },
+                {
+                    handler: 'navigation',
+                    modifier: 'alt+shift',
+                    bindings: [
+                        {
+                            code: 'KeyO',
+                            activation: { kind: 'navigate', url: '/orders' },
+                        },
+                    ],
+                },
+            ],
+            { singleKeys: false },
+        )
+
+        assert.deepEqual(badgesOn(button), [])
+        assert.deepEqual(badgesOn(anchor), ['O'])
+    })
 })

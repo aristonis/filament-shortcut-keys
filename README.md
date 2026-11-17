@@ -73,11 +73,33 @@ Nothing fires while an input, textarea, select, or contenteditable element has f
 
 | Set | Keys | What it covers |
 | --- | --- | --- |
-| Navigation | `Alt` + `Shift` + letter | Every registered resource and page |
-| Actions | `Alt` + letter | The current page's header actions |
+| Navigation | `G`, then a letter | Every registered resource and page |
+| Actions | bare letter | The current page's header actions |
 | Table | bare keys | `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` select, `Enter` edit, `Delete` delete; while the cursor is live `↑`/`↓` move it and `←`/`→` paginate |
 | Row actions | bare letters | Custom record actions you register (see below); never `J` or `K` while they share the table's modifiers |
-| Custom | `Alt` + `Shift` + letter | Bindings an admin adds themselves |
+| Custom | `G`, then a letter | Bindings an admin adds themselves |
+
+Nothing is held down by default. Browsers, operating systems and keyboard layouts already own many
+`Alt` and `Ctrl` combinations (`Alt`+`D` focuses the address bar, `Alt`+`Shift` switches the layout on
+Windows, `Option` types characters on a Mac), and a page cannot tell which. So navigation uses a
+leader key: press `G`, let go, then press the letter within a second and a half. `Esc` cancels.
+Header and row actions share one pool of bare letters, so they never collide, and none of them can
+take `G`, `J` or `K`. If you prefer held modifiers, set them per set in the `modifiers` config.
+
+On bare letters, a header action only gets a key by default if it is safe to press by accident: it opens a page, or it
+asks first with a modal or a confirmation. An action that does its work on the click itself gets no
+default key, so one stray keystroke can never run it. To key one anyway, pin a letter for it in the
+`overlay` config. Filament cannot tell without mounting an action whether a plain form schema will
+open a modal, so such an action is treated as instant too; give it a modal heading or pin it. On a
+held modifier or a leader every action keeps its key, since those are never pressed by accident.
+
+Anyone can turn single-key shortcuts off from the `Shift` + `/` cheatsheet. The choice is saved in
+that browser and silences every bare key and every `G` sequence, which assistive technology and voice
+control users may need. Shortcuts on held modifiers, if you configured any, keep working.
+
+A leader cannot be a key the table already uses (`J`, `K`, `/` and the like), and a page set (global,
+table, row actions) cannot share the leader that navigation uses, because the two are lettered
+separately. Both mistakes throw on the next render with a message naming the key.
 
 The arrow keys scroll the page until `J` or `K` starts the row cursor, and again once you click
 somewhere else or press `Esc`, so a long page or a wide table still scrolls from the keyboard.
@@ -94,7 +116,8 @@ modifiers via the `modifiers` config merges their letter pools rather than creat
 Where a shortcut maps to one stable element on the page, the plugin paints a small key badge on that
 element, so the key is visible where it is used and not only in the cheatsheet. Navigation links,
 header actions and an admin's own custom bindings all get one, whether the shortcut fires by
-following a link or by clicking a control.
+following a link or by clicking a control. Badges for `G` shortcuts appear only while `G` waits for
+its letter, so the sidebar is not covered in letters the rest of the time.
 
 Table keys and row actions get none, on purpose. A table key is a behaviour with no single element
 behind it, and a row action repeats on every row, so a badge per row would be noise rather than a
@@ -156,14 +179,15 @@ return [
     // 'personal' lets each admin fork and remap their own keys; 'locked' uses one shared map.
     'customization' => 'personal',
 
-    // The modifier scheme per set. Tokens: ctrl, alt, shift, meta. An empty list means bare keys.
+    // How each set's letters are pressed. One letter (['g']) is a leader key: press it, then the
+    // letter. An empty list means bare keys. Tokens ctrl, alt, shift, meta hold modifiers instead.
     // Drop a set from this list to put it back on its built-in scheme; an unknown token throws.
     'modifiers' => [
-        'navigation' => ['alt', 'shift'],
-        'global' => ['alt'],
+        'navigation' => ['g'],
+        'global' => [],
         'table' => [],
         'row-action' => [],
-        'custom' => ['alt', 'shift'],
+        'custom' => ['g'],
     ],
 
     // Who may edit a panel's shared system maps. null denies everyone.
