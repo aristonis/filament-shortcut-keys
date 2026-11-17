@@ -74,7 +74,7 @@ export function isTyping(target) {
 
 // While focus is inside a modal, an open select, a menu or a tab list, that widget owns the keyboard:
 // Enter confirms the modal, arrows move through the options. Closed Filament modals stay in the DOM,
-// so this asks where focus is; isModalOpen covers a modal that opened without taking focus.
+// so this asks where focus is, and isModalOpen covers the rest.
 const KEYBOARD_OWNERS = [
     '[role="dialog"]',
     '[role="alertdialog"]',

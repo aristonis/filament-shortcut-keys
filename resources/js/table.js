@@ -1,13 +1,20 @@
 // The table handler owns a "focused row" cursor because table shortcuts (select, edit, delete, custom
-// row actions) all act on one row, and Filament renders no such cursor of its own. Arrow keys move it;
-// row-scoped actions read it. State is per-page, so index.js resets it on navigation.
+// row actions) all act on one row, and Filament renders no such cursor of its own. j and k start and
+// move it, the arrows move it once it is live, Escape releases it; row-scoped actions read it. State
+// is per-page, so index.js resets it on navigation.
 
-const ROW_SELECTOR = 'tr.fi-ta-row'
+// Record rows only: Filament also renders a column-search row and group headers as tr.fi-ta-row. A
+// record row's wire:key ends in its record key, which is how the cursor remembers it.
+const ROW_SELECTOR = 'tr.fi-ta-row[wire\\:key*=".table.records."]'
 const SEARCH_SELECTOR = '.fi-ta-search-field input, input[type="search"]'
 const FOCUS_CLASS = 'fi-hotkey-row-focused'
 
 function rows() {
     return [...document.querySelectorAll(ROW_SELECTOR)]
+}
+
+function keyOf(row) {
+    return row.getAttribute('wire:key')
 }
 
 // Match on rel, which Filament emits on both the simple and the numbered pagination. The visible
@@ -17,16 +24,36 @@ function paginationLink(direction) {
 }
 
 export function createTableHandler() {
-    let focusedIndex = -1
+    // The cursor remembers a record by its key. A sort, a search or a poll re-renders the rows, so a
+    // remembered position would point a row action at a different record.
+    let focusedKey = null
 
     function paint(all) {
-        all.forEach((row, index) => {
-            const focused = index === focusedIndex
+        all.forEach((row) => {
+            const focused = focusedKey !== null && keyOf(row) === focusedKey
             row.classList.toggle(FOCUS_CLASS, focused)
             // Inline outline so the cursor is visible without shipping a stylesheet.
             row.style.outline = focused ? '2px solid currentColor' : ''
             row.style.outlineOffset = focused ? '-2px' : ''
         })
+    }
+
+    // The marked record's current row, repainted because a re-render strips the mark. A record that
+    // left the table takes the cursor with it.
+    function focusedRow() {
+        if (focusedKey === null) {
+            return null
+        }
+
+        const all = rows()
+        const row = all.find((candidate) => keyOf(candidate) === focusedKey)
+
+        if (!row) {
+            focusedKey = null
+        }
+
+        paint(all)
+        return row ?? null
     }
 
     function moveFocus(step) {
@@ -36,13 +63,15 @@ export function createTableHandler() {
         }
 
         // From "no row", down starts at the top and up starts at the bottom.
-        const start = focusedIndex < 0 ? (step > 0 ? 0 : all.length - 1) : focusedIndex + step
-        focusedIndex = Math.max(0, Math.min(all.length - 1, start))
+        const current = all.indexOf(focusedRow())
+        const start =
+            current < 0 ? (step > 0 ? 0 : all.length - 1) : current + step
+        const row = all[Math.max(0, Math.min(all.length - 1, start))]
+        focusedKey = keyOf(row)
         paint(all)
 
         // The cursor takes real focus, or Enter and Space would press whatever was clicked last
         // instead of acting on the marked row. -1 keeps rows out of the Tab order.
-        const row = all[focusedIndex]
         if (!row.hasAttribute('tabindex')) {
             row.setAttribute('tabindex', '-1')
         }
@@ -51,8 +80,44 @@ export function createTableHandler() {
         return true
     }
 
-    function focusedRow() {
-        return focusedIndex < 0 ? null : rows()[focusedIndex] ?? null
+    // The arrows belong to the page (scrolling it, or a wide table sideways) until j or k starts the
+    // cursor, and go back to it once the user focuses something else. Focus that fell back to the
+    // page, as when a re-render replaced the focused row, keeps them; a click on the page releases
+    // the cursor through onPointerDown instead.
+    function isCursorLive() {
+        const row = focusedRow()
+        if (!row) {
+            return false
+        }
+
+        const active = document.activeElement
+        if (!active || active.tagName === 'BODY') {
+            return true
+        }
+
+        return active === row || Boolean(active.closest?.(ROW_SELECTOR))
+    }
+
+    function drop() {
+        focusedKey = null
+        paint(rows())
+    }
+
+    // Escape counts only while the cursor is live. A stale cursor goes away and Escape goes to the
+    // page.
+    function release() {
+        const row = focusedRow()
+        if (!row) {
+            return false
+        }
+
+        const live = isCursorLive()
+        drop()
+
+        if (live) {
+            row.blur?.()
+        }
+        return live
     }
 
     function clickInRow(selector) {
@@ -75,9 +140,15 @@ export function createTableHandler() {
                 return true
             }
             case 'row-up':
-                return moveFocus(-1)
+                return isCursorLive() && moveFocus(-1)
             case 'row-down':
+                return isCursorLive() && moveFocus(1)
+            case 'cursor-up':
+                return moveFocus(-1)
+            case 'cursor-down':
                 return moveFocus(1)
+            case 'cursor-release':
+                return release()
             case 'select':
                 return clickInRow('input[type="checkbox"]')
             // Keyed on wire:key, not wire:click: an Edit action on a resource that registers an edit
@@ -89,6 +160,7 @@ export function createTableHandler() {
                 return clickInRow('[wire\\:key*=".actions.delete."]')
             case 'page-prev':
             case 'page-next': {
+                if (!isCursorLive()) return false
                 // Which arrow key carries which direction is decided server-side (mirrored in an
                 // RTL panel); by the time it reaches here the behavior is already the real one.
                 const link = paginationLink(behavior === 'page-prev' ? 'prev' : 'next')
@@ -122,7 +194,13 @@ export function createTableHandler() {
     }
 
     handle.reset = () => {
-        focusedIndex = -1
+        focusedKey = null
+    }
+
+    handle.onPointerDown = (event) => {
+        if (focusedKey !== null && !event.target?.closest?.(ROW_SELECTOR)) {
+            drop()
+        }
     }
 
     return handle

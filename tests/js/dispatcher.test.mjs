@@ -388,6 +388,26 @@ describe('createDispatcher', () => {
             assert.equal(table.calls.length, 2)
         })
 
+        it('lets a held j keep moving the row cursor', () => {
+            const table = recorder()
+            const nextRow = {
+                handler: 'table',
+                modifier: '',
+                bindings: [
+                    {
+                        code: 'KeyJ',
+                        activation: { kind: 'table', behavior: 'cursor-down' },
+                    },
+                ],
+            }
+            const dispatch = createDispatcher(() => [nextRow], { table })
+
+            dispatch(createKeyEvent({ code: 'KeyJ' }))
+            dispatch(createKeyEvent({ code: 'KeyJ', repeat: true }))
+
+            assert.equal(table.calls.length, 2)
+        })
+
         it('keeps repeating the binding that fired, past one that could not act', () => {
             // A page binding on the same key with nothing to click falls through to the table on the
             // first press; the repeat must not stop at the page binding.

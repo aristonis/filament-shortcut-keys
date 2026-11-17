@@ -8,14 +8,24 @@ import {
     restoreGlobals,
 } from './support/dom.mjs'
 
-const ROW_SELECTOR = 'tr.fi-ta-row'
+// Record rows only: Filament also renders a column-search row and group headers as tr.fi-ta-row.
+const ROW_SELECTOR = 'tr.fi-ta-row[wire\\:key*=".table.records."]'
 const SEARCH_SELECTOR = '.fi-ta-search-field input, input[type="search"]'
 const FOCUS_CLASS = 'fi-hotkey-row-focused'
 const EDIT_SELECTOR = '[wire\\:key*=".actions.edit."]'
 const DELETE_SELECTOR = '[wire\\:key*=".actions.delete."]'
 
-function row(selectors = {}) {
-    return createElement({ tagName: 'TR', selectors })
+let nextRecord = 0
+
+// A record row as Filament renders it: its wire:key ends in the record key, which survives a re-render
+// while the row's position does not.
+function row(selectors = {}, key = `r${++nextRecord}`) {
+    return createElement({
+        tagName: 'TR',
+        selectors,
+        attributes: { 'wire:key': `page.table.records.${key}` },
+        matches: [ROW_SELECTOR],
+    })
 }
 
 function table(rows, extra = {}) {
@@ -40,7 +50,7 @@ describe('the row cursor', () => {
         table(rows)
         const handle = createTableHandler()
 
-        assert.equal(handle(behavior('row-down')), true)
+        assert.equal(handle(behavior('cursor-down')), true)
         assert.equal(focusedIndexOf(rows), 0)
     })
 
@@ -49,7 +59,7 @@ describe('the row cursor', () => {
         table(rows)
         const handle = createTableHandler()
 
-        assert.equal(handle(behavior('row-up')), true)
+        assert.equal(handle(behavior('cursor-up')), true)
         assert.equal(focusedIndexOf(rows), 2)
     })
 
@@ -58,9 +68,9 @@ describe('the row cursor', () => {
         table(rows)
         const handle = createTableHandler()
 
-        handle(behavior('row-down'))
-        handle(behavior('row-down'))
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
+        handle(behavior('cursor-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(focusedIndexOf(rows), 1)
     })
@@ -70,9 +80,9 @@ describe('the row cursor', () => {
         table(rows)
         const handle = createTableHandler()
 
-        handle(behavior('row-down'))
-        handle(behavior('row-up'))
-        handle(behavior('row-up'))
+        handle(behavior('cursor-down'))
+        handle(behavior('cursor-up'))
+        handle(behavior('cursor-up'))
 
         assert.equal(focusedIndexOf(rows), 0)
     })
@@ -82,8 +92,8 @@ describe('the row cursor', () => {
         table(rows)
         const handle = createTableHandler()
 
-        handle(behavior('row-down'))
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(
             rows.filter((candidate) =>
@@ -100,7 +110,7 @@ describe('the row cursor', () => {
         table([])
         const handle = createTableHandler()
 
-        assert.equal(handle(behavior('row-down')), false)
+        assert.equal(handle(behavior('cursor-down')), false)
     })
 
     it('drops the cursor on reset, because it belongs to the page that was left', () => {
@@ -108,10 +118,10 @@ describe('the row cursor', () => {
         table(rows)
         const handle = createTableHandler()
 
-        handle(behavior('row-down'))
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
+        handle(behavior('cursor-down'))
         handle.reset()
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(focusedIndexOf(rows), 0)
     })
@@ -128,8 +138,8 @@ describe('row-scoped actions', () => {
         table([first, second])
         const handle = createTableHandler()
 
-        handle(behavior('row-down'))
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(handle(behavior('select')), true)
         assert.equal(second.querySelector('input[type="checkbox"]').clicks, 1)
@@ -142,7 +152,7 @@ describe('row-scoped actions', () => {
         const only = row({ [EDIT_SELECTOR]: edit, [DELETE_SELECTOR]: remove })
         table([only])
         const handle = createTableHandler()
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(handle(behavior('edit')), true)
         assert.equal(handle(behavior('delete')), true)
@@ -155,7 +165,7 @@ describe('row-scoped actions', () => {
         const only = row({ '#approve': target })
         table([only])
         const handle = createTableHandler()
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(
             handle({
@@ -181,7 +191,7 @@ describe('row-scoped actions', () => {
     it('declines when the focused row does not carry that action', () => {
         table([row()])
         const handle = createTableHandler()
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(handle(behavior('edit')), false)
     })
@@ -206,11 +216,12 @@ describe('table behaviours', () => {
     it('pages by rel, which survives translation of the visible label', () => {
         const prev = createElement({ tagName: 'A' })
         const next = createElement({ tagName: 'A' })
-        table([], {
+        table([row()], {
             '.fi-pagination [rel="prev"]': prev,
             '.fi-pagination [rel="next"]': next,
         })
         const handle = createTableHandler()
+        handle(behavior('cursor-down'))
 
         assert.equal(handle(behavior('page-prev')), true)
         assert.equal(handle(behavior('page-next')), true)
@@ -247,8 +258,8 @@ describe('the row cursor and real focus', () => {
         const document = table(rows)
         const handle = createTableHandler()
 
-        handle(behavior('row-down'))
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(document.activeElement, rows[1])
     })
@@ -258,8 +269,160 @@ describe('the row cursor and real focus', () => {
         table(rows)
         const handle = createTableHandler()
 
-        handle(behavior('row-down'))
+        handle(behavior('cursor-down'))
 
         assert.equal(rows[0].getAttribute('tabindex'), '-1')
+    })
+})
+
+describe('arrows wait for the row cursor', () => {
+    // Without a live cursor the arrows belong to the page: up/down scroll it, left/right scroll a
+    // wide table sideways.
+    function paged() {
+        const next = createElement({ tagName: 'A' })
+        const rows = [row(), row()]
+        const document = table(rows, { '.fi-pagination [rel="next"]': next })
+
+        return { next, rows, document, handle: createTableHandler() }
+    }
+
+    it('leaves up and down to the page until a row is marked', () => {
+        const { rows, handle } = paged()
+
+        assert.equal(handle(behavior('row-down')), false)
+        assert.equal(handle(behavior('row-up')), false)
+        assert.equal(focusedIndexOf(rows), -1)
+    })
+
+    it('leaves left and right to the page until a row is marked', () => {
+        const { next, handle } = paged()
+
+        assert.equal(handle(behavior('page-next')), false)
+        assert.equal(next.clicks, 0)
+    })
+
+    it('moves with the arrows once j or k has started the cursor', () => {
+        const { rows, handle } = paged()
+
+        handle(behavior('cursor-down'))
+
+        assert.equal(handle(behavior('row-down')), true)
+        assert.equal(focusedIndexOf(rows), 1)
+    })
+
+    it('keeps the arrows while focus fell back to the page, as after a re-render', () => {
+        const { rows, document, handle } = paged()
+        handle(behavior('cursor-down'))
+
+        document.activeElement = createElement({ tagName: 'BODY' })
+
+        assert.equal(handle(behavior('row-down')), true)
+        assert.equal(focusedIndexOf(rows), 1)
+    })
+
+    it('gives the arrows back once the user focused something else', () => {
+        const { next, document, handle } = paged()
+        handle(behavior('cursor-down'))
+
+        document.activeElement = createElement({ tagName: 'A' })
+
+        assert.equal(handle(behavior('row-down')), false)
+        assert.equal(handle(behavior('page-next')), false)
+        assert.equal(next.clicks, 0)
+    })
+
+    it('releases the cursor on Escape and hands the arrows back', () => {
+        const { rows, handle } = paged()
+        handle(behavior('cursor-down'))
+
+        assert.equal(handle(behavior('cursor-release')), true)
+        assert.equal(focusedIndexOf(rows), -1)
+        assert.equal(handle(behavior('row-down')), false)
+    })
+
+    it('leaves Escape to the page when no row is marked', () => {
+        const { handle } = paged()
+
+        assert.equal(handle(behavior('cursor-release')), false)
+    })
+})
+
+describe('the row cursor follows the record, not the position', () => {
+    const EDIT = '[wire\\:key*=".actions.edit."]'
+
+    function editableRow(key) {
+        return row({ [EDIT]: createElement({ tagName: 'A' }) }, key)
+    }
+
+    it('acts on the marked record after a sort moved it', () => {
+        const first = editableRow('a')
+        const document = table([first, editableRow('b')])
+        const handle = createTableHandler()
+        handle(behavior('cursor-down'))
+
+        // Livewire re-rendered the table sorted the other way: new elements, same records.
+        const movedA = editableRow('a')
+        const movedB = editableRow('b')
+        document.selectors[ROW_SELECTOR] = [movedB, movedA]
+        document.activeElement = createElement({ tagName: 'BODY' })
+
+        assert.equal(handle(behavior('edit')), true)
+        assert.equal(movedA.querySelector(EDIT).clicks, 1)
+        assert.equal(movedB.querySelector(EDIT).clicks, 0)
+        assert.equal(movedA.classList.contains(FOCUS_CLASS), true)
+    })
+
+    it('drops the cursor once its record left the table', () => {
+        const document = table([editableRow('a'), editableRow('b')])
+        const handle = createTableHandler()
+        handle(behavior('cursor-down'))
+
+        const other = editableRow('c')
+        document.selectors[ROW_SELECTOR] = [other]
+        document.activeElement = createElement({ tagName: 'BODY' })
+
+        assert.equal(handle(behavior('edit')), false)
+        assert.equal(other.querySelector(EDIT).clicks, 0)
+        assert.equal(handle(behavior('row-down')), false)
+    })
+})
+
+describe('giving the keys back to the page', () => {
+    it('releases the cursor when the user clicks outside the rows', () => {
+        // A click on blank page space moves focus to the body, which alone looks like a re-render.
+        const rows = [row(), row()]
+        const document = table(rows)
+        const handle = createTableHandler()
+        handle(behavior('cursor-down'))
+
+        handle.onPointerDown({ target: createElement() })
+        document.activeElement = createElement({ tagName: 'BODY' })
+
+        assert.equal(focusedIndexOf(rows), -1)
+        assert.equal(handle(behavior('row-down')), false)
+    })
+
+    it('keeps the cursor when the click lands inside a row', () => {
+        const rows = [row(), row()]
+        table(rows)
+        const handle = createTableHandler()
+        handle(behavior('cursor-down'))
+
+        const cell = rows[0].appendChild(createElement({ tagName: 'TD' }))
+        handle.onPointerDown({ target: cell })
+
+        assert.equal(focusedIndexOf(rows), 0)
+    })
+
+    it('leaves Escape to the page once focus moved elsewhere, and drops the stale cursor', () => {
+        const rows = [row(), row()]
+        const document = table(rows)
+        const handle = createTableHandler()
+        handle(behavior('cursor-down'))
+
+        document.activeElement = createElement({ tagName: 'A' })
+
+        assert.equal(handle(behavior('cursor-release')), false)
+        assert.equal(focusedIndexOf(rows), -1)
     })
 })

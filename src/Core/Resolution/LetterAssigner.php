@@ -17,9 +17,12 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
  */
 final readonly class LetterAssigner
 {
-    public function assign(ModifierScheme $scheme, array $bindings): array
+    /**
+     * @param  string[]  $unavailableCodes  keys another set already owns in this pool
+     */
+    public function assign(ModifierScheme $scheme, array $bindings, array $unavailableCodes = []): array
     {
-        $taken = $this->reservedCodes($bindings);
+        $taken = array_merge($unavailableCodes, $this->reservedCodes($bindings));
         $keptCodes = [];
         $result = [];
 

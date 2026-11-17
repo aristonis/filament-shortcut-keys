@@ -36,6 +36,20 @@ menu or a tab list, and `Enter` or `Space` on a focused button or link. The row 
 real focus, so `Enter` acts on the marked row rather than on whatever was clicked last. A clicked row
 checkbox no longer counts as typing, which had left every table key dead until the next click.
 
+**The arrow keys scroll the page again.** On any page with a table, `↑`/`↓` moved the row cursor and
+`←`/`→` changed the table page, so a long page or a wide table could not be scrolled from the
+keyboard. The row cursor now starts with `J` (down) or `K` (up) and is released with `Esc`; the arrows
+move it and paginate only while it is live, and go back to scrolling once you click elsewhere. While
+row actions share the table's modifiers (the default) they are never given `J` or `K`, so a host
+whose row action had auto-assigned one of those letters sees it move to the next free letter. The
+documented lettering example was wrong and now matches what the code assigns.
+
+**Row keys act on the record you marked.** The row cursor remembered a position, so after a sort, a
+search or a polling refresh `Enter`, `Delete` or a custom row action could run on a different record,
+with no row visibly marked. The cursor now follows the record itself and is dropped when that record
+leaves the table. It also skips the column-search and group-header rows, which it could land on
+before.
+
 **One key press runs one action.** Holding a key fired its shortcut again on every auto-repeat, so a
 held `Delete` reopened the confirm and a held navigation key queued up visits. A held key now acts
 once; only the row cursor keeps moving while an arrow is held. Keys pressed while an input method is

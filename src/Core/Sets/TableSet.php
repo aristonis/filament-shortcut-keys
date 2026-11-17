@@ -29,6 +29,9 @@ final class TableSet implements ShortcutSet
         'delete' => 'Delete',
         'page-prev' => 'ArrowLeft',
         'page-next' => 'ArrowRight',
+        'cursor-down' => 'KeyJ',
+        'cursor-up' => 'KeyK',
+        'cursor-release' => 'Escape',
     ];
 
     /**
@@ -37,6 +40,12 @@ final class TableSet implements ShortcutSet
      * @param  ModifierScheme|null  $modifier  a developer-configured scheme; null keeps the convention
      */
     public function __construct(private bool $rightToLeft = false, private ?ModifierScheme $modifier = null) {}
+
+    /** @return string[] every key this set binds, so a set sharing its bare keys can route around them */
+    public static function reservedCodes(): array
+    {
+        return array_values(self::CODES);
+    }
 
     /** @return string[] the behaviors this set always binds, whatever the panel direction */
     public static function behaviors(): array

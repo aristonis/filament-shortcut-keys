@@ -55,8 +55,10 @@ there to click:
   and gets a 403. Also intended.
 - **The table does not expose that action.** `Enter` needs an edit action on the row, `Delete` a delete
   action, `/` a searchable column. Without them the key has no target.
-- **No row is focused.** Row actions dispatch against the focused row. Move the cursor with the arrow
-  keys first.
+- **No row is focused.** Row actions dispatch against the focused row. Start the cursor with `J` or `K`
+  first.
+- **The arrow keys scroll the page instead of moving rows.** By design: they move the cursor only while
+  it is live. Press `J` or `K` to start it, and again after clicking elsewhere or pressing `Esc`.
 
 A useful check: does clicking the control with the mouse work for this user? If not, the shortcut is
 behaving correctly.

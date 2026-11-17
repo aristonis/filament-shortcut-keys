@@ -114,6 +114,15 @@ it('the table set reserves pagination on the left and right arrow keys', functio
         ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowRight')))->toBeTrue();
 });
 
+it('the table set starts and releases the row cursor with j, k and Escape', function () {
+    $byKey = collect((new TableSet)->discover(nav([]), page(hasTable: true), 'admin'))
+        ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
+
+    expect($byKey['cursor-down']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'KeyJ')))->toBeTrue()
+        ->and($byKey['cursor-up']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'KeyK')))->toBeTrue()
+        ->and($byKey['cursor-release']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'Escape')))->toBeTrue();
+});
+
 it('the table set mirrors the pagination arrows in a right-to-left panel', function () {
     $byKey = collect((new TableSet(rightToLeft: true))->discover(nav([]), page(hasTable: true), 'admin'))
         ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);

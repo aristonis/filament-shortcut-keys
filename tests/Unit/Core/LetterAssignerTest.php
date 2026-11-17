@@ -138,3 +138,13 @@ it('assigns from the alphabet when the hint is null', function () {
 
     expect($result[0]->keyCombo->equals(KeyCombo::parse('alt+shift+a')))->toBeTrue();
 });
+
+it('routes around keys another set already owns in the pool', function () {
+    $result = (new LetterAssigner)->assign(
+        ModifierScheme::none(),
+        [binding('join', 'join')],
+        ['KeyJ', 'KeyO'],
+    );
+
+    expect($result[0]->keyCombo->code)->toBe('KeyI');
+});

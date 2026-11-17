@@ -149,8 +149,9 @@ class FilamentShortcutKeysPlugin implements Plugin
     {
         $sets = new ShortcutSetRegistry;
         $sets->register(new GlobalSet($this->configuredModifier('global')));
-        $sets->register(new TableSet($this->panelIsRightToLeft(), $this->configuredModifier('table')));
-        $sets->register(new RowActionSet($this->rowActions, $this->configuredModifier('row-action')));
+        $tableModifier = $this->configuredModifier('table');
+        $sets->register(new TableSet($this->panelIsRightToLeft(), $tableModifier));
+        $sets->register(new RowActionSet($this->rowActions, $this->configuredModifier('row-action'), $tableModifier));
         $sets->register(new PageSet($this->configuredModifier('page')));
 
         return $sets;

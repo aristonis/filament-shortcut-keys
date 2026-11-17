@@ -28,6 +28,9 @@ function start(signal) {
 
     refreshKeymap()
     document.addEventListener('livewire:navigated', refreshKeymap, { signal })
+    document.addEventListener('pointerdown', tableHandler.onPointerDown, {
+        signal,
+    })
 }
 
 // Each evaluation of the bundle retires the one before it through a handle on window. A page that

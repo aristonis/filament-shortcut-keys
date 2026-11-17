@@ -45,7 +45,7 @@ Tailwind's purge:
 | --- | --- | --- |
 | Navigation | `Alt` + `Shift` + letter | every registered resource and page |
 | Actions | `Alt` + letter | the current page's header actions |
-| Table | bare keys | `/` search, arrows move the row cursor, `Space` selects, `Enter` edits, `Delete` deletes, left/right paginate |
+| Table | bare keys | `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` selects, `Enter` edits, `Delete` deletes; while the cursor is live the arrows move it (up/down) and paginate (left/right) |
 | Row actions | bare letters | only the record actions you register by name |
 | Custom | `Alt` + `Shift` + letter | bindings an admin adds for themselves |
 

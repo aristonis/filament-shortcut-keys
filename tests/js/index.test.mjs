@@ -81,5 +81,6 @@ describe('index entry', () => {
         assert.equal(second.signal.aborted, false)
         assert.equal(document.listenerCount('keydown'), listeners)
         assert.equal(document.listenerCount('livewire:navigated'), 1)
+        assert.equal(document.listenerCount('pointerdown'), 1)
     })
 })

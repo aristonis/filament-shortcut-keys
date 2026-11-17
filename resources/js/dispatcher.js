@@ -14,7 +14,7 @@ const PRECEDENCE = ['page', 'custom', 'table', 'global', 'navigation']
 
 // Moving the row cursor is the one action worth repeating while a key is held; every other shortcut
 // fires once per press, so a held Delete or navigation key cannot stack up actions.
-const REPEATABLE_BEHAVIORS = ['row-up', 'row-down']
+const REPEATABLE_BEHAVIORS = ['row-up', 'row-down', 'cursor-up', 'cursor-down']
 
 function isRepeatable(binding) {
     const activation = binding.activation
@@ -87,7 +87,7 @@ function fire(event, groups, handlers) {
 
 export function createDispatcher(getGroups, handlers) {
     // What the last fresh press of each key did. Its auto-repeat is judged by that, not by whichever
-    // binding happens to match first, so a held key never stacks actions nor leaks to the browser
+    // binding happens to match first, so a held key neither stacks actions nor leaks to the browser
     // halfway through.
     let lastPress = null
 

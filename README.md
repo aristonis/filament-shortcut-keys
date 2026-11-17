@@ -75,9 +75,12 @@ Nothing fires while an input, textarea, select, or contenteditable element has f
 | --- | --- | --- |
 | Navigation | `Alt` + `Shift` + letter | Every registered resource and page |
 | Actions | `Alt` + letter | The current page's header actions |
-| Table | bare keys | `/` search, `↑`/`↓` move the row cursor, `Space` select, `Enter` edit, `Delete` delete, `←`/`→` paginate |
-| Row actions | bare letters | Custom record actions you register (see below) |
+| Table | bare keys | `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` select, `Enter` edit, `Delete` delete; while the cursor is live `↑`/`↓` move it and `←`/`→` paginate |
+| Row actions | bare letters | Custom record actions you register (see below); never `J` or `K` while they share the table's modifiers |
 | Custom | `Alt` + `Shift` + letter | Bindings an admin adds themselves |
+
+The arrow keys scroll the page until `J` or `K` starts the row cursor, and again once you click
+somewhere else or press `Esc`, so a long page or a wide table still scrolls from the keyboard.
 
 `Shift` + `/` opens a cheatsheet of everything active on the current page. A full listing of the
 panel-wide shortcuts also lives on its own page in the sidebar.

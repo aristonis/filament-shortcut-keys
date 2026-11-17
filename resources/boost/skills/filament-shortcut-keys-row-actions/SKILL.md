@@ -29,16 +29,20 @@ That is deliberate: `approve` keeps the same key whether or not `reject` happens
 table, so the key does not move as you navigate.
 
 The array is ordered data, not a set. Each name takes the first letter of its own label that is still
-free, so whoever comes first picks first — `['reject', 'refund']` gives `R` and `E`, and swapping the
-two gives `R` and `J`. Alphabetising the array during a cleanup silently rekeys the panel. If a letter
+free, so whoever comes first picks first — `['reject', 'refund']` gives reject `R` and refund `E`, and
+swapping the two gives refund `R` and reject `E`. Alphabetising the array during a cleanup silently rekeys the panel. If a letter
 has to survive a reordering, pin it in the config overlay rather than relying on the position.
+
+`J` and `K` are never assigned while row actions share the table's modifiers (the default): they
+start and move the row cursor. Configuring a different modifier for one of the two sets frees them.
 
 On any given page, a binding is emitted only when that page's table actually exposes a record action
 of that name. Everywhere else it is neither bound nor listed in the cheatsheet, so there are no dead
 keys advertised to the user.
 
 Firing one triggers the real Filament record action on the row the cursor is on, with its native
-authorization and confirmation. Move the cursor with the arrow keys first.
+authorization and confirmation. Start the cursor with `J` or `K` first; the arrow keys only move it
+once it is live.
 
 ## Do not register edit or delete
 

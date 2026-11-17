@@ -63,3 +63,25 @@ it('assigns letters over the FULL registered list so a letter is stable when oth
 
     expect($archive->keyCombo->code)->toBe('KeyR');
 });
+
+it('never gives a row action the letters that move the row cursor', function () {
+    // "join" and "keep" would otherwise take j and k, and the cursor keys would stop working.
+    $set = new RowActionSet(['join', 'keep']);
+
+    $codes = collect($set->discover(emptyNav(), rowActionPage(['join', 'keep']), 'admin'))
+        ->map(fn ($b) => $b->keyCombo->code)
+        ->all();
+
+    expect($codes)->toHaveCount(2)
+        ->not->toContain('KeyJ')
+        ->not->toContain('KeyK');
+});
+
+it('leaves j and k to row actions when they sit on a different modifier than the table', function () {
+    // Alt+J and a bare J never meet, so reserving j there would only shift letters for nothing.
+    $set = new RowActionSet(['join'], ModifierScheme::alt(), tableModifier: ModifierScheme::none());
+
+    $bindings = $set->discover(emptyNav(), rowActionPage(['join']), 'admin');
+
+    expect($bindings[0]->keyCombo->code)->toBe('KeyJ');
+});

@@ -31,6 +31,9 @@ return [
         'delete' => 'Delete the row',
         'page-prev' => 'Previous page',
         'page-next' => 'Next page',
+        'cursor-down' => 'Start or move the row cursor down',
+        'cursor-up' => 'Start or move the row cursor up',
+        'cursor-release' => 'Leave the row cursor',
     ],
 
     'overlay' => [
