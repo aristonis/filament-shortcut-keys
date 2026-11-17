@@ -69,6 +69,9 @@ export function createElement(options = {}) {
         hasAttribute(name) {
             return name in this.attributes
         },
+        getAttributeNames() {
+            return Object.keys(this.attributes)
+        },
         removeAttribute(name) {
             delete this.attributes[name]
         },

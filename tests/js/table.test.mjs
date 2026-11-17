@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
+import { isAwaitingResponse, settle } from '../../resources/js/inflight.js'
 import { createTableHandler } from '../../resources/js/table.js'
 import {
     createElement,
@@ -424,5 +425,23 @@ describe('giving the keys back to the page', () => {
 
         assert.equal(handle(behavior('cursor-release')), false)
         assert.equal(focusedIndexOf(rows), -1)
+    })
+})
+
+describe('a row action that goes to the server', () => {
+    afterEach(() => settle())
+
+    it('makes the next bare key wait for the modal it opens', () => {
+        const remove = createElement({
+            tagName: 'BUTTON',
+            attributes: { 'wire:click': "mountAction('delete')" },
+        })
+        table([row({ [DELETE_SELECTOR]: remove })])
+        const handle = createTableHandler()
+        handle(behavior('cursor-down'))
+
+        handle(behavior('delete'))
+
+        assert.equal(isAwaitingResponse(), true)
     })
 })

@@ -1,3 +1,5 @@
+import { noteClick } from './inflight.js'
+
 // One handler per client-handler key. Each takes the matched binding and returns true only when it
 // actually fired something, so the dispatcher knows whether to swallow the key. A handler that can't
 // act (missing element, wrong activation kind) returns false and lets the next candidate try.
@@ -20,6 +22,7 @@ function clickSelector(selector) {
         return false
     }
 
+    noteClick(element)
     element.click()
     return true
 }

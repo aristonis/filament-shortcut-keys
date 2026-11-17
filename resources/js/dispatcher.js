@@ -121,6 +121,7 @@ export function createDispatcher(getGroups, handlers, options = {}) {
     const {
         onLeader = () => {},
         singleKeysEnabled = () => true,
+        isAwaitingResponse = () => false,
         setTimer = (callback, ms) => setTimeout(callback, ms),
         clearTimer = (id) => clearTimeout(id),
     } = options
@@ -175,7 +176,8 @@ export function createDispatcher(getGroups, handlers, options = {}) {
 
         const groups = getGroups()
         const leader = pendingLeader
-        const singleKeys = singleKeysEnabled()
+        // While a shortcut's request is in flight, bare keys are held back exactly as when they are off.
+        const singleKeys = singleKeysEnabled() && !isAwaitingResponse()
 
         if (leader !== null) {
             endLeader()

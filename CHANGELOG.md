@@ -35,11 +35,24 @@ accidental keystroke could run an action that does its work on the click. On bar
 action now gets no default key; actions that open a page, a modal or a confirmation keep theirs. A letter pinned in the
 `overlay` config still keys an instant action on purpose.
 
+**Laravel 11 is no longer supported.** Composer refuses every Laravel 11 release over unpatched
+security advisories, and its security support has ended. The package now requires Laravel 12 or newer.
+
 **Single-key shortcuts can be switched off.** The cheatsheet has a switch that silences every bare key
 and `G` sequence in that browser, for people using assistive technology or voice control. Held-modifier
 shortcuts keep working.
 
 ### Fixed
+
+**Key badges and announcements survive Livewire updates.** Any Livewire request on a page, such as
+opening and closing a modal, re-rendered the markup and stripped every key badge and
+`aria-keyshortcuts`; they only came back after navigating away. The script now repaints them after
+each in-page update.
+
+**A key pressed right after a shortcut opens a modal waits for that modal.** A confirm or edit modal
+only appears once its Livewire request returns, so `Enter` pressed straight after `Delete` reached the
+row behind it and opened its edit page. Keys without a modifier now wait for the response a shortcut
+started, for up to two seconds.
 
 **Actions that render as links are reachable again.** Every keyable control was looked up by
 `wire:click="mountAction('name'"`, which an action with a url does not have. Filament gives View, Edit

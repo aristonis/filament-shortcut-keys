@@ -760,4 +760,39 @@ describe('createDispatcher', () => {
             assert.equal(global.calls.length, 1)
         })
     })
+
+    describe('while a shortcut waits for its server response', () => {
+        it('holds bare keys back, so the next key lands on the modal that is coming', () => {
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'Enter' })],
+                { table },
+                { isAwaitingResponse: () => true },
+            )
+
+            const enter = createKeyEvent({
+                code: 'Enter',
+                target: createElement({ tagName: 'TR' }),
+            })
+            dispatch(enter)
+
+            assert.equal(table.calls.length, 0)
+            assert.equal(enter.defaultPrevented, false)
+        })
+
+        it('still fires a held-modifier shortcut', () => {
+            const global = recorder()
+            const dispatch = createDispatcher(
+                () => [group('global', { modifier: 'alt+shift' })],
+                { global },
+                { isAwaitingResponse: () => true },
+            )
+
+            dispatch(
+                createKeyEvent({ code: 'KeyE', altKey: true, shiftKey: true }),
+            )
+
+            assert.equal(global.calls.length, 1)
+        })
+    })
 })
