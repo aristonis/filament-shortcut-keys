@@ -67,6 +67,15 @@ A forced letter is applied before letters are assigned, so other shortcuts route
 entry is removed before assignment, so its letter returns to the pool for something else.
 
 An invalid forced letter is ignored rather than fatal, so one bad entry cannot take down the keymap.
+The same goes for a letter on a reserved key (`g`, `j`, `k`, a table key): the shortcut keeps its
+automatic letter. If two entries pin the same letter in one pool, the first set registered wins and
+the other shortcut is dropped, so check the cheatsheet after adding pins.
+
+Pin the screens whose keys people rely on. Automatic letters follow sidebar order, so adding a
+resource can move the letter of a later one that lost a clash; a pinned letter never moves.
+
+A letter pin also turns on a header action that runs on the click itself, which otherwise gets no
+key on bare letters. Only pin such an action if a stray keystroke running it is acceptable.
 
 ## Cache
 

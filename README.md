@@ -276,9 +276,12 @@ admin's map.
 - Register a morph map (`Relation::enforceMorphMap([...])`) if you might rename your user model. Map
   ownership is stored as the model's morph class and compared as a string.
 - Letters are assigned in sidebar order, so inserting a resource can shift the letter of a later item
-  that had lost a clash. Pin anything you want to stay fixed with a config `overlay` entry.
+  that had lost a clash. Pin anything you want to stay fixed with a config `overlay` entry, for
+  example `'navigation:App\Filament\Resources\ProductResource' => ['letter' => 'p']`; a pinned
+  letter never moves, whatever is added to the sidebar later.
 - Shortcuts inside a closed action dropdown are not reachable.
-- Single combos only. There are no multi-key sequences or macros.
+- One fixed leader key per set (`G`, then a letter) is the only sequence. There are no user-defined
+  sequences or macros.
 
 ## How it works inside
 

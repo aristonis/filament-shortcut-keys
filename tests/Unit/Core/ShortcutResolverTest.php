@@ -338,3 +338,31 @@ it('turns on a shortcut the set left off when the overlay pins a letter to it', 
     expect(bindingFor(resolveGroups($registry), 'global', 'send'))->toBeNull()
         ->and(bindingFor(resolveGroups($registry, ['global:send' => ['letter' => 'x']]), 'global', 'send')->keyCombo->code)->toBe('KeyX');
 });
+
+it('keeps a pinned letter when a screen is added ahead of it in the sidebar', function () {
+    // Without the pin, Partners takes P on its own first letter and Products is pushed to R.
+    $resolve = function (array $items) {
+        $registry = new ShortcutSetRegistry;
+        $registry->register(resolverSet('navigation', ModifierScheme::leader('g'), $items));
+
+        return bindingFor(resolveGroups($registry, ['navigation:products' => ['letter' => 'p']]), 'navigation', 'products');
+    };
+
+    $before = $resolve([convention('navigation', 'orders', 'Orders'), convention('navigation', 'products', 'Products')]);
+    $after = $resolve([convention('navigation', 'partners', 'Partners'), convention('navigation', 'orders', 'Orders'), convention('navigation', 'products', 'Products')]);
+
+    expect($before->keyCombo->code)->toBe('KeyP')
+        ->and($after->keyCombo->code)->toBe('KeyP');
+});
+
+it('moves an unpinned letter when a screen is added ahead of it, which is why pinning exists', function () {
+    $resolve = function (array $items) {
+        $registry = new ShortcutSetRegistry;
+        $registry->register(resolverSet('navigation', ModifierScheme::leader('g'), $items));
+
+        return bindingFor(resolveGroups($registry), 'navigation', 'products');
+    };
+
+    expect($resolve([convention('navigation', 'products', 'Products')])->keyCombo->code)->toBe('KeyP')
+        ->and($resolve([convention('navigation', 'partners', 'Partners'), convention('navigation', 'products', 'Products')])->keyCombo->code)->not->toBe('KeyP');
+});
