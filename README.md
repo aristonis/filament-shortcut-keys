@@ -15,6 +15,7 @@ everyone else starts from.
 ## Requirements
 
 - PHP 8.2 or newer
+- Laravel 12 or newer
 - Filament 5
 - MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column)
 
