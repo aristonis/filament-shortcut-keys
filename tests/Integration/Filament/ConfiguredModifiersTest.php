@@ -73,28 +73,23 @@ it('keeps a set on its built-in scheme when config does not mention it', functio
 });
 
 it('reads an empty configured list as bare keys', function () {
+    // Header and row actions are bare by default; they move off so no lettered set shares the pool.
     config()->set('shortcut-keys.modifiers.navigation', []);
+    config()->set('shortcut-keys.modifiers.global', ['alt']);
+    config()->set('shortcut-keys.modifiers.row-action', ['alt', 'shift']);
 
     $modifiers = injectedModifiers((string) $this->get('/admin/orders')->assertOk()->getContent());
 
     expect($modifiers['navigation'])->toBe('');
 });
 
-it('re-letters a set that moved onto another set\'s scheme so the two cannot collide', function () {
-    // Global actions already own alt; moving navigation there puts both in one letter pool.
+it('refuses a page set on the same keys as navigation, since the two are lettered apart', function () {
+    // Navigation and header actions are resolved separately, so sharing alt could give both one letter.
     config()->set('shortcut-keys.modifiers.navigation', ['alt']);
+    config()->set('shortcut-keys.modifiers.global', ['alt']);
 
-    $keymap = injectedKeymap((string) $this->get('/admin/orders')->assertOk()->getContent());
-
-    $codes = [];
-    foreach ($keymap as $group) {
-        if (in_array($group['set'], ['navigation', 'global'], true)) {
-            $codes = [...$codes, ...array_column($group['bindings'], 'code')];
-        }
-    }
-
-    expect($codes)->not->toBeEmpty()
-        ->and(array_unique($codes))->toHaveCount(count($codes));
+    expect(renderThrowable())->toBeInstanceOf(InvalidModifierSchemeException::class)
+        ->getMessage()->toContain('global');
 });
 
 it('fails loudly on a modifier token it cannot resolve', function () {
@@ -179,4 +174,19 @@ it('does not hold back a letter whose overlay entry is disabled', function () {
         ->firstWhere('set', 'row-action');
 
     expect(collect($rowActions['bindings'])->firstWhere('target', 'row-action:approve')['code'])->toBe('KeyA');
+});
+
+it('refuses bare navigation while row actions are bare too', function () {
+    config()->set('shortcut-keys.modifiers.navigation', []);
+    config()->set('shortcut-keys.modifiers.global', ['alt']);
+
+    expect(renderThrowable())->toBeInstanceOf(InvalidModifierSchemeException::class)
+        ->getMessage()->toContain('row-action');
+});
+
+it('refuses header actions on the keys custom bindings use, not only navigation\'s', function () {
+    config()->set('shortcut-keys.modifiers.custom', ['alt']);
+    config()->set('shortcut-keys.modifiers.global', ['alt']);
+
+    expect(renderThrowable())->toBeInstanceOf(InvalidModifierSchemeException::class);
 });

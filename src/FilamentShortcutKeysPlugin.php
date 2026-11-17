@@ -188,13 +188,18 @@ class FilamentShortcutKeysPlugin implements Plugin
         $panelWide = $this->panelWideSets()->all();
         $page = $this->builtInPageSets();
 
-        // The two registries are lettered by separate resolvers, so a leader pool split between them
-        // would hand out the same letter twice.
-        $panelWideLeaders = array_filter(array_map(fn ($set) => $set->defaultModifier()->leader, $panelWide));
-        foreach ($page as $set) {
-            $leader = $set->defaultModifier()->leader;
-            if ($leader !== null && in_array($leader, $panelWideLeaders, true)) {
-                throw InvalidModifierSchemeException::forSharedLeader($leader);
+        // The two registries are lettered by separate resolvers, so a pool split between them would
+        // hand out the same letter twice. Only the page sets that hand out letters can collide: the
+        // table's keys are fixed and reserved for both resolvers, and the page set emits nothing yet.
+        $panelWidePools = array_map(fn ($set) => $set->defaultModifier()->toString(), $panelWide);
+        [$global] = $page;
+        $lettered = [
+            'global' => $global->defaultModifier()->toString(),
+            'row-action' => (new RowActionSet([], $this->configuredModifier('row-action')))->defaultModifier()->toString(),
+        ];
+        foreach ($lettered as $set => $pool) {
+            if (in_array($pool, $panelWidePools, true)) {
+                throw InvalidModifierSchemeException::forSharedPool($set, $pool);
             }
         }
 

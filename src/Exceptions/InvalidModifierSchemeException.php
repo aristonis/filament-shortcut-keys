@@ -22,10 +22,12 @@ final class InvalidModifierSchemeException extends ShortcutKeysException
         );
     }
 
-    public static function forSharedLeader(string $code): self
+    public static function forSharedPool(string $set, string $pool): self
     {
+        $keys = $pool === '' ? 'bare keys' : $pool;
+
         return new self(
-            "The leader key {$code} is used by both a panel-wide set (navigation, custom) and a page set (global, table, row-action, page). They are lettered separately, so their keys could collide. Give the page set a different leader.",
+            "The {$set} set uses the same keys ({$keys}) as navigation or custom bindings. The two are lettered separately, so their shortcuts could collide. Give {$set} different modifiers or a leader of its own.",
             10008,
             'INVALID_MODIFIER_SCHEME',
         );
