@@ -28,6 +28,20 @@ key to a route in the app got a working key with nothing on screen to announce i
 cheatsheet as the only way to find it. A badge is now decided by how a shortcut fires rather than by
 which set it came from, which also covers the header actions that carry a url as of the fix above.
 
+**Table keys no longer act behind a modal or on a focused control.** With a row marked, pressing
+`Enter` in Filament's delete confirm ran the row's edit instead of confirming, and `Space` on any
+focused button toggled the row's checkbox. Keys without a modifier now stay with whatever owns the
+keyboard: an open modal (even one that opened without taking focus), an open select, a dropdown, a
+menu or a tab list, and `Enter` or `Space` on a focused button or link. The row cursor now moves
+real focus, so `Enter` acts on the marked row rather than on whatever was clicked last. A clicked row
+checkbox no longer counts as typing, which had left every table key dead until the next click.
+
+**One key press runs one action.** Holding a key fired its shortcut again on every auto-repeat, so a
+held `Delete` reopened the confirm and a held navigation key queued up visits. A held key now acts
+once; only the row cursor keeps moving while an arrow is held. Keys pressed while an input method is
+composing text (Arabic, CJK) are ignored, Safari included. If the script ends up loaded twice, or a
+newer version loads mid-session, only the newest copy listens.
+
 ### Documentation
 
 - The install steps now include `php artisan filament:assets`. Without it no key fires and nothing

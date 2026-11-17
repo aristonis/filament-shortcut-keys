@@ -171,8 +171,17 @@ export function installDocument({
 
             return element
         },
-        addEventListener(type, handler) {
+        addEventListener(type, handler, options = {}) {
             ;(listeners[type] ??= []).push(handler)
+
+            options.signal?.addEventListener('abort', () => {
+                listeners[type] = listeners[type].filter((h) => h !== handler)
+            })
+        },
+
+        // Test-only: how many listeners are live for an event type.
+        listenerCount(type) {
+            return (listeners[type] ?? []).length
         },
 
         // Test-only: fire everything registered for an event type, in registration order.

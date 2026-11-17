@@ -39,7 +39,15 @@ export function createTableHandler() {
         const start = focusedIndex < 0 ? (step > 0 ? 0 : all.length - 1) : focusedIndex + step
         focusedIndex = Math.max(0, Math.min(all.length - 1, start))
         paint(all)
-        all[focusedIndex].scrollIntoView({ block: 'nearest' })
+
+        // The cursor takes real focus, or Enter and Space would press whatever was clicked last
+        // instead of acting on the marked row. -1 keeps rows out of the Tab order.
+        const row = all[focusedIndex]
+        if (!row.hasAttribute('tabindex')) {
+            row.setAttribute('tabindex', '-1')
+        }
+        row.focus({ preventScroll: true })
+        row.scrollIntoView({ block: 'nearest' })
         return true
     }
 

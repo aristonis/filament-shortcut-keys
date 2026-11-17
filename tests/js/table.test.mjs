@@ -239,3 +239,27 @@ describe('table behaviours', () => {
         )
     })
 })
+
+describe('the row cursor and real focus', () => {
+    it('moves keyboard focus onto the row it marks', () => {
+        // Otherwise Enter and Space go to whatever was clicked last, not to the marked row.
+        const rows = [row(), row()]
+        const document = table(rows)
+        const handle = createTableHandler()
+
+        handle(behavior('row-down'))
+        handle(behavior('row-down'))
+
+        assert.equal(document.activeElement, rows[1])
+    })
+
+    it('makes the row focusable by script without adding it to the Tab order', () => {
+        const rows = [row()]
+        table(rows)
+        const handle = createTableHandler()
+
+        handle(behavior('row-down'))
+
+        assert.equal(rows[0].getAttribute('tabindex'), '-1')
+    })
+})

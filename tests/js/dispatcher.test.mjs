@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { createDispatcher } from '../../resources/js/dispatcher.js'
-import { createElement, createKeyEvent } from './support/dom.mjs'
+import {
+    createElement,
+    createKeyEvent,
+    installDocument,
+    restoreGlobals,
+} from './support/dom.mjs'
 
 function group(handler, { modifier = '', code = 'KeyE' } = {}) {
     return {
@@ -26,6 +31,8 @@ function recorder(fired = true) {
 
     return handler
 }
+
+afterEach(restoreGlobals)
 
 describe('createDispatcher', () => {
     it('fires the binding whose code and modifier both match', () => {
@@ -167,5 +174,318 @@ describe('createDispatcher', () => {
         dispatch(createKeyEvent({ code: 'KeyE' }))
 
         assert.equal(global.calls.length, 1)
+    })
+
+    describe('when focus sits in something that owns the keyboard', () => {
+        // A focused element nested inside a container matching `selector`, the way focus lands in a
+        // Filament modal, select or dropdown.
+        function focusedInside(selector, tagName = 'BUTTON') {
+            const container = createElement({ matches: [selector] })
+
+            return container.appendChild(createElement({ tagName }))
+        }
+
+        const OWNERS = [
+            '[role="dialog"]',
+            '[role="alertdialog"]',
+            '[aria-modal="true"]',
+            '[role="listbox"]',
+            '[role="combobox"]',
+            '[role="menu"]',
+            '[role="menubar"]',
+            '[role="tablist"]',
+            '.fi-dropdown-panel',
+        ]
+
+        for (const selector of OWNERS) {
+            it(`holds bare keys back inside ${selector}`, () => {
+                const table = recorder()
+                const dispatch = createDispatcher(
+                    () => [group('table', { code: 'ArrowDown' })],
+                    { table },
+                )
+
+                const event = createKeyEvent({
+                    code: 'ArrowDown',
+                    target: focusedInside(selector),
+                })
+                dispatch(event)
+
+                assert.equal(table.calls.length, 0)
+                assert.equal(event.defaultPrevented, false)
+            })
+        }
+
+        it('lets Enter confirm a focused modal button instead of editing the row behind it', () => {
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'Enter' })],
+                { table },
+            )
+
+            const event = createKeyEvent({
+                code: 'Enter',
+                target: focusedInside('[role="alertdialog"]'),
+            })
+            dispatch(event)
+
+            assert.equal(table.calls.length, 0)
+            assert.equal(event.defaultPrevented, false)
+        })
+
+        it('still fires modifier groups inside a dialog', () => {
+            const navigation = recorder()
+            const dispatch = createDispatcher(
+                () => [group('navigation', { modifier: 'alt+shift' })],
+                { navigation },
+            )
+
+            dispatch(
+                createKeyEvent({
+                    code: 'KeyE',
+                    altKey: true,
+                    shiftKey: true,
+                    target: focusedInside('[role="dialog"]'),
+                }),
+            )
+
+            assert.equal(navigation.calls.length, 1)
+        })
+    })
+
+    describe('activation keys on a focused control', () => {
+        for (const [code, tagName] of [
+            ['Enter', 'BUTTON'],
+            ['Enter', 'A'],
+            ['NumpadEnter', 'BUTTON'],
+            ['Space', 'BUTTON'],
+            ['Space', 'A'],
+        ]) {
+            it(`leaves ${code} to a focused ${tagName}`, () => {
+                const table = recorder()
+                const dispatch = createDispatcher(
+                    () => [group('table', { code })],
+                    { table },
+                )
+
+                const event = createKeyEvent({
+                    code,
+                    target: createElement({ tagName }),
+                })
+                dispatch(event)
+
+                assert.equal(table.calls.length, 0)
+                assert.equal(event.defaultPrevented, false)
+            })
+        }
+
+        it('leaves Enter to an element acting as a button', () => {
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'Enter' })],
+                { table },
+            )
+
+            dispatch(
+                createKeyEvent({
+                    code: 'Enter',
+                    target: createElement({ attributes: { role: 'button' } }),
+                }),
+            )
+
+            assert.equal(table.calls.length, 0)
+        })
+
+        it('still fires Enter when focus is on the page itself', () => {
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'Enter' })],
+                { table },
+            )
+
+            dispatch(
+                createKeyEvent({
+                    code: 'Enter',
+                    target: createElement({ tagName: 'BODY' }),
+                }),
+            )
+
+            assert.equal(table.calls.length, 1)
+        })
+
+        it('still fires a row-action letter while a button has focus', () => {
+            // Only Enter and Space mean "activate this control"; a letter has no native meaning on it.
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'KeyA' })],
+                { table },
+            )
+
+            dispatch(
+                createKeyEvent({
+                    code: 'KeyA',
+                    target: createElement({ tagName: 'BUTTON' }),
+                }),
+            )
+
+            assert.equal(table.calls.length, 1)
+        })
+    })
+
+    describe('one press, one action', () => {
+        function rowDown() {
+            return {
+                handler: 'table',
+                modifier: '',
+                bindings: [
+                    {
+                        code: 'ArrowDown',
+                        activation: { kind: 'table', behavior: 'row-down' },
+                    },
+                ],
+            }
+        }
+
+        it('swallows the auto-repeat of a held key it already acted on', () => {
+            // Holding Delete must not open a confirm per repeat, and holding Space after selecting a
+            // row must not start scrolling the page.
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'Delete' })],
+                { table },
+            )
+
+            dispatch(createKeyEvent({ code: 'Delete' }))
+            const repeat = createKeyEvent({ code: 'Delete', repeat: true })
+            dispatch(repeat)
+
+            assert.equal(table.calls.length, 1)
+            assert.equal(repeat.defaultPrevented, true)
+        })
+
+        it('leaves the repeat of a key it did not act on to the browser', () => {
+            const table = recorder(false)
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'Space' })],
+                { table },
+            )
+
+            dispatch(createKeyEvent({ code: 'Space' }))
+            const repeat = createKeyEvent({ code: 'Space', repeat: true })
+            dispatch(repeat)
+
+            assert.equal(table.calls.length, 1)
+            assert.equal(repeat.defaultPrevented, false)
+        })
+
+        it('lets a held arrow keep moving the row cursor', () => {
+            const table = recorder()
+            const dispatch = createDispatcher(() => [rowDown()], { table })
+
+            dispatch(createKeyEvent({ code: 'ArrowDown' }))
+            dispatch(createKeyEvent({ code: 'ArrowDown', repeat: true }))
+
+            assert.equal(table.calls.length, 2)
+        })
+
+        it('keeps repeating the binding that fired, past one that could not act', () => {
+            // A page binding on the same key with nothing to click falls through to the table on the
+            // first press; the repeat must not stop at the page binding.
+            const page = recorder(false)
+            const table = recorder()
+            const pageArrow = group('page', { code: 'ArrowDown' })
+            const dispatch = createDispatcher(() => [pageArrow, rowDown()], {
+                page,
+                table,
+            })
+
+            dispatch(createKeyEvent({ code: 'ArrowDown' }))
+            dispatch(createKeyEvent({ code: 'ArrowDown', repeat: true }))
+
+            assert.equal(table.calls.length, 2)
+        })
+
+        for (const [label, overrides] of [
+            ['isComposing', { isComposing: true }],
+            // Safari ends composition before the last keydown, which then only carries keyCode 229.
+            ['keyCode 229', { keyCode: 229 }],
+        ]) {
+            it(`ignores keys while an input method is composing text (${label})`, () => {
+                const global = recorder()
+                const dispatch = createDispatcher(
+                    () => [group('global', { modifier: 'alt+shift' })],
+                    { global },
+                )
+
+                const event = createKeyEvent({
+                    code: 'KeyE',
+                    altKey: true,
+                    shiftKey: true,
+                    ...overrides,
+                })
+                dispatch(event)
+
+                assert.equal(global.calls.length, 0)
+                assert.equal(event.defaultPrevented, false)
+            })
+        }
+    })
+
+    describe('while a modal is open but focus stayed behind it', () => {
+        for (const selector of [
+            '.fi-modal-open[aria-modal="true"]',
+            '#filament-shortcut-keys-overlay:not([hidden])',
+        ]) {
+            it(`holds bare keys back when ${selector} is on the page`, () => {
+                installDocument({ selectors: { [selector]: createElement() } })
+                const table = recorder()
+                const dispatch = createDispatcher(
+                    () => [group('table', { code: 'Delete' })],
+                    { table },
+                )
+
+                dispatch(
+                    createKeyEvent({
+                        code: 'Delete',
+                        target: createElement({ tagName: 'BODY' }),
+                    }),
+                )
+
+                assert.equal(table.calls.length, 0)
+            })
+        }
+    })
+
+    describe('non-text inputs', () => {
+        function checkbox() {
+            return createElement({
+                tagName: 'INPUT',
+                attributes: { type: 'checkbox' },
+            })
+        }
+
+        it('still moves the row cursor after a row checkbox was clicked', () => {
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'ArrowDown' })],
+                { table },
+            )
+
+            dispatch(createKeyEvent({ code: 'ArrowDown', target: checkbox() }))
+
+            assert.equal(table.calls.length, 1)
+        })
+
+        it('leaves Space to a focused checkbox', () => {
+            const table = recorder()
+            const dispatch = createDispatcher(
+                () => [group('table', { code: 'Space' })],
+                { table },
+            )
+
+            dispatch(createKeyEvent({ code: 'Space', target: checkbox() }))
+
+            assert.equal(table.calls.length, 0)
+        })
     })
 })

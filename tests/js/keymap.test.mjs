@@ -88,6 +88,29 @@ describe('isTyping', () => {
         )
     })
 
+    for (const type of ['checkbox', 'radio', 'button', 'submit', 'reset']) {
+        it(`is false on an input of type ${type}, which takes no text`, () => {
+            assert.equal(
+                isTyping(
+                    createElement({ tagName: 'INPUT', attributes: { type } }),
+                ),
+                false,
+            )
+        })
+    }
+
+    it('is true on a text-like input such as email', () => {
+        assert.equal(
+            isTyping(
+                createElement({
+                    tagName: 'INPUT',
+                    attributes: { type: 'email' },
+                }),
+            ),
+            true,
+        )
+    })
+
     it('is false on an ordinary element', () => {
         assert.equal(isTyping(createElement({ tagName: 'DIV' })), false)
     })

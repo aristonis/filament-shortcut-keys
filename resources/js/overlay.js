@@ -48,46 +48,51 @@ function trapTab(element, event) {
     }
 }
 
-export function initOverlay() {
-    document.addEventListener('keydown', (event) => {
-        const element = overlay()
+function onKeydown(event) {
+    const element = overlay()
 
-        if (element === null) {
-            return
-        }
+    if (element === null) {
+        return
+    }
 
-        // "?" toggles the cheatsheet, but never while the user is typing "?" into a field.
-        if (isReservedOverlayKey(event) && !isTyping(event.target)) {
-            event.preventDefault()
-            isOpen(element) ? close(element) : open(element)
-            return
-        }
+    // "?" toggles the cheatsheet, but never while the user is typing "?" into a field.
+    if (isReservedOverlayKey(event) && !isTyping(event.target)) {
+        event.preventDefault()
+        isOpen(element) ? close(element) : open(element)
+        return
+    }
 
-        if (!isOpen(element)) {
-            return
-        }
+    if (!isOpen(element)) {
+        return
+    }
 
-        if (event.key === 'Escape') {
-            event.preventDefault()
-            close(element)
-        } else if (event.key === 'Tab') {
-            trapTab(element, event)
-        }
-    })
+    if (event.key === 'Escape') {
+        event.preventDefault()
+        close(element)
+    } else if (event.key === 'Tab') {
+        trapTab(element, event)
+    }
+}
 
-    document.addEventListener('click', (event) => {
-        const element = overlay()
+function onClick(event) {
+    const element = overlay()
 
-        if (!isOpen(element)) {
-            return
-        }
+    if (!isOpen(element)) {
+        return
+    }
 
-        // The backdrop is the overlay root itself; a click on it (or the close button) dismisses.
-        if (
-            event.target === element ||
-            event.target.closest('[data-fsk-overlay-close]')
-        ) {
-            close(element)
-        }
-    })
+    // The backdrop is the overlay root itself; a click on it (or the close button) dismisses.
+    if (
+        event.target === element ||
+        event.target.closest('[data-fsk-overlay-close]')
+    ) {
+        close(element)
+    }
+}
+
+// Listeners live on the document so they survive Livewire navigation; the signal lets a newer
+// evaluation of the bundle take them down.
+export function initOverlay(signal) {
+    document.addEventListener('keydown', onKeydown, { signal })
+    document.addEventListener('click', onClick, { signal })
 }
