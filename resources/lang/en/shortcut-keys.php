@@ -61,6 +61,8 @@ return [
         'clone_preset' => 'Clone preset',
         'edit_preset' => 'Edit preset',
         'edit_preset_confirm' => 'I understand this changes the map for every admin using it.',
+        'set_default' => 'Set panel default',
+        'set_default_confirm' => 'I understand every admin without a map of their own switches to this preset.',
         'saved' => 'Saved.',
         'failed' => 'Something went wrong. Please try again.',
         'map_custom' => 'Your customizations',

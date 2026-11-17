@@ -71,15 +71,15 @@ final class ManageShortcuts extends Page
     protected function getViewData(): array
     {
         $preset = 0;
+        $maps = [];
 
-        $maps = array_map(
-            fn (MapSummary $map): array => [
+        foreach ($this->mapSummaries() as $map) {
+            $maps[] = [
                 'label' => $this->mapLabel($map, $map->type === MapType::SYSTEM && ! $map->isDefault ? ++$preset : 0),
                 'isActive' => $map->isActive,
                 'isDefault' => $map->isDefault,
-            ],
-            $this->mapSummaries(),
-        );
+            ];
+        }
 
         return [
             'maps' => $maps,
@@ -103,7 +103,7 @@ final class ManageShortcuts extends Page
         }
 
         if ($this->canAuthor()) {
-            $actions = [...$actions, $this->createPresetAction(), $this->clonePresetAction(), $this->editPresetAction()];
+            $actions = [...$actions, $this->createPresetAction(), $this->clonePresetAction(), $this->editPresetAction(), $this->setDefaultPresetAction()];
         }
 
         return $actions;
@@ -223,6 +223,22 @@ final class ManageShortcuts extends Page
             }));
     }
 
+    private function setDefaultPresetAction(): Action
+    {
+        return Action::make('setDefaultPreset')
+            ->label(trans('filament-shortcut-keys::shortcut-keys.manage.set_default'))
+            ->schema([
+                Select::make('map')->label(self::fieldLabel('map'))->options($this->presetOptions())->required(),
+                Checkbox::make('confirmed')->label(trans('filament-shortcut-keys::shortcut-keys.manage.set_default_confirm'))->accepted()->required(),
+            ])
+            ->action(fn (array $data) => $this->run(fn () => $this->author()->makeDefault(
+                $this->user(),
+                $this->panelId(),
+                (int) $data['map'],
+                (bool) $data['confirmed'],
+            )));
+    }
+
     /** Without an explicit label Filament humanizes the field name, which is always English. */
     private static function fieldLabel(string $field): string
     {
@@ -233,6 +249,9 @@ final class ManageShortcuts extends Page
     {
         try {
             $write();
+            // The map list was read while building the actions, before this write; drop it so the
+            // page renders what the write changed.
+            $this->mapSummaries = null;
             Notification::make()->title(trans('filament-shortcut-keys::shortcut-keys.manage.saved'))->success()->send();
         } catch (ShortcutKeysException $exception) {
             Notification::make()->title($exception->getMessage())->danger()->send();

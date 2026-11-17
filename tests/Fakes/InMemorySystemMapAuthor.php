@@ -20,6 +20,9 @@ final class InMemorySystemMapAuthor implements SystemMapAuthor
     /** @var array<int, array{panelId: string, mapId: int, target: string}> */
     public array $removed = [];
 
+    /** @var array<int, array{panelId: string, mapId: int}> */
+    public array $defaults = [];
+
     public function __construct(public int $mapId = 99) {}
 
     public function createPreset(string $panelId, ?array $modifiers = null): int
@@ -46,6 +49,13 @@ final class InMemorySystemMapAuthor implements SystemMapAuthor
     public function removeEntry(string $panelId, int $mapId, string $target): int
     {
         $this->removed[] = compact('panelId', 'mapId', 'target');
+
+        return $mapId;
+    }
+
+    public function makeDefault(string $panelId, int $mapId): int
+    {
+        $this->defaults[] = compact('panelId', 'mapId');
 
         return $mapId;
     }

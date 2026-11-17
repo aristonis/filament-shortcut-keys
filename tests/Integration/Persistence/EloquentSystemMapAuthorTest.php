@@ -95,3 +95,42 @@ it('refuses to clone a source that does not exist in the panel', function () {
     expect(fn () => (new EloquentSystemMapAuthor)->clonePreset('admin', $map->id))
         ->toThrow(ModelNotFoundException::class);
 });
+
+it('makes a preset the panel default and takes the mark off the previous one', function () {
+    $previous = ShortcutMap::factory()->default('admin')->create();
+    $preset = ShortcutMap::factory()->create(['panel_id' => 'admin']);
+
+    (new EloquentSystemMapAuthor)->makeDefault('admin', $preset->id);
+
+    expect($preset->fresh()->default_marker)->toBe('admin')
+        ->and($previous->fresh()->default_marker)->toBeNull();
+});
+
+it('refuses to make a map of another panel, or a custom map, the default', function () {
+    $foreign = ShortcutMap::factory()->create(['panel_id' => 'reports']);
+    $custom = ShortcutMap::factory()->custom()->create(['panel_id' => 'admin']);
+
+    expect(fn () => (new EloquentSystemMapAuthor)->makeDefault('admin', $foreign->id))->toThrow(ModelNotFoundException::class);
+    expect(fn () => (new EloquentSystemMapAuthor)->makeDefault('admin', $custom->id))->toThrow(ModelNotFoundException::class);
+});
+
+it('leaves exactly one default when the current default is chosen again', function () {
+    $default = ShortcutMap::factory()->default('admin')->create();
+    ShortcutMap::factory()->create(['panel_id' => 'admin']);
+
+    (new EloquentSystemMapAuthor)->makeDefault('admin', $default->id);
+
+    expect(ShortcutMap::query()->where('default_marker', 'admin')->pluck('id')->all())->toBe([$default->id]);
+});
+
+it('keeps the previous default when the new one is refused', function () {
+    $previous = ShortcutMap::factory()->default('admin')->create();
+    $foreign = ShortcutMap::factory()->create(['panel_id' => 'reports']);
+
+    try {
+        (new EloquentSystemMapAuthor)->makeDefault('admin', $foreign->id);
+    } catch (ModelNotFoundException) {
+    }
+
+    expect($previous->fresh()->default_marker)->toBe('admin');
+});

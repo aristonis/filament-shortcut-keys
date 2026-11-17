@@ -1,6 +1,8 @@
 <?php
 
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Filament\Pages\ManageShortcuts;
+use Aristonis\FilamentShortcutKeys\Persistence\EloquentSystemMapAuthor;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
 
 it('injects the resolved keymap as a JSON script block on a panel page', function () {
@@ -98,4 +100,17 @@ it('writes a g shortcut in the cheatsheet as g then the letter', function () {
     $html = preg_replace('/<!--.*?-->/s', '', (string) $this->get('/admin')->assertOk()->getContent());
 
     expect($html)->toMatch('#<kbd>g</kbd>\\s*<span class="fsk-then">then</span>\\s*<kbd>[a-z]</kbd>#');
+});
+
+it('serves the panel default map to an admin with no map of their own in locked mode', function () {
+    config()->set('shortcut-keys.customization', 'locked');
+    $author = new EloquentSystemMapAuthor;
+    $preset = $author->createPreset('admin');
+    $author->saveEntry('admin', $preset, new MapEntryEdit('navigation:' . OrderResource::class, 'x', false));
+    $author->makeDefault('admin', $preset);
+
+    $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))->firstWhere('set', 'navigation');
+    $orders = collect($navigation['bindings'])->firstWhere('target', 'navigation:' . OrderResource::class);
+
+    expect($orders['code'])->toBe('KeyX');
 });

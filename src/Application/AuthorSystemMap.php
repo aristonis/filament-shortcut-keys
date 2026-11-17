@@ -52,6 +52,15 @@ final readonly class AuthorSystemMap
         return $this->author->removeEntry($panelId, $mapId, $target);
     }
 
+    /** The default reaches every admin without a map of their own, so it is confirmed like an in-place edit. */
+    public function makeDefault(?Authenticatable $user, string $panelId, int $mapId, bool $confirmed): int
+    {
+        $this->authorize($user, $panelId);
+        $this->requireConfirmation($mapId, $confirmed);
+
+        return $this->author->makeDefault($panelId, $mapId);
+    }
+
     private function authorize(?Authenticatable $user, string $panelId): void
     {
         if (! $this->gate->allowsAuthoring($user, $panelId)) {

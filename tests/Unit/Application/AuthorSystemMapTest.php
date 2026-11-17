@@ -92,3 +92,21 @@ it('refuses an in-place edit or revert without explicit confirmation', function 
     expect($author->saved)->toBeEmpty()
         ->and($author->removed)->toBeEmpty();
 });
+
+it('makes a preset the panel default once confirmed', function () {
+    $author = new InMemorySystemMapAuthor;
+
+    systemAuthor(true, $author)->makeDefault(null, 'admin', 4, confirmed: true);
+
+    expect($author->defaults[0])->toBe(['panelId' => 'admin', 'mapId' => 4]);
+});
+
+it('refuses to change the panel default without the gate or without confirmation', function () {
+    $author = new InMemorySystemMapAuthor;
+
+    expect(fn () => systemAuthor(false, $author)->makeDefault(null, 'admin', 4, confirmed: true))
+        ->toThrow(AuthoringDeniedException::class);
+    expect(fn () => systemAuthor(true, $author)->makeDefault(null, 'admin', 4, confirmed: false))
+        ->toThrow(ConfirmationRequiredException::class);
+    expect($author->defaults)->toBeEmpty();
+});

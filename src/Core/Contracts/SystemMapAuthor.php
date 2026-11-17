@@ -23,4 +23,7 @@ interface SystemMapAuthor
 
     /** Drop one override row from a system preset in place; returns that map's id. */
     public function removeEntry(string $panelId, int $mapId, string $target): int;
+
+    /** Make a system preset the map every admin without their own selection uses; returns its id. */
+    public function makeDefault(string $panelId, int $mapId): int;
 }

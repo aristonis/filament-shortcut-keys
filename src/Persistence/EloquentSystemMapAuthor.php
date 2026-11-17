@@ -93,6 +93,24 @@ final class EloquentSystemMapAuthor implements SystemMapAuthor
         });
     }
 
+    public function makeDefault(string $panelId, int $mapId): int
+    {
+        return DB::transaction(function () use ($panelId, $mapId): int {
+            $map = $this->systemMapInPanel($panelId, $mapId, forUpdate: true);
+
+            // One default per panel is a unique constraint on the marker, so the old one is cleared
+            // before the new one is set.
+            ShortcutMap::query()
+                ->where('default_marker', $panelId)
+                ->whereKeyNot($map->id)
+                ->update(['default_marker' => null]);
+
+            ShortcutMap::query()->whereKey($map->id)->update(['default_marker' => $panelId]);
+
+            return $map->id;
+        });
+    }
+
     /**
      * Load a system map, scoped to its panel. The panel scope is the security boundary: a manager
      * authorized for one panel passing another panel's map id gets a not-found, never a cross-panel

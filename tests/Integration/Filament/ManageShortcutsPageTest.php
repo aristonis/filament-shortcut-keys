@@ -51,3 +51,43 @@ it('allows the manager in locked mode when the authoring gate grants', function 
 
     $this->get(ManageShortcuts::getUrl())->assertOk();
 });
+
+it('lets an authorized admin make a preset the panel default', function () {
+    config()->set('shortcut-keys.customization', 'locked');
+    config()->set('shortcut-keys.authorize', fn () => true);
+    Filament\Facades\Filament::setCurrentPanel('admin');
+    $preset = ShortcutMap::factory()->create(['panel_id' => 'admin']);
+
+    $page = Livewire\Livewire::test(ManageShortcuts::class)
+        ->callAction('setDefaultPreset', ['map' => $preset->id, 'confirmed' => true]);
+
+    expect($preset->fresh()->default_marker)->toBe('admin');
+
+    // The page shows the new default in the same request.
+    expect(collect($page->viewData('maps'))->where('isDefault', true))->toHaveCount(1);
+});
+
+it('lists a preset on the page as soon as it is created', function () {
+    config()->set('shortcut-keys.customization', 'locked');
+    config()->set('shortcut-keys.authorize', fn () => true);
+    Filament\Facades\Filament::setCurrentPanel('admin');
+
+    $page = Livewire\Livewire::test(ManageShortcuts::class);
+    $before = count($page->viewData('maps'));
+
+    $page->callAction('createPreset');
+
+    expect($page->viewData('maps'))->toHaveCount($before + 1);
+});
+
+it('numbers each preset in the list the same way the forms do', function () {
+    config()->set('shortcut-keys.customization', 'locked');
+    config()->set('shortcut-keys.authorize', fn () => true);
+    Filament\Facades\Filament::setCurrentPanel('admin');
+    ShortcutMap::factory()->default('admin')->create();
+    ShortcutMap::factory()->count(2)->create(['panel_id' => 'admin']);
+
+    $labels = collect(Livewire\Livewire::test(ManageShortcuts::class)->viewData('maps'))->pluck('label')->all();
+
+    expect($labels)->toBe(['Default preset', 'Preset 1', 'Preset 2']);
+});
