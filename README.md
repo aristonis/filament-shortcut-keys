@@ -50,7 +50,7 @@ runs it on every `composer install` or `update` through `filament:upgrade`; othe
 
 - **For developers → [documentation site](https://aristonis.org/open-source/filament-shortcut-keys/docs)** — human
   guides: getting started, the shortcuts, row actions, customization, custom bindings, configuration,
-  pruning, translations, security, troubleshooting, limitations and the design notes.
+  pruning, translations, security, troubleshooting and limitations.
 - **For AI agents → [Laravel Boost](https://laravel.com/docs/boost)** — the package ships Boost guidelines and
   skills in [`resources/boost/`](resources/boost/). Pick the package when the interactive
   `php artisan boost:install` asks for third-party packages, or add it to `boost.json` under `packages`
