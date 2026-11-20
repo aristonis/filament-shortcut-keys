@@ -1,5 +1,7 @@
 # Filament shortcut keys
 
+![Filament Shortcut Keys](https://raw.githubusercontent.com/aristonis/filament-shortcut-keys/main/art/cover.jpg)
+
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
 [![Total Downloads](https://img.shields.io/packagist/dt/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
 [![PHP Version](https://img.shields.io/packagist/php-v/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
