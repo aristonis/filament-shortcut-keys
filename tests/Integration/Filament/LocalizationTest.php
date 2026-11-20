@@ -2,7 +2,7 @@
 
 use Aristonis\FilamentShortcutKeys\Filament\Pages\ManageShortcuts;
 use Aristonis\FilamentShortcutKeys\Filament\Pages\ShortcutReference;
-use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Factories\ShortcutMapFactory;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Lang;
 use Livewire\Livewire;
@@ -48,7 +48,7 @@ it('renders the cheatsheet overlay in the active locale', function () {
 
 it('renders the map manager in the active locale', function () {
     config()->set('shortcut-keys.customization', 'personal');
-    ShortcutMap::factory()->default('admin')->create();
+    ShortcutMapFactory::new()->default('admin')->create();
 
     $this->get(ManageShortcuts::getUrl())
         ->assertOk()
@@ -60,7 +60,7 @@ it('renders the map manager in the active locale', function () {
 it('labels every edit form field in the active locale', function (string $action) {
     config()->set('shortcut-keys.customization', 'personal');
     config()->set('shortcut-keys.authorize', fn () => true);
-    ShortcutMap::factory()->default('admin')->create();
+    ShortcutMapFactory::new()->default('admin')->create();
     Filament::setCurrentPanel('admin');
 
     $page = Livewire::test(ManageShortcuts::class)->mountAction($action)->instance();

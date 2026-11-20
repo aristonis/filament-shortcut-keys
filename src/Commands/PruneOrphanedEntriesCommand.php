@@ -121,8 +121,8 @@ class PruneOrphanedEntriesCommand extends Command
     }
 
     /**
-     * The sets a maintenance pass can enumerate. Anything absent here (custom bindings, page actions,
-     * table row actions of the page being viewed) is deliberately left out so it is never judged dead.
+     * The sets a maintenance pass can enumerate. Anything absent here (header actions, which exist only
+     * while their page renders, and custom bindings) is deliberately left out so it is never judged dead.
      *
      * @return array<string, string[]>
      */

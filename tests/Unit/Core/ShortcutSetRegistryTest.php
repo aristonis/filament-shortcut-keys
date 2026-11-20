@@ -24,7 +24,7 @@ function fakeSet(string $key): ShortcutSet
 
         public function defaultModifier(): ModifierScheme
         {
-            return ModifierScheme::alt();
+            return held('alt');
         }
 
         public function discover(NavigationProvider $nav, PageContextProvider $page, string $panelId): array

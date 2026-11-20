@@ -2,6 +2,7 @@
 
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Factories\ShortcutMapFactory;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
 use Filament\Panel;
 use Filament\PanelRegistry;
@@ -14,7 +15,7 @@ afterEach(fn () => app()['env'] = 'testing');
 /** A map carrying one override per case the audit has to tell apart. */
 function mapWithMixedEntries(): ShortcutMap
 {
-    $map = ShortcutMap::factory()->default('admin')->create();
+    $map = ShortcutMapFactory::new()->default('admin')->create();
 
     $map->entries()->createMany([
         ['target' => 'navigation:' . OrderResource::class, 'letter' => 'o'],
@@ -58,7 +59,7 @@ it('bumps the version of every map it prunes so cached keymaps are rebuilt', fun
 });
 
 it('leaves an untouched map at its current version', function () {
-    $map = ShortcutMap::factory()->default('admin')->create();
+    $map = ShortcutMapFactory::new()->default('admin')->create();
     $map->entries()->create(['target' => 'navigation:' . OrderResource::class, 'letter' => 'o']);
     $before = $map->version;
 
@@ -77,7 +78,7 @@ it('changes nothing on a dry run', function () {
 });
 
 it('leaves maps belonging to a panel it was not asked to audit alone', function () {
-    $other = ShortcutMap::factory()->create(['panel_id' => 'reporting']);
+    $other = ShortcutMapFactory::new()->create(['panel_id' => 'reporting']);
     $other->entries()->create(['target' => 'navigation:App\\Filament\\Resources\\DeletedResource', 'letter' => 'd']);
 
     $this->artisan('shortcut-keys:prune --panel=admin')->assertSuccessful();

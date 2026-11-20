@@ -7,20 +7,20 @@ use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Exceptions\SystemMapPayloadNotAllowedException;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
-use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
 use Illuminate\Support\Facades\DB;
 
 /** Eloquent-backed {@see SystemMapAuthor}: creates, clones, and edits a panel's shared system presets in place. */
 final class EloquentSystemMapAuthor implements SystemMapAuthor
 {
-    public function createPreset(string $panelId, ?array $modifiers = null): int
+    use CopiesMapEntries;
+
+    public function createPreset(string $panelId): int
     {
         // A new preset starts empty; conventions fill the rest at resolve time. It never claims the
         // panel's default marker, since choosing the active/default preset is a separate concern.
         return ShortcutMap::query()->create([
             'panel_id' => $panelId,
             'type' => MapType::SYSTEM,
-            'modifiers' => $modifiers,
             'version' => 1,
             'default_marker' => null,
         ])->id;
@@ -34,25 +34,13 @@ final class EloquentSystemMapAuthor implements SystemMapAuthor
             $clone = ShortcutMap::query()->create([
                 'panel_id' => $panelId,
                 'type' => MapType::SYSTEM,
-                'modifiers' => $source->modifiers,
                 // Version stays monotonic per lineage so a cache key keyed on (id, version) can never
                 // alias the clone with its source.
                 'version' => $source->version + 1,
                 'default_marker' => null,
             ]);
 
-            $rows = $source->entries
-                ->map(fn (ShortcutMapEntry $entry): array => [
-                    'target' => $entry->target,
-                    'letter' => $entry->letter,
-                    'disabled' => $entry->disabled,
-                    'payload' => $entry->payload,
-                ])
-                ->all();
-
-            if ($rows !== []) {
-                $clone->entries()->createMany($rows);
-            }
+            $this->copyEntries($source, $clone);
 
             return $clone->id;
         });
@@ -75,18 +63,6 @@ final class EloquentSystemMapAuthor implements SystemMapAuthor
                 ['letter' => $edit->letter, 'disabled' => $edit->disabled, 'payload' => $edit->payload],
             );
 
-            $this->bumpVersion($map);
-
-            return $map->id;
-        });
-    }
-
-    public function removeEntry(string $panelId, int $mapId, string $target): int
-    {
-        return DB::transaction(function () use ($panelId, $mapId, $target): int {
-            $map = $this->systemMapInPanel($panelId, $mapId, forUpdate: true);
-
-            $map->entries()->where('target', $target)->delete();
             $this->bumpVersion($map);
 
             return $map->id;

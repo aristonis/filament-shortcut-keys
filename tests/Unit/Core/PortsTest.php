@@ -46,7 +46,7 @@ it('the fake page context returns actions and table presence', function () {
 });
 
 it('the fake map repository returns the seeded active map', function () {
-    $map = new MapData(type: MapType::SYSTEM, modifiers: null, entries: [], version: 3);
+    $map = new MapData(type: MapType::SYSTEM, entries: [], version: 3);
     $repo = new InMemoryMapRepository($map);
 
     $active = $repo->activeMap('App\\Models\\User', '1', 'admin');

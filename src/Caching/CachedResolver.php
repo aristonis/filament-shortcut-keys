@@ -12,9 +12,9 @@ use Illuminate\Contracts\Cache\Repository;
 
 /**
  * Caches the panel-wide (navigation) map, which is page-independent and shared across every page of a
- * panel. The cache key is a fingerprint of every input that shapes the map (navigation version, user
- * identity, active map version, developer config and locale), so a changed input is a guaranteed cache
- * miss and a stale map is never served.
+ * panel. The cache key is a fingerprint of every input that shapes the map (navigation version, the
+ * active map's identity (id + version), developer config and locale), so a changed input is a
+ * guaranteed cache miss and a stale map is never served.
  *
  * Only the panel-wide resolver is wrapped: page sets are cheap and page-specific, so they are always
  * resolved fresh (see CompositeResolver, which sits above this decorator).
@@ -44,9 +44,9 @@ final readonly class CachedResolver implements Resolver
     ): ResolvedMap {
         $navVersionToken = $nav->versionToken($panelId);
 
-        // The identity/id are used to LOAD the map. However, the cache key is scoped by the map's own
-        // row identity — so every user resolving to the same map shares one entry, while two forks
-        // of the same source (same monotonic version) never collide because their ids differ.
+        // The owner only picks which map loads; the key uses the map's own id and version, so every
+        // user on one map shares an entry, while two forks of the same source (same monotonic
+        // version) never collide because their ids differ.
         $map = $this->maps->activeMap($authType, $authId, $panelId);
         $mapIdentity = $map->type->value . ':' . ($map->id ?? 'none') . ':' . $map->version;
 

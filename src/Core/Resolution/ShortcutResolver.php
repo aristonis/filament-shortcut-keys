@@ -150,7 +150,6 @@ final readonly class ShortcutResolver implements Resolver
 
     private function keepEnabled(array $bindings): array
     {
-        // disabled shortcuts (overlay/user) never reach letter assignment or the client map
         return array_values(array_filter($bindings, fn ($binding) => $binding->enabled));
     }
 

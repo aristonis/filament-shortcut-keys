@@ -19,6 +19,9 @@ final class FilamentPageContextProvider implements PageContextProvider
      */
     private ?array $actions = null;
 
+    /** @var ActionTarget[]|null */
+    private ?array $rowActions = null;
+
     private ?bool $hasNestedTables = null;
 
     /** @param object $page the currently-rendering Filament page (a Livewire component) */
@@ -65,7 +68,7 @@ final class FilamentPageContextProvider implements PageContextProvider
             return [];
         }
 
-        return $this->toTargets($this->page->getTable()->getFlatRecordActions(), fn (Action $action): ActionTarget => $this->toRowTarget($action));
+        return $this->rowActions ??= $this->toTargets($this->page->getTable()->getFlatRecordActions(), fn (Action $action): ActionTarget => $this->toRowTarget($action));
     }
 
     /**

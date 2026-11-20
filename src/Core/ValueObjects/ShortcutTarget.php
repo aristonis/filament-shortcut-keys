@@ -14,9 +14,4 @@ final readonly class ShortcutTarget
     {
         return "$this->set:$this->structureKey";
     }
-
-    public function equals(self $other): bool
-    {
-        return $this->identity() === $other->identity();
-    }
 }

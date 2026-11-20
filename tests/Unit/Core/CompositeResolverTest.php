@@ -74,7 +74,7 @@ function recordingResolver(ResolvedMap $map, array &$seen): Resolver
 }
 
 it('merges the panel-wide and page maps into one resolved map', function () {
-    $panelWide = singleSetResolver('navigation', ModifierScheme::altShift(), 'products');
+    $panelWide = singleSetResolver('navigation', held('alt', 'shift'), 'products');
     $page = singleSetResolver('table', ModifierScheme::none(), 'search');
 
     $composite = new CompositeResolver($panelWide, $page);

@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('authenticatable_type', 191)->nullable();
             $table->string('authenticatable_id', 191)->nullable();
 
-            $table->json('modifiers')->nullable();
             $table->unsignedInteger('version')->default(1);
 
             // Nullable-marker trick: set to panel_id for the panel's default system map,

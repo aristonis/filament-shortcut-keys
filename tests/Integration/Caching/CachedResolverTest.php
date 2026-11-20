@@ -9,9 +9,7 @@ use Aristonis\FilamentShortcutKeys\Core\Enums\BindingSource;
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedGroup;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
-use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapData;
-use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 use Aristonis\FilamentShortcutKeys\Tests\Fakes\ClassRestrictedCacheStore;
@@ -38,7 +36,7 @@ function countingInner(): Resolver
         ): ResolvedMap {
             $this->calls++;
 
-            return new ResolvedMap([new ResolvedGroup('navigation', ModifierScheme::altShift(), [])]);
+            return new ResolvedMap([new ResolvedGroup('navigation', held('alt', 'shift'), [])]);
         }
     };
 }
@@ -49,7 +47,7 @@ function countingInner(): Resolver
  */
 function repoForMap(MapType $type, ?int $id, int $version): MapRepository
 {
-    return new InMemoryMapRepository(new MapData($type, null, [], $version, $id));
+    return new InMemoryMapRepository(new MapData($type, [], $version, $id));
 }
 
 /** @return array{0: Repository, 1: NavigationProvider, 2: PageContextProvider} */
@@ -90,10 +88,10 @@ function populatedInner(): Resolver
             $this->calls++;
 
             return new ResolvedMap([
-                new ResolvedGroup('navigation', ModifierScheme::altShift(), [
+                new ResolvedGroup('navigation', held('alt', 'shift'), [
                     new ShortcutBinding(
                         new ShortcutTarget('navigation', 'App\\Filament\\Resources\\ProductResource'),
-                        KeyCombo::parse('alt+shift+p'),
+                        combo('alt+shift+p'),
                         letterHint: 'Products',
                     ),
                     new ShortcutBinding(
@@ -103,10 +101,10 @@ function populatedInner(): Resolver
                         source: BindingSource::USER,
                     ),
                 ]),
-                new ResolvedGroup('custom', ModifierScheme::altShift(), [
+                new ResolvedGroup('custom', held('alt', 'shift'), [
                     new ShortcutBinding(
                         new ShortcutTarget('custom', 'open-docs'),
-                        KeyCombo::parse('alt+shift+d'),
+                        combo('alt+shift+d'),
                         source: BindingSource::USER,
                         payload: ['route' => '/admin/docs'],
                     ),
@@ -126,7 +124,7 @@ function mapShape(ResolvedMap $map): array
             'bindings' => array_map(
                 fn (ShortcutBinding $binding): array => [
                     'identity' => $binding->target->identity(),
-                    'combo' => $binding->keyCombo?->toString(),
+                    'combo' => $binding->keyCombo === null ? null : [$binding->keyCombo->modifiers->toString(), $binding->keyCombo->code],
                     'enabled' => $binding->enabled,
                     'source' => $binding->source->value,
                     'letterHint' => $binding->letterHint,

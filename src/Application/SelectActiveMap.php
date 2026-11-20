@@ -3,6 +3,7 @@
 namespace Aristonis\FilamentShortcutKeys\Application;
 
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapSelector;
+use Aristonis\FilamentShortcutKeys\Core\Enums\CustomizationMode;
 use Aristonis\FilamentShortcutKeys\Exceptions\EditingLockedException;
 
 /**
@@ -11,8 +12,6 @@ use Aristonis\FilamentShortcutKeys\Exceptions\EditingLockedException;
  */
 final readonly class SelectActiveMap
 {
-    private const PERSONAL = 'personal';
-
     public function __construct(
         private MapSelector $selector,
         private string $mode,
@@ -20,7 +19,7 @@ final readonly class SelectActiveMap
 
     public function select(string $authType, string $authId, string $panelId, int $mapId): int
     {
-        if ($this->mode !== self::PERSONAL) {
+        if ($this->mode !== CustomizationMode::PERSONAL->value) {
             throw EditingLockedException::forPanel($panelId);
         }
 

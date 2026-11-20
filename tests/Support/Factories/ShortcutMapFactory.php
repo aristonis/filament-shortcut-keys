@@ -1,6 +1,6 @@
 <?php
 
-namespace Aristonis\FilamentShortcutKeys\Database\Factories;
+namespace Aristonis\FilamentShortcutKeys\Tests\Support\Factories;
 
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
@@ -24,7 +24,6 @@ final class ShortcutMapFactory extends Factory
             'type' => MapType::SYSTEM,
             'authenticatable_type' => null,
             'authenticatable_id' => null,
-            'modifiers' => null,
             'version' => 1,
             'default_marker' => null,
         ];

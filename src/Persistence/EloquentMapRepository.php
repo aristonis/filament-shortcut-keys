@@ -8,7 +8,6 @@ use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapData;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
-use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapSelection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 /** Eloquent-backed {@see MapRepository} and {@see MapEditor}: resolves the active map and writes a user's overrides. */
 final class EloquentMapRepository implements MapEditor, MapRepository
 {
+    use CopiesMapEntries;
+
     public function activeMap(string $authType, string $authId, string $panelId): MapData
     {
         $map = $this->resolveActiveMap($authType, $authId, $panelId);
@@ -23,7 +24,7 @@ final class EloquentMapRepository implements MapEditor, MapRepository
         if ($map === null) {
             // An app with no seeded system map still resolves via pure conventions
             // downstream, so we hand back a neutral passthrough rather than throwing.
-            return new MapData(MapType::SYSTEM, null, [], 0);
+            return new MapData(MapType::SYSTEM, [], 0);
         }
 
         return $this->toMapData($map);
@@ -42,7 +43,7 @@ final class EloquentMapRepository implements MapEditor, MapRepository
      * create() (which, unlike updateOrCreate, does not swallow the violation), and a losing
      * concurrent fork catches the error, discards its map, and converges on the winner's.
      */
-    public function forkForEdit(string $authType, string $authId, string $panelId): ShortcutMap
+    private function forkForEdit(string $authType, string $authId, string $panelId): ShortcutMap
     {
         return DB::transaction(function () use ($authType, $authId, $panelId): ShortcutMap {
             // Lock the selection row if it exists so a concurrent fork blocks until we commit.
@@ -198,7 +199,6 @@ final class EloquentMapRepository implements MapEditor, MapRepository
             'type' => MapType::CUSTOM,
             'authenticatable_type' => $authType,
             'authenticatable_id' => $authId,
-            'modifiers' => $source?->modifiers,
             // Version is monotonic per lineage: the fork must never share its source's
             // version, or a later cache key keyed on version could alias two maps that hold
             // different content.
@@ -210,18 +210,7 @@ final class EloquentMapRepository implements MapEditor, MapRepository
             return $custom;
         }
 
-        $rows = $source->entries
-            ->map(fn (ShortcutMapEntry $entry): array => [
-                'target' => $entry->target,
-                'letter' => $entry->letter,
-                'disabled' => $entry->disabled,
-                'payload' => $entry->payload,
-            ])
-            ->all();
-
-        if ($rows !== []) {
-            $custom->entries()->createMany($rows);
-        }
+        $this->copyEntries($source, $custom);
 
         return $custom;
     }
@@ -250,7 +239,6 @@ final class EloquentMapRepository implements MapEditor, MapRepository
 
         return new MapData(
             type: $map->type,
-            modifiers: $map->modifiers,
             entries: $entries,
             version: $map->version,
             id: $map->id,

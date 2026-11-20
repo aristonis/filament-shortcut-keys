@@ -67,7 +67,7 @@ function resolveWithMap(ShortcutSetRegistry $registry, array $entries, array $ov
 {
     $nav = new InMemoryNavigationProvider([], 'v1');
     $page = new InMemoryPageContextProvider([], false);
-    $map = new MapData(type: MapType::CUSTOM, modifiers: null, entries: $entries, version: 1);
+    $map = new MapData(type: MapType::CUSTOM, entries: $entries, version: 1);
     $maps = new InMemoryMapRepository($map);
 
     return (new ShortcutResolver($registry, $overlay, $maps))
@@ -90,7 +90,7 @@ function bindingFor(array $groups, string $set, string $structureKey): ?Shortcut
 
 it('resolves convention bindings into per-set groups with assigned letters', function () {
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), [
         convention('navigation', 'products', 'Products'),
         convention('navigation', 'payments', 'Payments'),
     ]));
@@ -99,32 +99,32 @@ it('resolves convention bindings into per-set groups with assigned letters', fun
 
     expect($groups)->toHaveCount(1)
         ->and($groups[0]->setKey)->toBe('navigation')
-        ->and($groups[0]->modifier->equals(ModifierScheme::altShift()))->toBeTrue()
-        ->and($groups[0]->bindings[0]->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue()
-        ->and($groups[0]->bindings[1]->keyCombo->equals(KeyCombo::parse('alt+shift+a')))->toBeTrue();
+        ->and($groups[0]->modifier)->toEqual(held('alt', 'shift'))
+        ->and($groups[0]->bindings[0]->keyCombo)->toEqual(combo('alt+shift+p'))
+        ->and($groups[0]->bindings[1]->keyCombo)->toEqual(combo('alt+shift+a'));
 });
 
 it('keeps sets with different modifier schemes in separate clash pools', function () {
     // both want letter P, but different schemes → no clash, both get P
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), [
         convention('navigation', 'products', 'Products'),
     ]));
-    $registry->register(resolverSet('global', ModifierScheme::alt(), [
+    $registry->register(resolverSet('global', held('alt'), [
         convention('global', 'print', 'Print'),
     ]));
 
     $groups = resolveGroups($registry);
 
     expect($groups)->toHaveCount(2)
-        ->and($groups[0]->bindings[0]->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue()
-        ->and($groups[1]->bindings[0]->keyCombo->equals(KeyCombo::parse('alt+p')))->toBeTrue();
+        ->and($groups[0]->bindings[0]->keyCombo)->toEqual(combo('alt+shift+p'))
+        ->and($groups[1]->bindings[0]->keyCombo)->toEqual(combo('alt+p'));
 });
 
 it('forces a config-overlay letter and frees the convention letter for others', function () {
     // products would convention to P; overlay forces it to R, so payments is free to take P.
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), [
         convention('navigation', 'products', 'Products'),
         convention('navigation', 'payments', 'Payments'),
     ]));
@@ -134,14 +134,14 @@ it('forces a config-overlay letter and frees the convention letter for others', 
     $products = bindingFor($groups, 'navigation', 'products');
     $payments = bindingFor($groups, 'navigation', 'payments');
 
-    expect($products->keyCombo->equals(KeyCombo::parse('alt+shift+r')))->toBeTrue()
+    expect($products->keyCombo)->toEqual(combo('alt+shift+r'))
         ->and($products->source)->toBe(BindingSource::OVERLAY)
-        ->and($payments->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue();
+        ->and($payments->keyCombo)->toEqual(combo('alt+shift+p'));
 });
 
 it('drops a config-overlay disabled shortcut from the resolved map', function () {
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('global', ModifierScheme::alt(), [
+    $registry->register(resolverSet('global', held('alt'), [
         convention('global', 'export', 'Export'),
         convention('global', 'print', 'Print'),
     ]));
@@ -155,7 +155,7 @@ it('drops a config-overlay disabled shortcut from the resolved map', function ()
 it('applies a user active-map remap and frees the convention letter', function () {
     // products would convention to P; the user's map remaps it to Z, freeing P for payments.
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), [
         convention('navigation', 'products', 'Products'),
         convention('navigation', 'payments', 'Payments'),
     ]));
@@ -165,14 +165,14 @@ it('applies a user active-map remap and frees the convention letter', function (
     $products = bindingFor($groups, 'navigation', 'products');
     $payments = bindingFor($groups, 'navigation', 'payments');
 
-    expect($products->keyCombo->equals(KeyCombo::parse('alt+shift+z')))->toBeTrue()
+    expect($products->keyCombo)->toEqual(combo('alt+shift+z'))
         ->and($products->source)->toBe(BindingSource::USER)
-        ->and($payments->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue();
+        ->and($payments->keyCombo)->toEqual(combo('alt+shift+p'));
 });
 
 it('drops a user active-map disabled shortcut from the resolved map', function () {
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('global', ModifierScheme::alt(), [
+    $registry->register(resolverSet('global', held('alt'), [
         convention('global', 'export', 'Export'),
         convention('global', 'print', 'Print'),
     ]));
@@ -186,7 +186,7 @@ it('drops a user active-map disabled shortcut from the resolved map', function (
 it('falls through to convention for targets the user map does not mention', function () {
     // map only touches products; payments is untouched → still convention-assigned.
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), [
         convention('navigation', 'products', 'Products'),
         convention('navigation', 'payments', 'Payments'),
     ]));
@@ -196,12 +196,12 @@ it('falls through to convention for targets the user map does not mention', func
     $payments = bindingFor($groups, 'navigation', 'payments');
 
     expect($payments->source)->toBe(BindingSource::CONVENTION)
-        ->and($payments->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue();
+        ->and($payments->keyCombo)->toEqual(combo('alt+shift+p'));
 });
 
 it('throws when a binding references an unregistered set', function () {
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), [
         convention('ghost', 'thing', 'Thing'),
     ]));
 
@@ -211,14 +211,14 @@ it('throws when a binding references an unregistered set', function () {
 
 it('ignores an invalid overlay letter and keeps the convention key', function () {
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), [
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), [
         convention('navigation', 'products', 'Products'),
     ]));
 
     $groups = resolveGroups($registry, ['navigation:products' => ['letter' => 'enter']]);
     $products = bindingFor($groups, 'navigation', 'products');
 
-    expect($products->keyCombo->equals(KeyCombo::parse('alt+shift+p')))->toBeTrue()
+    expect($products->keyCombo)->toEqual(combo('alt+shift+p'))
         ->and($products->source)->toBe(BindingSource::CONVENTION);
 });
 
@@ -228,7 +228,7 @@ it('resolves a pool larger than the alphabet without emitting a null key', funct
         $bindings[] = convention('navigation', "r{$i}", 'Item');
     }
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('navigation', ModifierScheme::altShift(), $bindings));
+    $registry->register(resolverSet('navigation', held('alt', 'shift'), $bindings));
 
     $groups = resolveGroups($registry);
 
@@ -280,7 +280,7 @@ it('shares one letter pool so a custom binding cannot steal a nav letter', funct
 it('ignores a payload entry whose set does not accept custom bindings', function () {
     // A set keyed 'custom' but without the AcceptsCustomBindings marker must not receive the payload.
     $registry = new ShortcutSetRegistry;
-    $registry->register(resolverSet('custom', ModifierScheme::altShift(), []));
+    $registry->register(resolverSet('custom', held('alt', 'shift'), []));
 
     $groups = resolveWithMap($registry, [
         'custom:deploy' => ['letter' => 'd', 'payload' => ['selector' => '#x']],
@@ -327,7 +327,7 @@ it('forces a letter onto a leader set', function () {
 
     $groups = resolveGroups($registry, ['navigation:orders' => ['letter' => 'x']]);
 
-    expect(bindingFor($groups, 'navigation', 'orders')->keyCombo->equals(new KeyCombo(ModifierScheme::leader('g'), 'KeyX')))->toBeTrue();
+    expect(bindingFor($groups, 'navigation', 'orders')->keyCombo)->toEqual(new KeyCombo(ModifierScheme::leader('g'), 'KeyX'));
 });
 
 it('turns on a shortcut the set left off when the overlay pins a letter to it', function () {

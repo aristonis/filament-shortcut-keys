@@ -7,6 +7,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\MapRepository;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
+use Aristonis\FilamentShortcutKeys\Core\Contracts\ShortcutSet;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\CompositeResolver;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\KeyReservations;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
@@ -14,7 +15,6 @@ use Aristonis\FilamentShortcutKeys\Core\Resolution\ShortcutResolver;
 use Aristonis\FilamentShortcutKeys\Core\Sets\CustomSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\GlobalSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\NavigationSet;
-use Aristonis\FilamentShortcutKeys\Core\Sets\PageSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\RowActionSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
@@ -88,23 +88,23 @@ class FilamentShortcutKeysPlugin implements Plugin
                 // The sets are assembled here rather than at registration because the panel's text
                 // direction depends on the request locale, which is only settled once the app's
                 // locale middleware has run — long after plugins register.
-                $panelWideSets = $this->panelWideSets();
-                $pageSets = $this->pageSets();
-                $resolver = $this->buildResolver($panelWideSets, $pageSets);
+                [$panelWideSets, $pageSets, $reserved] = $this->assembleSets();
+
+                // The navigation map is page-independent, so it is cached once and shared across every
+                // page; the page's own sets are cheap and page-specific, so they are resolved fresh and
+                // merged in.
+                $resolver = new CompositeResolver(
+                    $this->panelWideResolver($panelWideSets, $reserved),
+                    $this->pageResolver($pageSets, $reserved),
+                );
                 $handlerBySet = $this->handlerBySet($panelWideSets, $pageSets);
 
-                $user = Filament::auth()->user();
+                [$authType, $authId] = $this->owner(Filament::auth()->user());
                 $navigation = app(NavigationProvider::class);
                 $pageContext = new FilamentPageContextProvider($page);
                 $panelId = $panel->getId();
 
-                $map = $resolver->resolve(
-                    $navigation,
-                    $pageContext,
-                    $panelId,
-                    $user instanceof Model ? $user->getMorphClass() : '',
-                    (string) ($user?->getAuthIdentifier() ?? ''),
-                );
+                $map = $resolver->resolve($navigation, $pageContext, $panelId, $authType, $authId);
 
                 $payload = (new ClientMapSerializer($navigation, $pageContext, $handlerBySet))
                     ->serialize($map, $panelId);
@@ -130,13 +130,12 @@ class FilamentShortcutKeysPlugin implements Plugin
      */
     public function resolvePanelWideMap(string $panelId, ?Authenticatable $user): ResolvedMap
     {
-        return $this->panelWideResolver($this->panelWideSets())->resolve(
-            app(NavigationProvider::class),
-            new NullPageContextProvider,
-            $panelId,
-            $user instanceof Model ? $user->getMorphClass() : '',
-            (string) ($user?->getAuthIdentifier() ?? ''),
-        );
+        $panelWideSets = $this->panelWideSets();
+        $reserved = $this->keyReservations($panelWideSets, $this->builtInPageSets());
+        [$authType, $authId] = $this->owner($user);
+
+        return $this->panelWideResolver($panelWideSets, $reserved)
+            ->resolve(app(NavigationProvider::class), new NullPageContextProvider, $panelId, $authType, $authId);
     }
 
     /**
@@ -146,16 +145,27 @@ class FilamentShortcutKeysPlugin implements Plugin
      */
     public function resolveTableMap(string $panelId, ?Authenticatable $user): ResolvedMap
     {
-        $pageSets = $this->pageSets();
+        [, $pageSets, $reserved] = $this->assembleSets();
+        [$authType, $authId] = $this->owner($user);
 
-        return (new ShortcutResolver($pageSets, config('shortcut-keys.overlay', []), app(MapRepository::class), $this->keyReservations(), $this->claimedRowActionCodes($pageSets)))
-            ->resolve(
-                app(NavigationProvider::class),
-                new AnyTablePageContextProvider,
-                $panelId,
-                $user instanceof Model ? $user->getMorphClass() : '',
-                (string) ($user?->getAuthIdentifier() ?? ''),
-            );
+        return $this->pageResolver($pageSets, $reserved)
+            ->resolve(app(NavigationProvider::class), new AnyTablePageContextProvider, $panelId, $authType, $authId);
+    }
+
+    /**
+     * Both registries and the keys reserved across them, built once per resolution and handed to every
+     * step that needs them. Nothing is kept on the plugin: it is a singleton, so a cached copy would
+     * outlive the request's locale and any config change.
+     *
+     * @return array{0: ShortcutSetRegistry, 1: ShortcutSetRegistry, 2: array<string, string[]>} panel-wide sets, page sets, reserved keys by pool
+     */
+    private function assembleSets(): array
+    {
+        $panelWideSets = $this->panelWideSets();
+        $builtInPageSets = $this->builtInPageSets();
+        $reserved = $this->keyReservations($panelWideSets, $builtInPageSets);
+
+        return [$panelWideSets, $this->pageSets($panelWideSets, $builtInPageSets, $reserved), $reserved];
     }
 
     private function panelWideSets(): ShortcutSetRegistry
@@ -167,33 +177,36 @@ class FilamentShortcutKeysPlugin implements Plugin
         return $sets;
     }
 
-    private function pageSets(): ShortcutSetRegistry
+    /**
+     * @param  array{GlobalSet, TableSet}  $builtInPageSets
+     * @param  array<string, string[]>  $reserved
+     */
+    private function pageSets(ShortcutSetRegistry $panelWideSets, array $builtInPageSets, array $reserved): ShortcutSetRegistry
     {
-        [$global, $table, $page] = $this->builtInPageSets();
+        [$global, $table] = $builtInPageSets;
         $rowActionModifier = $this->configuredModifier('row-action');
         $pool = (new RowActionSet([], $rowActionModifier))->defaultModifier()->toString();
 
         // Row actions letter themselves before the resolver runs, so they also have to step around
         // letters a developer pinned in the overlay for another set in their pool; otherwise the
         // pinned shortcut is resolved first and the row action is dropped on every table page.
-        $unavailable = [...$this->keyReservations()[$pool] ?? [], ...$this->pinnedCodes($pool, except: 'row-action')];
+        $pinned = $this->pinnedCodes([...$panelWideSets->all(), ...$builtInPageSets], $pool, except: 'row-action');
+        $unavailable = [...$reserved[$pool] ?? [], ...$pinned];
 
         $sets = new ShortcutSetRegistry;
         $sets->register($global);
         $sets->register($table);
         $sets->register(new RowActionSet($this->rowActions, $rowActionModifier, $unavailable));
-        $sets->register($page);
 
         return $sets;
     }
 
-    /** @return array{GlobalSet, TableSet, PageSet} */
+    /** @return array{GlobalSet, TableSet} */
     private function builtInPageSets(): array
     {
         return [
             new GlobalSet($this->configuredModifier('global')),
             new TableSet($this->panelIsRightToLeft(), $this->configuredModifier('table')),
-            new PageSet($this->configuredModifier('page')),
         ];
     }
 
@@ -201,18 +214,18 @@ class FilamentShortcutKeysPlugin implements Plugin
      * Keys no letter may take, per pool, across both registries: the leader key belongs to the
      * panel-wide sets but has to stay out of the bare pool the page sets share.
      *
+     * @param  array{GlobalSet, TableSet}  $builtInPageSets
      * @return array<string, string[]>
      */
-    private function keyReservations(): array
+    private function keyReservations(ShortcutSetRegistry $panelWideSets, array $builtInPageSets): array
     {
-        $panelWide = $this->panelWideSets()->all();
-        $page = $this->builtInPageSets();
+        $panelWide = $panelWideSets->all();
 
         // The two registries are lettered by separate resolvers, so a pool split between them would
         // hand out the same letter twice. Only the page sets that hand out letters can collide: the
-        // table's keys are fixed and reserved for both resolvers, and the page set emits nothing yet.
+        // table's keys are fixed and reserved for both resolvers.
         $panelWidePools = array_map(fn ($set) => $set->defaultModifier()->toString(), $panelWide);
-        [$global] = $page;
+        [$global] = $builtInPageSets;
         $lettered = [
             'global' => $global->defaultModifier()->toString(),
             'row-action' => (new RowActionSet([], $this->configuredModifier('row-action')))->defaultModifier()->toString(),
@@ -223,14 +236,14 @@ class FilamentShortcutKeysPlugin implements Plugin
             }
         }
 
-        return KeyReservations::for([...$panelWide, ...$page]);
+        return KeyReservations::for([...$panelWide, ...$builtInPageSets]);
     }
 
     /**
      * Every registered row action's key, in its pool. A row action is emitted only where a table has
      * it, so without this a header action would take that letter on one page and lose it on the next,
      * and a page that gains a relation manager would rekey its header actions. Claimed rather than
-     * reserved, so an overlay pin onto one of these keys still works as before.
+     * reserved, so an overlay pin can still take one of these keys.
      *
      * @return array<string, string[]>
      */
@@ -266,12 +279,13 @@ class FilamentShortcutKeysPlugin implements Plugin
     /**
      * Letters the overlay pins onto other sets in a pool, as key codes.
      *
+     * @param  ShortcutSet[]  $sets  every set whose pins count
      * @return string[]
      */
-    private function pinnedCodes(string $pool, string $except): array
+    private function pinnedCodes(array $sets, string $pool, string $except): array
     {
         $poolBySet = [];
-        foreach ([...$this->panelWideSets()->all(), ...$this->builtInPageSets()] as $set) {
+        foreach ($sets as $set) {
             $poolBySet[$set->key()] = $set->defaultModifier()->toString();
         }
 
@@ -312,26 +326,23 @@ class FilamentShortcutKeysPlugin implements Plugin
         return trans('filament-panels::layout.direction') === 'rtl';
     }
 
-    /**
-     * The navigation map is page-independent, so it is cached once and shared across every page; the
-     * page's own sets are cheap and page-specific, so they are resolved fresh and merged in.
-     */
-    private function buildResolver(ShortcutSetRegistry $panelWideSets, ShortcutSetRegistry $pageSets): CompositeResolver
+    /** @param  array<string, string[]>  $reserved */
+    private function pageResolver(ShortcutSetRegistry $pageSets, array $reserved): Resolver
     {
-        $overlay = config('shortcut-keys.overlay', []);
-
-        return new CompositeResolver(
-            $this->panelWideResolver($panelWideSets),
-            new ShortcutResolver($pageSets, $overlay, app(MapRepository::class), $this->keyReservations(), $this->claimedRowActionCodes($pageSets)),
+        return new ShortcutResolver(
+            $pageSets,
+            config('shortcut-keys.overlay', []),
+            app(MapRepository::class),
+            $reserved,
+            $this->claimedRowActionCodes($pageSets),
         );
     }
 
-    private function panelWideResolver(ShortcutSetRegistry $panelWideSets): Resolver
+    /** @param  array<string, string[]>  $reserved */
+    private function panelWideResolver(ShortcutSetRegistry $panelWideSets, array $reserved): Resolver
     {
         $maps = app(MapRepository::class);
         $overlay = config('shortcut-keys.overlay', []);
-
-        $reserved = $this->keyReservations();
 
         return new CachedResolver(
             new ShortcutResolver($panelWideSets, $overlay, $maps, $reserved),
@@ -341,6 +352,15 @@ class FilamentShortcutKeysPlugin implements Plugin
             app()->getLocale(),
             config('shortcut-keys.cache.ttl'),
         );
+    }
+
+    /** @return array{0: string, 1: string} the user's morph class and auth id; both empty for a guest */
+    private function owner(?Authenticatable $user): array
+    {
+        return [
+            $user instanceof Model ? $user->getMorphClass() : '',
+            (string) ($user?->getAuthIdentifier() ?? ''),
+        ];
     }
 
     /**

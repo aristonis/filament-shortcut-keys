@@ -26,8 +26,8 @@ function overlayGroup(array $groups, string $set): array
 
 it('labels every set from its own source and formats the keys', function () {
     $map = new ResolvedMap([
-        new ResolvedGroup('navigation', ModifierScheme::altShift(), [overlayBinding('navigation', 'App\\OrderResource', 'KeyO')]),
-        new ResolvedGroup('global', ModifierScheme::alt(), [overlayBinding('global', 'export', 'KeyE')]),
+        new ResolvedGroup('navigation', held('alt', 'shift'), [overlayBinding('navigation', 'App\\OrderResource', 'KeyO')]),
+        new ResolvedGroup('global', held('alt'), [overlayBinding('global', 'export', 'KeyE')]),
         new ResolvedGroup('table', ModifierScheme::none(), [overlayBinding('table', 'search', 'Slash')]),
     ]);
 
@@ -45,7 +45,7 @@ it('labels every set from its own source and formats the keys', function () {
 
 it('falls back to the structure key when a label is missing', function () {
     $map = new ResolvedMap([
-        new ResolvedGroup('global', ModifierScheme::alt(), [overlayBinding('global', 'export', 'KeyE')]),
+        new ResolvedGroup('global', held('alt'), [overlayBinding('global', 'export', 'KeyE')]),
     ]);
 
     $groups = OverlayCatalog::build($map, [], [], []);
@@ -59,7 +59,7 @@ it('shows a g shortcut as two keys pressed one after the other', function () {
         new ResolvedGroup('navigation', $leader, [
             new ShortcutBinding(new ShortcutTarget('navigation', 'App\\OrderResource'), new KeyCombo($leader, 'KeyO'), true, BindingSource::CONVENTION),
         ]),
-        new ResolvedGroup('global', ModifierScheme::alt(), [overlayBinding('global', 'export', 'KeyE')]),
+        new ResolvedGroup('global', held('alt'), [overlayBinding('global', 'export', 'KeyE')]),
     ]);
 
     $groups = OverlayCatalog::build($map, ['App\\OrderResource' => 'Orders'], ['global:export' => 'Export'], []);

@@ -13,16 +13,13 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 interface SystemMapAuthor
 {
     /** Create a new, empty system preset for a panel; returns its id. */
-    public function createPreset(string $panelId, ?array $modifiers = null): int;
+    public function createPreset(string $panelId): int;
 
-    /** Copy an existing system preset (its modifiers and override rows) into a fresh preset; returns the new id. */
+    /** Copy an existing system preset's override rows into a fresh preset; returns the new id. */
     public function clonePreset(string $panelId, int $sourceMapId): int;
 
     /** Upsert one override row on a system preset in place; returns that map's id. */
     public function saveEntry(string $panelId, int $mapId, MapEntryEdit $edit): int;
-
-    /** Drop one override row from a system preset in place; returns that map's id. */
-    public function removeEntry(string $panelId, int $mapId, string $target): int;
 
     /** Make a system preset the map every admin without their own selection uses; returns its id. */
     public function makeDefault(string $panelId, int $mapId): int;

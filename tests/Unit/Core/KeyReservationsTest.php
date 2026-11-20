@@ -17,14 +17,14 @@ it('reserves the leader key among bare keys, so no bare shortcut can take it', f
 });
 
 it('reserves the table keys in the table pool only', function () {
-    $reserved = KeyReservations::for([new TableSet(modifier: ModifierScheme::none()), new GlobalSet(ModifierScheme::alt())]);
+    $reserved = KeyReservations::for([new TableSet(modifier: ModifierScheme::none()), new GlobalSet(held('alt'))]);
 
     expect($reserved[''])->toContain('KeyJ', 'KeyK', 'Slash')
         ->and($reserved['alt'] ?? [])->not->toContain('KeyJ');
 });
 
 it('follows the table to whatever pool it was configured onto', function () {
-    $reserved = KeyReservations::for([new TableSet(modifier: ModifierScheme::alt())]);
+    $reserved = KeyReservations::for([new TableSet(modifier: held('alt'))]);
 
     expect($reserved['alt'])->toContain('KeyJ')
         ->and($reserved[''] ?? [])->not->toContain('KeyJ');

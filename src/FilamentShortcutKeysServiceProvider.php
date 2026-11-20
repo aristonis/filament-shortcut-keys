@@ -15,8 +15,6 @@ use Aristonis\FilamentShortcutKeys\Filament\FilamentNavigationProvider;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapCatalog;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapRepository;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentSystemMapAuthor;
-use Aristonis\FilamentShortcutKeys\Testing\TestsFilamentShortcutKeys;
-use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -44,20 +42,17 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
             '2026_01_01_000003_create_shortcut_map_selections_table',
         ]);
 
-        if (file_exists($package->basePath('/../resources/lang'))) {
-            $package->hasTranslations();
-        }
+        $package->hasTranslations();
 
-        if (file_exists($package->basePath('/../resources/views'))) {
-            $package->hasViews(static::$viewNamespace);
-        }
+        $package->hasViews(static::$viewNamespace);
     }
 
     public function packageRegistered(): void
     {
         // The ports resolve to their Filament/Eloquent adapters here, so the plugin and resolvers
-        // depend only on the contracts and a host app can swap any adapter. PageContextProvider is
-        // left unbound because it is page-specific, built per render from the current page.
+        // depend only on the contracts. Only the persistence and authorization bindings are meant to
+        // be swapped by a host app; the resolution ports are @internal. PageContextProvider is left
+        // unbound because it is page-specific, built per render from the current page.
         $this->app->singleton(NavigationProvider::class, FilamentNavigationProvider::class);
         $this->app->singleton(MapRepository::class, EloquentMapRepository::class);
         // The read and the write side of a user's map are one Eloquent adapter, so share the instance.
@@ -69,11 +64,5 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
         $this->app->singleton(EloquentMapCatalog::class);
         $this->app->singleton(ListMaps::class, fn ($app) => $app->make(EloquentMapCatalog::class));
         $this->app->singleton(MapSelector::class, fn ($app) => $app->make(EloquentMapCatalog::class));
-    }
-
-    public function packageBooted(): void
-    {
-        // Testing
-        Testable::mixin(new TestsFilamentShortcutKeys);
     }
 }

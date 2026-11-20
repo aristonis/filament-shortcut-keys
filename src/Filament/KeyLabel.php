@@ -18,11 +18,8 @@ final class KeyLabel
         'ArrowDown' => '↓',
         'ArrowLeft' => '←',
         'ArrowRight' => '→',
-        'Enter' => 'Enter',
-        'Space' => 'Space',
         'Delete' => 'Del',
         'Escape' => 'Esc',
-        'Backspace' => 'Backspace',
     ];
 
     /** @return string[] */

@@ -14,10 +14,10 @@ use Aristonis\FilamentShortcutKeys\Exceptions\InvalidModifierSchemeException;
 final class KeyReservations
 {
     /**
-     * @param  iterable<ShortcutSet>  $sets
+     * @param  ShortcutSet[]  $sets
      * @return array<string, string[]> key codes by pool name (ModifierScheme::toString())
      */
-    public static function for(iterable $sets): array
+    public static function for(array $sets): array
     {
         $reserved = [];
 
@@ -44,9 +44,9 @@ final class KeyReservations
      * A leader on a key another set already binds bare (the table's j, say) would start a wait instead
      * of doing its job, so it is refused rather than left to shadow that key.
      *
-     * @param  iterable<ShortcutSet>  $sets
+     * @param  ShortcutSet[]  $sets
      */
-    private static function assertLeadersFree(iterable $sets): void
+    private static function assertLeadersFree(array $sets): void
     {
         $bareCodes = [];
         $leaders = [];

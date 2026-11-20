@@ -14,7 +14,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 /**
  * Dev-registered custom row actions (e.g. approve/reject), auto-lettered and uniform across every
  * table. A shortcut is emitted only when the current page's table exposes a record action of that
- * name, so the reference overlay never shows a key the page can't use. A page with a nested table
+ * name, so the cheatsheet never shows a key the page can't use. A page with a nested table
  * gets every registered name, and the cheatsheet hides the ones its tables turn out not to have.
  */
 final class RowActionSet implements ShortcutSet

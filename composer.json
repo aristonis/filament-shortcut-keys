@@ -46,8 +46,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Aristonis\\FilamentShortcutKeys\\Tests\\": "tests/",
-            "Aristonis\\FilamentShortcutKeys\\Database\\Factories\\": "database/factories/"
+            "Aristonis\\FilamentShortcutKeys\\Tests\\": "tests/"
         }
     },
     "scripts": {

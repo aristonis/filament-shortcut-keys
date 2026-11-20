@@ -9,7 +9,6 @@ final class EditingLockedException extends ShortcutKeysException
         return new self(
             "Shortcut editing is disabled for panel: {$panelId}",
             10003,
-            'EDITING_LOCKED',
         );
     }
 }

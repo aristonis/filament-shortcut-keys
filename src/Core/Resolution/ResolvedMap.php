@@ -8,7 +8,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
-/** The final keymap for one page: shortcut groups (one per set), serialized for the client via toArray(). */
+/** The final keymap for one page: shortcut groups (one per set). */
 final readonly class ResolvedMap
 {
     /**
@@ -45,8 +45,8 @@ final readonly class ResolvedMap
      * Storing objects would make every host add the package's value objects to `serializable_classes`
      * before the panel could serve a second request. Primitives need no allowlist on any driver.
      *
-     * Lossless, unlike toArray(): this is read back into live objects, so it carries the fields the
-     * client payload has no use for (letter hint, custom-binding payload, target structure key).
+     * Lossless: this is read back into live objects, so it carries the fields the client payload has
+     * no use for (letter hint, custom-binding payload, target structure key).
      */
     public function toCache(): array
     {
@@ -123,27 +123,6 @@ final readonly class ResolvedMap
             shift: $modifier['shift'],
             meta: $modifier['meta'],
             leader: $modifier['leader'] ?? null,
-        );
-    }
-
-    public function toArray(): array
-    {
-        return array_map(
-            fn ($group) => [
-                'set' => $group->setKey,
-                'modifier' => $group->modifier->heldModifiers(),
-                'leader' => $group->modifier->leader,
-                'bindings' => array_map(
-                    fn ($binding) => [
-                        'target' => $binding->target->identity(),
-                        'code' => $binding->keyCombo->code,
-                        'enabled' => $binding->enabled,
-                        'source' => $binding->source->value,
-                    ],
-                    $group->bindings
-                ),
-            ],
-            $this->groups()
         );
     }
 }

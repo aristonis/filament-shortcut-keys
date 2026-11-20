@@ -9,7 +9,6 @@ final class AuthoringDeniedException extends ShortcutKeysException
         return new self(
             "System-map authoring is not permitted for panel: {$panelId}",
             10005,
-            'AUTHORING_DENIED',
         );
     }
 }

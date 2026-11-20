@@ -5,7 +5,7 @@ namespace Aristonis\FilamentShortcutKeys\Core\Contracts;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 
 /**
- * One category of shortcuts (navigation, global, table, row action, custom, page). A set names
+ * One category of shortcuts (navigation, global, table, row action, custom). A set names
  * itself, declares its default modifier, discovers its raw bindings for a page, and names the client
  * handler that fires them. A new category is a new set in a registry, not a change to the resolver.
  *

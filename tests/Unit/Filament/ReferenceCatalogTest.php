@@ -10,19 +10,14 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutBinding;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 use Aristonis\FilamentShortcutKeys\Filament\ReferenceCatalog;
 
-function catalogBinding(string $set, string $structureKey, ?string $code, bool $enabled = true): ShortcutBinding
+function catalogBinding(string $set, string $structureKey, string $code): ShortcutBinding
 {
-    return new ShortcutBinding(
-        new ShortcutTarget($set, $structureKey),
-        $code === null ? null : new KeyCombo(ModifierScheme::altShift(), $code),
-        $enabled,
-        BindingSource::CONVENTION,
-    );
+    return new ShortcutBinding(new ShortcutTarget($set, $structureKey), new KeyCombo(held('alt', 'shift'), $code));
 }
 
 it('labels a navigation binding from the matching nav item and formats its keys', function () {
     $map = new ResolvedMap([
-        new ResolvedGroup('navigation', ModifierScheme::altShift(), [
+        new ResolvedGroup('navigation', held('alt', 'shift'), [
             catalogBinding('navigation', 'App\\OrderResource', 'KeyO'),
         ]),
     ]);
@@ -37,7 +32,7 @@ it('labels a navigation binding from the matching nav item and formats its keys'
 
 it('falls back to the structure key when no nav item matches', function () {
     $map = new ResolvedMap([
-        new ResolvedGroup('navigation', ModifierScheme::altShift(), [
+        new ResolvedGroup('navigation', held('alt', 'shift'), [
             catalogBinding('navigation', 'App\\GhostResource', 'KeyG'),
         ]),
     ]);
@@ -49,7 +44,7 @@ it('falls back to the structure key when no nav item matches', function () {
 
 it('uses a custom binding structure key as its label', function () {
     $map = new ResolvedMap([
-        new ResolvedGroup('custom', ModifierScheme::altShift(), [
+        new ResolvedGroup('custom', held('alt', 'shift'), [
             catalogBinding('custom', 'reports', 'KeyR'),
         ]),
     ]);
@@ -59,17 +54,6 @@ it('uses a custom binding structure key as its label', function () {
     expect($groups[0]['set'])->toBe('custom')
         ->and($groups[0]['rows'][0]['label'])->toBe('reports')
         ->and($groups[0]['rows'][0]['keys'])->toBe(['Alt', 'Shift', 'R']);
-});
-
-it('skips disabled and unassigned bindings, dropping a group left empty', function () {
-    $map = new ResolvedMap([
-        new ResolvedGroup('navigation', ModifierScheme::altShift(), [
-            catalogBinding('navigation', 'App\\OrderResource', 'KeyO', enabled: false),
-            catalogBinding('navigation', 'App\\UserResource', null),
-        ]),
-    ]);
-
-    expect(ReferenceCatalog::build($map, []))->toBe([]);
 });
 
 it('marks a g shortcut as a sequence so the page can say "then"', function () {

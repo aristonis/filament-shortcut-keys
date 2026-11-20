@@ -31,19 +31,9 @@ final readonly class ModifierScheme
         return new self(ctrl: false, alt: false, shift: false, meta: false, leader: 'Key' . strtoupper($letter));
     }
 
-    public static function alt(): self
-    {
-        return new self(ctrl: false, alt: true, shift: false, meta: false);
-    }
-
     public static function none(): self
     {
         return new self(ctrl: false, alt: false, shift: false, meta: false);
-    }
-
-    public static function altShift(): self
-    {
-        return new self(ctrl: false, alt: true, shift: true, meta: false);
     }
 
     /**
@@ -77,15 +67,6 @@ final readonly class ModifierScheme
             shift: in_array('shift', $tokens, true),
             meta: in_array('meta', $tokens, true),
         );
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->ctrl === $other->ctrl
-            && $this->alt === $other->alt
-            && $this->shift === $other->shift
-            && $this->meta === $other->meta
-            && $this->leader === $other->leader;
     }
 
     /** Names the scheme; a leader scheme gets its own name so it never shares a letter pool with bare keys. */

@@ -3,7 +3,6 @@
 use Aristonis\FilamentShortcutKeys\Core\Enums\BindingSource;
 use Aristonis\FilamentShortcutKeys\Core\Sets\GlobalSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\NavigationSet;
-use Aristonis\FilamentShortcutKeys\Core\Sets\PageSet;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ActionTarget;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
@@ -74,7 +73,7 @@ it('the table set is keyed "table" and defaults to bare keys (no modifier)', fun
     $set = new TableSet;
 
     expect($set->key())->toBe('table')
-        ->and($set->defaultModifier()->equals(ModifierScheme::none()))->toBeTrue();
+        ->and($set->defaultModifier())->toEqual(ModifierScheme::none());
 });
 
 it('the table set discovers nothing when no table is present', function () {
@@ -95,7 +94,7 @@ it('the table set discovers fixed reserved bindings when a table is present', fu
     $search = collect($bindings)->first(fn (ShortcutBinding $b) => $b->target->structureKey === 'search');
 
     expect($search)->not->toBeNull()
-        ->and($search->keyCombo->equals(KeyCombo::parse('/')))->toBeTrue();
+        ->and($search->keyCombo)->toEqual(combo('/'));
 });
 
 it('the table set reserves pagination on the left and right arrow keys', function () {
@@ -103,54 +102,42 @@ it('the table set reserves pagination on the left and right arrow keys', functio
         ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
 
     expect($byKey->has('page-prev'))->toBeTrue()
-        ->and($byKey['page-prev']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowLeft')))->toBeTrue()
+        ->and($byKey['page-prev']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'ArrowLeft'))
         ->and($byKey->has('page-next'))->toBeTrue()
-        ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowRight')))->toBeTrue();
+        ->and($byKey['page-next']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'ArrowRight'));
 });
 
 it('the table set starts and releases the row cursor with j, k and Escape', function () {
     $byKey = collect((new TableSet)->discover(nav([]), page(hasTable: true), 'admin'))
         ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
 
-    expect($byKey['cursor-down']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'KeyJ')))->toBeTrue()
-        ->and($byKey['cursor-up']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'KeyK')))->toBeTrue()
-        ->and($byKey['cursor-release']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'Escape')))->toBeTrue();
+    expect($byKey['cursor-down']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'KeyJ'))
+        ->and($byKey['cursor-up']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'KeyK'))
+        ->and($byKey['cursor-release']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'Escape'));
 });
 
 it('the table set mirrors the pagination arrows in a right-to-left panel', function () {
     $byKey = collect((new TableSet(rightToLeft: true))->discover(nav([]), page(hasTable: true), 'admin'))
         ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
 
-    expect($byKey['page-prev']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowRight')))->toBeTrue()
-        ->and($byKey['page-next']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowLeft')))->toBeTrue();
+    expect($byKey['page-prev']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'ArrowRight'))
+        ->and($byKey['page-next']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'ArrowLeft'));
 });
 
 it('the table set leaves the row arrows alone in a right-to-left panel', function () {
     $byKey = collect((new TableSet(rightToLeft: true))->discover(nav([]), page(hasTable: true), 'admin'))
         ->keyBy(fn (ShortcutBinding $b) => $b->target->structureKey);
 
-    expect($byKey['row-up']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowUp')))->toBeTrue()
-        ->and($byKey['row-down']->keyCombo->equals(new KeyCombo(ModifierScheme::none(), 'ArrowDown')))->toBeTrue();
-});
-
-// --- Page set: registered but dormant until page discovery is wired ---------------------
-
-it('the page set is keyed "page"', function () {
-    expect((new PageSet)->key())->toBe('page');
-});
-
-it('the page set discovers nothing until page discovery is wired', function () {
-    expect((new PageSet)->discover(nav([]), page(actions: [
-        new ActionTarget('create', 'Create', '#create'),
-    ], hasTable: true), 'admin'))->toBe([]);
+    expect($byKey['row-up']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'ArrowUp'))
+        ->and($byKey['row-down']->keyCombo)->toEqual(new KeyCombo(ModifierScheme::none(), 'ArrowDown'));
 });
 
 it('puts navigation on the g leader by default, off any browser modifier', function () {
-    expect((new NavigationSet)->defaultModifier()->equals(ModifierScheme::leader('g')))->toBeTrue();
+    expect((new NavigationSet)->defaultModifier())->toEqual(ModifierScheme::leader('g'));
 });
 
 it('puts header actions on bare letters by default', function () {
-    expect((new GlobalSet)->defaultModifier()->equals(ModifierScheme::none()))->toBeTrue();
+    expect((new GlobalSet)->defaultModifier())->toEqual(ModifierScheme::none());
 });
 
 it('gives no default key to a header action that runs the moment it is pressed', function () {
@@ -167,7 +154,7 @@ it('keeps an instant header action keyed when the set needs a held modifier or a
     // Alt+letter or g then a letter is deliberate; only a bare key can be pressed by accident.
     $instant = page(actions: [new ActionTarget('send', 'Send', '#send', runsImmediately: true)]);
 
-    foreach ([ModifierScheme::alt(), ModifierScheme::leader('a')] as $scheme) {
+    foreach ([held('alt'), ModifierScheme::leader('a')] as $scheme) {
         expect((new GlobalSet($scheme))->discover(nav([]), $instant, 'admin')[0]->enabled)->toBeTrue();
     }
 });

@@ -25,7 +25,7 @@ it('is keyed "row-action", bare modifier, and shares the table client handler', 
     $set = new RowActionSet(['approve', 'reject']);
 
     expect($set->key())->toBe('row-action')
-        ->and($set->defaultModifier()->equals(ModifierScheme::none()))->toBeTrue()
+        ->and($set->defaultModifier())->toEqual(ModifierScheme::none())
         ->and($set->clientHandler())->toBe('table');
 });
 

@@ -40,7 +40,7 @@ final class ShortcutReference extends Page
     }
 
     /**
-     * @return array{groups: array<int, array{set: string, rows: array<int, array{label: string, keys: string[]}>}>}
+     * @return array{groups: array<int, array{set: string, rows: array<int, array{label: string, keys: string[], sequence: bool, presence?: string|null}>}>}
      */
     protected function getViewData(): array
     {

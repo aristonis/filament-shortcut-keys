@@ -15,7 +15,6 @@ use Filament\Schemas\SchemasServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -30,15 +29,6 @@ use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
 abstract class BaseTestCase extends Orchestra
 {
     use WithWorkbench;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Aristonis\\FilamentShortcutKeys\\Database\\Factories\\' . class_basename($modelName) . 'Factory'
-        );
-    }
 
     protected function getPackageProviders($app)
     {

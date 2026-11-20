@@ -9,7 +9,6 @@ final class ConfirmationRequiredException extends ShortcutKeysException
         return new self(
             "Editing shared system map {$mapId} in place requires explicit confirmation",
             10006,
-            'CONFIRMATION_REQUIRED',
         );
     }
 }

@@ -9,7 +9,6 @@ final class InvalidCustomBindingException extends ShortcutKeysException
         return new self(
             "Invalid custom binding: {$reason}",
             10004,
-            'INVALID_CUSTOM_BINDING',
         );
     }
 }

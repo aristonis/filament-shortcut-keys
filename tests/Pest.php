@@ -1,5 +1,7 @@
 <?php
 
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\KeyCombo;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Tests\ConcurrencyTestCase;
 use Aristonis\FilamentShortcutKeys\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
@@ -35,4 +37,22 @@ function injectedKeymap(string $html): ?array
 function violatesConstraint(Closure $action): Closure
 {
     return fn () => DB::transaction($action);
+}
+
+/** A scheme of held modifiers, e.g. held('alt', 'shift') for Alt+Shift. */
+function held(string ...$modifiers): ModifierScheme
+{
+    return ModifierScheme::fromTokens($modifiers);
+}
+
+/**
+ * A combo written the way a person reads it: modifiers first, then one letter or "/", joined by "+"
+ * ("alt+shift+p", "/"). Test shorthand only; the package never parses combos from text.
+ */
+function combo(string $keys): KeyCombo
+{
+    $tokens = explode('+', strtolower($keys));
+    $key = array_pop($tokens);
+
+    return new KeyCombo(held(...$tokens), $key === '/' ? 'Slash' : 'Key' . strtoupper($key));
 }

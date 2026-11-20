@@ -26,8 +26,7 @@ it('calls a target orphaned when its set no longer registers that structure key'
 
 it('leaves a target unverifiable when its set cannot be enumerated outside a page request', function () {
     expect(audit()->verdict('custom:reports'))->toBe(TargetVerdict::UNVERIFIABLE)
-        ->and(audit()->verdict('global:export'))->toBe(TargetVerdict::UNVERIFIABLE)
-        ->and(audit()->verdict('page:refresh'))->toBe(TargetVerdict::UNVERIFIABLE);
+        ->and(audit()->verdict('global:export'))->toBe(TargetVerdict::UNVERIFIABLE);
 });
 
 it('leaves a malformed target unverifiable rather than guessing it is dead', function () {

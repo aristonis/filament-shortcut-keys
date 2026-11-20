@@ -15,7 +15,7 @@ final class ReferenceCatalog
 {
     /**
      * @param  NavItem[]  $navItems  used to resolve a navigation target's label from its structure key
-     * @return array<int, array{set: string, rows: array<int, array{label: string, keys: string[]}>}>
+     * @return array<int, array{set: string, rows: array<int, array{label: string, keys: string[], sequence: bool}>}>
      */
     public static function build(ResolvedMap $map, array $navItems): array
     {
@@ -30,11 +30,6 @@ final class ReferenceCatalog
             $rows = [];
 
             foreach ($group->bindings as $binding) {
-                // A disabled or not-yet-assigned binding fires nothing, so it never appears in the reference.
-                if (! $binding->enabled || $binding->keyCombo === null) {
-                    continue;
-                }
-
                 $rows[] = [
                     'label' => self::labelFor($binding->target, $labels),
                     'keys' => KeyLabel::tokens($group->modifier, $binding->keyCombo->code),

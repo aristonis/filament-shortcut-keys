@@ -3,6 +3,7 @@
 namespace Aristonis\FilamentShortcutKeys\Application;
 
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapEditor;
+use Aristonis\FilamentShortcutKeys\Core\Enums\CustomizationMode;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Exceptions\EditingLockedException;
 use Aristonis\FilamentShortcutKeys\Exceptions\InvalidCustomBindingException;
@@ -14,8 +15,6 @@ use Aristonis\FilamentShortcutKeys\Exceptions\InvalidCustomBindingException;
  */
 final readonly class EditUserMap
 {
-    private const PERSONAL = 'personal';
-
     public function __construct(
         private MapEditor $editor,
         private string $mode,
@@ -61,7 +60,7 @@ final readonly class EditUserMap
 
     private function guard(string $panelId): void
     {
-        if ($this->mode !== self::PERSONAL) {
+        if ($this->mode !== CustomizationMode::PERSONAL->value) {
             throw EditingLockedException::forPanel($panelId);
         }
     }

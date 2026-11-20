@@ -6,7 +6,7 @@ return [
     'title' => 'Keyboard shortcuts',
     'subheading' => 'Shortcuts available across this panel.',
     'empty' => 'No shortcuts are configured yet.',
-    'page_level_note' => 'Page actions change from page to page, so they appear on each page and in the ? overlay.',
+    'page_level_note' => 'Header actions change from page to page, so they appear on each page and in the ? overlay.',
 
     'columns' => [
         'action' => 'Action',
@@ -19,7 +19,6 @@ return [
         'global' => 'Actions',
         'table' => 'Table',
         'row-action' => 'Row actions',
-        'page' => 'Page',
     ],
 
     'table_behaviors' => [

@@ -22,11 +22,11 @@ final readonly class AuthorSystemMap
         private SystemMapAuthor $author,
     ) {}
 
-    public function createPreset(?Authenticatable $user, string $panelId, ?array $modifiers = null): int
+    public function createPreset(?Authenticatable $user, string $panelId): int
     {
         $this->authorize($user, $panelId);
 
-        return $this->author->createPreset($panelId, $modifiers);
+        return $this->author->createPreset($panelId);
     }
 
     public function clonePreset(?Authenticatable $user, string $panelId, int $sourceMapId): int
@@ -42,14 +42,6 @@ final readonly class AuthorSystemMap
         $this->requireConfirmation($mapId, $confirmed);
 
         return $this->author->saveEntry($panelId, $mapId, $edit);
-    }
-
-    public function revertInPlace(?Authenticatable $user, string $panelId, int $mapId, string $target, bool $confirmed): int
-    {
-        $this->authorize($user, $panelId);
-        $this->requireConfirmation($mapId, $confirmed);
-
-        return $this->author->removeEntry($panelId, $mapId, $target);
     }
 
     /** The default reaches every admin without a map of their own, so it is confirmed like an in-place edit. */

@@ -9,10 +9,10 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 
 function navGroup(): ResolvedGroup
 {
-    return new ResolvedGroup('navigation', ModifierScheme::altShift(), [
+    return new ResolvedGroup('navigation', held('alt', 'shift'), [
         new ShortcutBinding(
             new ShortcutTarget('navigation', 'products'),
-            KeyCombo::parse('alt+shift+p'),
+            combo('alt+shift+p'),
         ),
     ]);
 }
@@ -22,7 +22,7 @@ function tableGroup(): ResolvedGroup
     return new ResolvedGroup('table', ModifierScheme::none(), [
         new ShortcutBinding(
             new ShortcutTarget('table', 'search'),
-            KeyCombo::parse('/'),
+            combo('/'),
         ),
     ]);
 }
@@ -33,36 +33,6 @@ it('exposes its groups in the order given', function () {
     expect($map->groups())->toHaveCount(2)
         ->and($map->groups()[0]->setKey)->toBe('navigation')
         ->and($map->groups()[1]->setKey)->toBe('table');
-});
-
-it('serializes to a client array grouped by set with a shared modifier', function () {
-    $map = new ResolvedMap([navGroup()]);
-
-    expect($map->toArray())->toBe([
-        [
-            'set' => 'navigation',
-            'modifier' => 'alt+shift',
-            'leader' => null,
-            'bindings' => [
-                [
-                    'target' => 'navigation:products',
-                    'code' => 'KeyP',
-                    'enabled' => true,
-                    'source' => 'convention',
-                ],
-            ],
-        ],
-    ]);
-});
-
-it('serializes bare table keys with an empty modifier', function () {
-    $map = new ResolvedMap([tableGroup()]);
-
-    $group = $map->toArray()[0];
-
-    expect($group['set'])->toBe('table')
-        ->and($group['modifier'])->toBe('')
-        ->and($group['bindings'][0]['code'])->toBe('Slash');
 });
 
 it('merges another map by concatenating groups in order', function () {
@@ -97,6 +67,6 @@ it('keeps a leader scheme through the cache round trip', function () {
 
     $restored = ResolvedMap::fromCache($map->toCache());
 
-    expect($restored->groups()[0]->modifier->equals($leader))->toBeTrue()
-        ->and($restored->groups()[0]->bindings[0]->keyCombo->equals(new KeyCombo($leader, 'KeyO')))->toBeTrue();
+    expect($restored->groups()[0]->modifier)->toEqual($leader)
+        ->and($restored->groups()[0]->bindings[0]->keyCombo)->toEqual(new KeyCombo($leader, 'KeyO'));
 });

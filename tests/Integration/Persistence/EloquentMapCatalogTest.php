@@ -1,9 +1,9 @@
 <?php
 
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
-use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapSelection;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapCatalog;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Factories\ShortcutMapFactory;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -20,11 +20,11 @@ it('lists the panel system presets and the owner\'s own custom map, and nothing 
     $user = catalogUser();
     $other = catalogUser();
 
-    $default = ShortcutMap::factory()->default('admin')->create();
-    $preset = ShortcutMap::factory()->create(['panel_id' => 'admin']);
-    $mine = ShortcutMap::factory()->custom()->ownedBy($user)->create(['panel_id' => 'admin']);
-    ShortcutMap::factory()->custom()->ownedBy($other)->create(['panel_id' => 'admin']);   // another user's
-    ShortcutMap::factory()->create(['panel_id' => 'reports']);                              // another panel
+    $default = ShortcutMapFactory::new()->default('admin')->create();
+    $preset = ShortcutMapFactory::new()->create(['panel_id' => 'admin']);
+    $mine = ShortcutMapFactory::new()->custom()->ownedBy($user)->create(['panel_id' => 'admin']);
+    ShortcutMapFactory::new()->custom()->ownedBy($other)->create(['panel_id' => 'admin']);   // another user's
+    ShortcutMapFactory::new()->create(['panel_id' => 'reports']);                              // another panel
 
     $summaries = (new EloquentMapCatalog)->available($user->getMorphClass(), (string) $user->getKey(), 'admin');
 
@@ -33,8 +33,8 @@ it('lists the panel system presets and the owner\'s own custom map, and nothing 
 
 it('marks the default preset active when the owner has made no selection', function () {
     $user = catalogUser();
-    $default = ShortcutMap::factory()->default('admin')->create();
-    $preset = ShortcutMap::factory()->create(['panel_id' => 'admin']);
+    $default = ShortcutMapFactory::new()->default('admin')->create();
+    $preset = ShortcutMapFactory::new()->create(['panel_id' => 'admin']);
 
     $summaries = collect((new EloquentMapCatalog)->available($user->getMorphClass(), (string) $user->getKey(), 'admin'));
 
@@ -44,8 +44,8 @@ it('marks the default preset active when the owner has made no selection', funct
 
 it('marks the explicitly selected map active instead of the default', function () {
     $user = catalogUser();
-    $default = ShortcutMap::factory()->default('admin')->create();
-    $preset = ShortcutMap::factory()->create(['panel_id' => 'admin']);
+    $default = ShortcutMapFactory::new()->default('admin')->create();
+    $preset = ShortcutMapFactory::new()->create(['panel_id' => 'admin']);
 
     $catalog = new EloquentMapCatalog;
     $catalog->select($user->getMorphClass(), (string) $user->getKey(), 'admin', $preset->id);
@@ -58,8 +58,8 @@ it('marks the explicitly selected map active instead of the default', function (
 
 it('replaces an existing selection rather than adding a second', function () {
     $user = catalogUser();
-    $a = ShortcutMap::factory()->create(['panel_id' => 'admin']);
-    $b = ShortcutMap::factory()->create(['panel_id' => 'admin']);
+    $a = ShortcutMapFactory::new()->create(['panel_id' => 'admin']);
+    $b = ShortcutMapFactory::new()->create(['panel_id' => 'admin']);
     $catalog = new EloquentMapCatalog;
 
     $catalog->select($user->getMorphClass(), (string) $user->getKey(), 'admin', $a->id);
@@ -71,7 +71,7 @@ it('replaces an existing selection rather than adding a second', function () {
 
 it('refuses to select a map from another panel', function () {
     $user = catalogUser();
-    $foreign = ShortcutMap::factory()->create(['panel_id' => 'reports']);
+    $foreign = ShortcutMapFactory::new()->create(['panel_id' => 'reports']);
 
     expect(fn () => (new EloquentMapCatalog)->select($user->getMorphClass(), (string) $user->getKey(), 'admin', $foreign->id))
         ->toThrow(ModelNotFoundException::class);
@@ -80,7 +80,7 @@ it('refuses to select a map from another panel', function () {
 it('refuses to select another user\'s custom map', function () {
     $user = catalogUser();
     $other = catalogUser();
-    $theirs = ShortcutMap::factory()->custom()->ownedBy($other)->create(['panel_id' => 'admin']);
+    $theirs = ShortcutMapFactory::new()->custom()->ownedBy($other)->create(['panel_id' => 'admin']);
 
     expect(fn () => (new EloquentMapCatalog)->select($user->getMorphClass(), (string) $user->getKey(), 'admin', $theirs->id))
         ->toThrow(ModelNotFoundException::class);

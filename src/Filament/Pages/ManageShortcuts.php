@@ -11,6 +11,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\MapEditor;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\MapSelector;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\SystemMapAuthor;
+use Aristonis\FilamentShortcutKeys\Core\Enums\CustomizationMode;
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapSummary;
@@ -70,12 +71,12 @@ final class ManageShortcuts extends Page
      */
     protected function getViewData(): array
     {
-        $preset = 0;
+        $labels = $this->mapOptions();
         $maps = [];
 
         foreach ($this->mapSummaries() as $map) {
             $maps[] = [
-                'label' => $this->mapLabel($map, $map->type === MapType::SYSTEM && ! $map->isDefault ? ++$preset : 0),
+                'label' => $labels[$map->id],
                 'isActive' => $map->isActive,
                 'isDefault' => $map->isDefault,
             ];
@@ -283,7 +284,12 @@ final class ManageShortcuts extends Page
         return $options;
     }
 
-    /** @return array<int, string> map id => display label */
+    /**
+     * Every map's display label, by id. The one place presets are numbered, so the list on the page
+     * and every picker call the same preset by the same number.
+     *
+     * @return array<int, string> map id => display label
+     */
     private function mapOptions(): array
     {
         $options = [];
@@ -299,17 +305,12 @@ final class ManageShortcuts extends Page
     /** @return array<int, string> system preset id => label, for cloning and editing */
     private function presetOptions(): array
     {
-        $options = [];
-        $preset = 0;
+        $presetIds = array_map(
+            fn (MapSummary $map): int => $map->id,
+            array_filter($this->mapSummaries(), fn (MapSummary $map): bool => $map->type === MapType::SYSTEM),
+        );
 
-        foreach ($this->mapSummaries() as $map) {
-            if ($map->type !== MapType::SYSTEM) {
-                continue;
-            }
-            $options[$map->id] = $this->mapLabel($map, $map->isDefault ? 0 : ++$preset);
-        }
-
-        return $options;
+        return array_intersect_key($this->mapOptions(), array_flip($presetIds));
     }
 
     /** @return MapSummary[] */
@@ -361,11 +362,11 @@ final class ManageShortcuts extends Page
 
     private function mode(): string
     {
-        return config('shortcut-keys.customization', 'personal');
+        return config('shortcut-keys.customization', CustomizationMode::PERSONAL->value);
     }
 
     private static function modeIsPersonal(): bool
     {
-        return config('shortcut-keys.customization', 'personal') === 'personal';
+        return config('shortcut-keys.customization', CustomizationMode::PERSONAL->value) === CustomizationMode::PERSONAL->value;
     }
 }

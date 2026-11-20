@@ -5,6 +5,7 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapRepository;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Factories\ShortcutMapFactory;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Models\User;
 
 function editorRepoAndUser(): array
@@ -20,7 +21,7 @@ function editorRepoAndUser(): array
 
 it('forks the system map and writes a custom binding with its payload', function () {
     [$repo, $user] = editorRepoAndUser();
-    ShortcutMap::factory()->default('admin')->create();
+    ShortcutMapFactory::new()->default('admin')->create();
 
     $mapId = $repo->saveEntry(
         $user->getMorphClass(),
@@ -41,7 +42,7 @@ it('forks the system map and writes a custom binding with its payload', function
 
 it('upserts the same target rather than duplicating it', function () {
     [$repo, $user] = editorRepoAndUser();
-    ShortcutMap::factory()->default('admin')->create();
+    ShortcutMapFactory::new()->default('admin')->create();
     $auth = [$user->getMorphClass(), (string) $user->getKey(), 'admin'];
 
     $repo->saveEntry(...$auth, edit: new MapEntryEdit('navigation:orders', 'o', false));
@@ -54,7 +55,7 @@ it('upserts the same target rather than duplicating it', function () {
 
 it('removes an override, reverting the target to convention', function () {
     [$repo, $user] = editorRepoAndUser();
-    ShortcutMap::factory()->default('admin')->create();
+    ShortcutMapFactory::new()->default('admin')->create();
     $auth = [$user->getMorphClass(), (string) $user->getKey(), 'admin'];
 
     $repo->saveEntry(...$auth, edit: new MapEntryEdit('global:export', null, true));
@@ -65,7 +66,7 @@ it('removes an override, reverting the target to convention', function () {
 
 it('preserves a payload entry when forking a source map', function () {
     [$repo, $user] = editorRepoAndUser();
-    $default = ShortcutMap::factory()->default('admin')->create();
+    $default = ShortcutMapFactory::new()->default('admin')->create();
     ShortcutMapEntry::create([
         'map_id' => $default->id,
         'target' => 'custom:reports',
@@ -83,7 +84,7 @@ it('preserves a payload entry when forking a source map', function () {
 
 it('bumps the map version on every edit so the cache busts', function () {
     [$repo, $user] = editorRepoAndUser();
-    ShortcutMap::factory()->default('admin')->create();
+    ShortcutMapFactory::new()->default('admin')->create();
     $auth = [$user->getMorphClass(), (string) $user->getKey(), 'admin'];
 
     $mapId = $repo->saveEntry(...$auth, edit: new MapEntryEdit('navigation:orders', 'o', false));

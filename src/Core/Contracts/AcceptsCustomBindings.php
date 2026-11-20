@@ -7,5 +7,8 @@ namespace Aristonis\FilamentShortcutKeys\Core\Contracts;
  * therefore carries a custom-binding payload. The resolver only turns a payload entry into a binding
  * for a set with this marker, so a stray payload on an ordinary set is ignored, never forced into its
  * clash pool or mis-served as that set's action.
+ *
+ * @internal Part of the resolution pipeline, not an extension point: the plugin builds its own sets
+ *           and providers, so this may gain methods in a minor release.
  */
 interface AcceptsCustomBindings {}

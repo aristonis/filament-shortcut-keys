@@ -2,14 +2,12 @@
 
 namespace Aristonis\FilamentShortcutKeys\Models;
 
-use Aristonis\FilamentShortcutKeys\Database\Factories\ShortcutMapEntryFactory;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * One override row of a map: a remapped letter and/or a disabled flag for a single target.
+ * One override row of a map for a single target: a remapped letter and/or a disabled flag, or a custom
+ * binding's letter and the payload it activates (a selector to click or a route to open).
  *
  * @property int $id
  * @property int $map_id
@@ -21,9 +19,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class ShortcutMapEntry extends Model
 {
-    /** @use HasFactory<ShortcutMapEntryFactory> */
-    use HasFactory;
-
     public $timestamps = false;
 
     protected $fillable = [
@@ -43,10 +38,5 @@ final class ShortcutMapEntry extends Model
     public function map(): BelongsTo
     {
         return $this->belongsTo(ShortcutMap::class, 'map_id');
-    }
-
-    protected static function newFactory(): Factory
-    {
-        return ShortcutMapEntryFactory::new();
     }
 }

@@ -2,15 +2,5 @@
 
 namespace Aristonis\FilamentShortcutKeys\Exceptions;
 
-abstract class ShortcutKeysException extends \RuntimeException
-{
-    public function __construct(string $message, int $code, protected string $stringCode, ?\Throwable $previous = null)
-    {
-        parent::__construct($message, $code, $previous);
-    }
-
-    public function stringCode(): string
-    {
-        return $this->stringCode;
-    }
-}
+/** The one type every error this package throws extends, so a caller can catch them all in one place. */
+abstract class ShortcutKeysException extends \RuntimeException {}

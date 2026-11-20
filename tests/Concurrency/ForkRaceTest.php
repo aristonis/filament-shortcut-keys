@@ -1,7 +1,9 @@
 <?php
 
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
+use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
+use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentMapRepository;
 use Illuminate\Support\Facades\DB;
 
@@ -27,27 +29,39 @@ it('converges two concurrent first-time forks on a single map', function () {
         'version' => 1,
     ]);
 
-    // The competing request commits its selection in the window between our lock probe (which finds
+    // The competing request commits its own fork in the window between our lock probe (which finds
     // no row to lock) and our own insert — the exact interleaving the UNIQUE constraint exists for.
     $raced = false;
-    DB::listen(function ($query) use (&$raced, $system) {
+    $winner = null;
+    DB::listen(function ($query) use (&$raced, &$winner) {
         if ($raced || ! str_contains($query->sql, 'shortcut_map_selections') || ! str_contains(strtolower($query->sql), 'for update')) {
             return;
         }
 
         $raced = true;
+        $now = now();
+
+        $winner = $this->second()->table('shortcut_maps')->insertGetId([
+            'panel_id' => 'admin',
+            'type' => MapType::CUSTOM->value,
+            'authenticatable_type' => 'users',
+            'authenticatable_id' => '1',
+            'version' => 2,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
 
         $this->second()->table('shortcut_map_selections')->insert([
             'authenticatable_type' => 'users',
             'authenticatable_id' => '1',
             'panel_id' => 'admin',
-            'map_id' => $system->id,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'map_id' => $winner,
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
     });
 
-    $map = (new EloquentMapRepository)->forkForEdit('users', '1', 'admin');
+    $mapId = (new EloquentMapRepository)->saveEntry('users', '1', 'admin', new MapEntryEdit('navigation:orders', 'o', false));
 
     expect($raced)->toBeTrue('the race never triggered, so this asserted nothing');
 
@@ -58,7 +72,12 @@ it('converges two concurrent first-time forks on a single map', function () {
         ->count();
 
     expect($selections)->toBe(1)
-        ->and($map->id)->toBe($system->id)
+        ->and($mapId)->toBe($winner, 'the edit did not land on the fork that won')
         ->and(ShortcutMap::query()->where('type', MapType::CUSTOM)->count())
-        ->toBe(0, 'the losing fork left an orphaned custom map behind');
+        ->toBe(1, 'the losing fork left an orphaned custom map behind')
+        ->and(ShortcutMapEntry::query()->where('map_id', $winner)->where('target', 'navigation:orders')->exists())
+        ->toBeTrue('the edit was lost along with the losing fork')
+        ->and(ShortcutMapEntry::query()->where('map_id', $system->id)->exists())
+        ->toBeFalse('the edit leaked into the shared system map')
+        ->and($system->fresh()->version)->toBe(1);
 });

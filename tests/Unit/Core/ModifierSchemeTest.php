@@ -12,24 +12,6 @@ it('holds the four modifier flags', function () {
         ->and($scheme->meta)->toBeFalse();
 });
 
-it('builds the Alt+Shift scheme (navigation default) via a named constructor', function () {
-    $scheme = ModifierScheme::altShift();
-
-    expect($scheme->alt)->toBeTrue()
-        ->and($scheme->shift)->toBeTrue()
-        ->and($scheme->ctrl)->toBeFalse()
-        ->and($scheme->meta)->toBeFalse();
-});
-
-it('builds the Alt scheme (global default) via a named constructor', function () {
-    $scheme = ModifierScheme::alt();
-
-    expect($scheme->alt)->toBeTrue()
-        ->and($scheme->shift)->toBeFalse()
-        ->and($scheme->ctrl)->toBeFalse()
-        ->and($scheme->meta)->toBeFalse();
-});
-
 it('builds the bare scheme (table default, no modifiers) via a named constructor', function () {
     $scheme = ModifierScheme::none();
 
@@ -39,29 +21,24 @@ it('builds the bare scheme (table default, no modifiers) via a named constructor
         ->and($scheme->meta)->toBeFalse();
 });
 
-it('is equal when every flag matches and differs otherwise', function () {
-    expect(ModifierScheme::altShift()->equals(ModifierScheme::altShift()))->toBeTrue()
-        ->and(ModifierScheme::altShift()->equals(ModifierScheme::alt()))->toBeFalse();
-});
-
 it('renders a canonical string in fixed modifier order', function () {
-    expect(ModifierScheme::altShift()->toString())->toBe('alt+shift')
-        ->and(ModifierScheme::alt()->toString())->toBe('alt')
+    expect(held('alt', 'shift')->toString())->toBe('alt+shift')
+        ->and(held('alt')->toString())->toBe('alt')
         ->and(ModifierScheme::none()->toString())->toBe('');
 });
 
 it('builds a scheme from configured modifier tokens', function () {
     $scheme = ModifierScheme::fromTokens(['alt', 'shift']);
 
-    expect($scheme->equals(ModifierScheme::altShift()))->toBeTrue();
+    expect($scheme)->toEqual(new ModifierScheme(ctrl: false, alt: true, shift: true, meta: false));
 });
 
 it('reads an empty token list as bare keys', function () {
-    expect(ModifierScheme::fromTokens([])->equals(ModifierScheme::none()))->toBeTrue();
+    expect(ModifierScheme::fromTokens([]))->toEqual(ModifierScheme::none());
 });
 
 it('ignores the order the tokens are written in', function () {
-    expect(ModifierScheme::fromTokens(['shift', 'alt'])->equals(ModifierScheme::altShift()))->toBeTrue();
+    expect(ModifierScheme::fromTokens(['shift', 'alt']))->toEqual(ModifierScheme::fromTokens(['alt', 'shift']));
 });
 
 it('rejects a token it cannot map to a real modifier', function () {
@@ -73,8 +50,8 @@ it('reads a single letter token as a leader key pressed before the letter', func
     $scheme = ModifierScheme::fromTokens(['g']);
 
     expect($scheme->leader)->toBe('KeyG')
-        ->and($scheme->equals(ModifierScheme::leader('g')))->toBeTrue()
-        ->and($scheme->equals(ModifierScheme::none()))->toBeFalse();
+        ->and($scheme)->toEqual(ModifierScheme::leader('g'))
+        ->and($scheme)->not->toEqual(ModifierScheme::none());
 });
 
 it('names a leader scheme apart from bare keys, but holds no modifier', function () {
@@ -82,7 +59,7 @@ it('names a leader scheme apart from bare keys, but holds no modifier', function
 
     expect($scheme->toString())->toBe('leader:g')
         ->and($scheme->heldModifiers())->toBe('')
-        ->and(ModifierScheme::altShift()->heldModifiers())->toBe('alt+shift');
+        ->and(held('alt', 'shift')->heldModifiers())->toBe('alt+shift');
 });
 
 it('rejects a leader key mixed with held modifiers', function () {

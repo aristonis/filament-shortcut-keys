@@ -4,7 +4,7 @@ namespace Aristonis\FilamentShortcutKeys\Core\ValueObjects;
 
 use Aristonis\FilamentShortcutKeys\Core\Enums\MapType;
 
-/** A stored shortcut map: its type, optional per-set modifier overrides, override entries, and the row id + version that together form its cache identity. */
+/** A stored shortcut map: its type, override entries, and the row id + version that together form its cache identity. */
 final readonly class MapData
 {
     /**
@@ -14,7 +14,6 @@ final readonly class MapData
      */
     public function __construct(
         public MapType $type,
-        public ?array $modifiers,
         public array $entries,
         public int $version,
         public ?int $id = null,

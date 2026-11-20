@@ -7,9 +7,8 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 use Illuminate\Support\Str;
 
 /**
- * Flattens the full per-page map into labeled rows for the cheatsheet overlay. Unlike the reference
- * page, it covers every set (actions, table, custom, page), pulling each set's labels from its own
- * source.
+ * Flattens the full per-page map into labeled rows for the cheatsheet overlay, pulling each set's
+ * labels from its own source. Unlike the reference page, it includes the current page's header actions.
  */
 final class OverlayCatalog
 {
@@ -30,10 +29,6 @@ final class OverlayCatalog
             $rows = [];
 
             foreach ($group->bindings as $binding) {
-                if (! $binding->enabled || $binding->keyCombo === null) {
-                    continue;
-                }
-
                 $rows[] = [
                     'label' => self::labelFor($group->setKey, $binding->target, $navLabels, $actionLabels, $behaviorLabels),
                     'keys' => KeyLabel::tokens($group->modifier, $binding->keyCombo->code),
