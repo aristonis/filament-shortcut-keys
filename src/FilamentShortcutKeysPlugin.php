@@ -8,6 +8,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\Resolver;
 use Aristonis\FilamentShortcutKeys\Core\Contracts\ShortcutSet;
+use Aristonis\FilamentShortcutKeys\Core\Enums\CustomizationMode;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\CompositeResolver;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\KeyReservations;
 use Aristonis\FilamentShortcutKeys\Core\Resolution\ResolvedMap;
@@ -68,7 +69,10 @@ class FilamentShortcutKeysPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $panel->pages([ShortcutReference::class, ManageShortcuts::class]);
+        // The manage page edits stored maps, so 'config' mode, which stores none, leaves it out.
+        $panel->pages(CustomizationMode::current()->storesMaps()
+            ? [ShortcutReference::class, ManageShortcuts::class]
+            : [ShortcutReference::class]);
 
         $panel->assets([
             Js::make('filament-shortcut-keys', __DIR__ . '/../resources/dist/filament-shortcut-keys.js'),

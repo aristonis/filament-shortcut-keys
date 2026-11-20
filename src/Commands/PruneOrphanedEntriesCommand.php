@@ -3,6 +3,7 @@
 namespace Aristonis\FilamentShortcutKeys\Commands;
 
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
+use Aristonis\FilamentShortcutKeys\Core\Enums\CustomizationMode;
 use Aristonis\FilamentShortcutKeys\Core\Enums\TargetVerdict;
 use Aristonis\FilamentShortcutKeys\Core\Maintenance\TargetAudit;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
@@ -36,6 +37,12 @@ class PruneOrphanedEntriesCommand extends Command
 
     public function handle(): int
     {
+        if (! CustomizationMode::current()->storesMaps()) {
+            $this->components->info("Customization is 'config', so nothing is stored and there is nothing to prune.");
+
+            return self::SUCCESS;
+        }
+
         $panels = $this->panelsToAudit();
 
         if ($panels === null) {

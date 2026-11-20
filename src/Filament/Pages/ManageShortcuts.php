@@ -59,6 +59,11 @@ final class ManageShortcuts extends Page
     /** Hide the page entirely unless the visitor can actually do something here. */
     public static function canAccess(): bool
     {
+        // Nothing is stored in 'config' mode, so there is nothing here for anyone to manage.
+        if (! CustomizationMode::current()->storesMaps()) {
+            return false;
+        }
+
         if (self::modeIsPersonal()) {
             return true;
         }

@@ -9,10 +9,15 @@ return [
     |
     | Whether end users may personalize their own shortcut maps.
     |
+    |   'personal' — each user may fork and remap their own shortcuts.
     |   'locked'   — no personalization. Admins use the panel's default system
     |                map (set on the manage page), or the conventions if none is
     |                set; a selection made earlier in 'personal' mode is kept.
-    |   'personal' — each user may fork and remap their own shortcuts.
+    |   'config'   — keys come only from the conventions and this file. Nothing
+    |                is stored: the migrations are optional and the manage page
+    |                is not registered.
+    |
+    | Any other value throws.
     |
     */
 
