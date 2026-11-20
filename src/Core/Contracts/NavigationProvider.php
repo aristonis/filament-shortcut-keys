@@ -4,6 +4,10 @@ namespace Aristonis\FilamentShortcutKeys\Core\Contracts;
 
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\NavItem;
 
+/**
+ * @internal Part of the resolution pipeline, not an extension point: the plugin builds its own sets
+ *           and providers, so this may gain methods in a minor release.
+ */
 interface NavigationProvider
 {
     /**
