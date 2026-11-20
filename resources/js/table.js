@@ -1,4 +1,5 @@
 import { noteClick } from './inflight.js'
+import { safeQuery } from './query.js'
 
 // The table handler owns a "focused row" cursor because table shortcuts (select, edit, delete, custom
 // row actions) all act on one row, and Filament renders no such cursor of its own. j and k start and
@@ -135,7 +136,7 @@ export function createTableHandler() {
 
     function clickInRow(selector) {
         const row = focusedRow()
-        const target = row && row.querySelector(selector)
+        const target = row && safeQuery(row, selector)
         if (!target) {
             return false
         }

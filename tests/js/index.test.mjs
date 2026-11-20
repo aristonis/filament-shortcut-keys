@@ -6,6 +6,7 @@ import {
     createKeyEvent,
     installDocument,
     installWindow,
+    INVALID_SELECTOR,
     restoreGlobals,
 } from './support/dom.mjs'
 import {
@@ -136,6 +137,65 @@ describe('index entry', () => {
 
         assert.equal(exportButton.getAttribute('aria-keyshortcuts'), 'E')
         assert.equal(exportButton.children.length, 1)
+    })
+
+    it('keeps every other shortcut working when one custom selector is not valid CSS', async () => {
+        // Custom selectors come from an admin form that checks only their shape. A broken one threw
+        // while painting badges on start, before the navigation and Livewire listeners attached.
+        const exportButton = createElement({ tagName: 'BUTTON' })
+        const keymap = createElement({
+            textContent: JSON.stringify([
+                {
+                    set: 'custom',
+                    handler: 'custom',
+                    modifier: '',
+                    leader: null,
+                    bindings: [
+                        {
+                            target: 'custom:broken',
+                            code: 'KeyB',
+                            activation: { kind: 'click', selector: '#bad[' },
+                        },
+                    ],
+                },
+                {
+                    set: 'global',
+                    handler: 'global',
+                    modifier: '',
+                    leader: null,
+                    bindings: [
+                        {
+                            target: 'global:export',
+                            code: 'KeyE',
+                            activation: { kind: 'click', selector: '#export' },
+                        },
+                    ],
+                },
+            ]),
+        })
+        const document = installDocument({
+            elementsById: { 'filament-shortcut-keys-map': keymap },
+            selectors: { '#bad[': INVALID_SELECTOR, '#export': exportButton },
+        })
+        installWindow()
+
+        await loadEntry()
+        const press = (code) =>
+            document.dispatch(
+                'keydown',
+                createKeyEvent({
+                    code,
+                    target: createElement({ tagName: 'BODY' }),
+                }),
+            )
+
+        assert.doesNotThrow(() => press('KeyB'))
+        press('KeyE')
+
+        assert.equal(exportButton.clicks, 1)
+        assert.equal(exportButton.getAttribute('aria-keyshortcuts'), 'E')
+        assert.equal(document.listenerCount('livewire:navigated'), 1)
+        assert.equal(document.listenerCount('pointerdown'), 1)
     })
 
     describe('waiting for a response', () => {

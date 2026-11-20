@@ -9,8 +9,19 @@
 // append a badge and then re-query for it to avoid painting twice, and a registry alone cannot see a
 // node that was added after the fact.
 
+// Registered as a selector's value, makes that lookup throw the way a browser rejects selector text
+// that is not valid CSS.
+export const INVALID_SELECTOR = Symbol('invalid selector')
+
 function resolve(registry, selector) {
     const value = registry[selector]
+
+    if (value === INVALID_SELECTOR) {
+        throw new DOMException(
+            `'${selector}' is not a valid selector.`,
+            'SyntaxError',
+        )
+    }
 
     if (value === undefined) {
         return []
@@ -22,6 +33,7 @@ function resolve(registry, selector) {
 export function createElement(options = {}) {
     const {
         tagName = 'DIV',
+        type = '',
         attributes = {},
         selectors = {},
         matches = [],
@@ -31,6 +43,7 @@ export function createElement(options = {}) {
 
     return {
         tagName,
+        type,
         textContent,
         isContentEditable,
         className: '',
@@ -148,16 +161,13 @@ export function installDocument({
     selectors = {},
     elementsById = {},
     activeElement = null,
-    readyState = 'complete',
 } = {}) {
     const listeners = {}
 
     const document = {
-        readyState,
+        readyState: 'complete',
         activeElement,
         selectors,
-        elementsById,
-        created: [],
 
         getElementById(id) {
             return elementsById[id] ?? null
@@ -169,10 +179,7 @@ export function installDocument({
             return resolve(selectors, selector)
         },
         createElement(tagName) {
-            const element = createElement({ tagName: tagName.toUpperCase() })
-            document.created.push(element)
-
-            return element
+            return createElement({ tagName: tagName.toUpperCase() })
         },
         addEventListener(type, handler, options = {}) {
             ;(listeners[type] ??= []).push(handler)

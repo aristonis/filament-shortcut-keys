@@ -48,9 +48,7 @@ function isNonTextInput(target) {
         return false
     }
 
-    const type = target.type || target.getAttribute?.('type') || 'text'
-
-    return NON_TEXT_INPUT_TYPES.includes(String(type).toLowerCase())
+    return NON_TEXT_INPUT_TYPES.includes(target.type)
 }
 
 // A shortcut with no modifier must not fire while the user is typing, or "/" would never reach a
@@ -136,5 +134,11 @@ export function isControlActivation(event) {
 // Shift+Slash ("?") is reserved for the cheatsheet overlay, so the dispatcher never treats it as a
 // normal shortcut even though "/" alone is the table search key.
 export function isReservedOverlayKey(event) {
-    return event.code === 'Slash' && event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey
+    return (
+        event.code === 'Slash' &&
+        event.shiftKey &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey
+    )
 }

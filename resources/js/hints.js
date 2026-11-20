@@ -1,3 +1,5 @@
+import { linkTo, safeQuery } from './query.js'
+
 // Renders a small key badge on the element each shortcut fires, so the keys are discoverable in place.
 // Only navigation links, header actions and custom bindings get a badge: they map to one stable
 // element each. Table keys are behaviours (no single element) and row actions repeat per row, so
@@ -32,7 +34,7 @@ function ariaShortcut(modifier, code) {
         return null
     }
 
-    const parts = (modifier ?? '')
+    const parts = modifier
         .split('+')
         .map((name) => ARIA_MODIFIERS[name])
         .filter(Boolean)
@@ -74,10 +76,9 @@ function badge(text) {
     return el
 }
 
-// Gate on how the binding fires, not on which handler owns it. A header action is a Livewire control
-// to click or an anchor to a page depending on whether the resource registers that page, so Create,
-// Edit and View arrive here as `navigate` under the global handler and would otherwise go unbadged
-// while still firing on the key.
+// Pick the host from the activation kind, since Create, Edit and View can arrive as `navigate` under
+// the global handler: a header action is a Livewire control to click or an anchor to a page depending
+// on whether the resource registers that page, and either shape fires on the key.
 function hostFor(group, binding, leader, singleKeys) {
     const activation = binding.activation
 
@@ -86,7 +87,7 @@ function hostFor(group, binding, leader, singleKeys) {
     }
 
     // With single-key shortcuts off, a badge would advertise a key that does nothing.
-    if (!singleKeys && (group.modifier ?? '') === '') {
+    if (!singleKeys && group.modifier === '') {
         return null
     }
 
@@ -97,11 +98,11 @@ function hostFor(group, binding, leader, singleKeys) {
     }
 
     if (activation?.kind === 'navigate') {
-        return document.querySelector(`a[href="${activation.url}"]`)
+        return linkTo(activation.url)
     }
 
     if (activation?.kind === 'click') {
-        return document.querySelector(activation.selector)
+        return safeQuery(document, activation.selector)
     }
 
     return null

@@ -91,9 +91,7 @@ describe('isTyping', () => {
     for (const type of ['checkbox', 'radio', 'button', 'submit', 'reset']) {
         it(`is false on an input of type ${type}, which takes no text`, () => {
             assert.equal(
-                isTyping(
-                    createElement({ tagName: 'INPUT', attributes: { type } }),
-                ),
+                isTyping(createElement({ tagName: 'INPUT', type })),
                 false,
             )
         })
@@ -104,7 +102,7 @@ describe('isTyping', () => {
             isTyping(
                 createElement({
                     tagName: 'INPUT',
-                    attributes: { type: 'email' },
+                    type: 'email',
                 }),
             ),
             true,

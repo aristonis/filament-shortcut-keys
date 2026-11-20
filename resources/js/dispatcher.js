@@ -7,10 +7,9 @@ import {
     isTyping,
 } from './keymap.js'
 
-// When two sets bind the same physical key, the more specific context wins: a page shortcut beats a
-// user's custom binding, which beats table, global, then navigation. The first handler that fires
-// stops the search.
-const PRECEDENCE = ['page', 'custom', 'table', 'global', 'navigation']
+// When two sets bind the same physical key, the more specific context wins: a user's custom binding
+// beats table, which beats global, then navigation. The first handler that fires stops the search.
+const PRECEDENCE = ['custom', 'table', 'global', 'navigation']
 
 // Moving the row cursor is the one action worth repeating while a key is held; every other shortcut
 // fires once per press, so a held Delete or navigation key cannot stack up actions.
@@ -66,14 +65,14 @@ function fire(event, groups, handlers, leader, singleKeys) {
     const byHandler = groupByHandler(groups)
 
     for (const handlerKey of PRECEDENCE) {
-        const groups = byHandler[handlerKey]
+        const handlerGroups = byHandler[handlerKey]
         const handler = handlers[handlerKey]
 
-        if (!groups || !handler) {
+        if (!handlerGroups || !handler) {
             continue
         }
 
-        for (const group of groups) {
+        for (const group of handlerGroups) {
             if ((group.leader ?? null) !== leader) {
                 continue
             }
@@ -114,7 +113,8 @@ function startsLeader(event, groups) {
     )
 }
 
-// A press of Shift, Ctrl, Alt or Meta on its own just starts the next key.
+// While g waits, a press of Shift, Ctrl, Alt or Meta on its own just starts the next key, so it does
+// not cancel the leader.
 const MODIFIER_KEYS = ['Shift', 'Control', 'Alt', 'Meta']
 
 export function createDispatcher(getGroups, handlers, options = {}) {
@@ -163,7 +163,8 @@ export function createDispatcher(getGroups, handlers, options = {}) {
         }
 
         if (event.repeat) {
-            // A held leader keeps waiting; it never repeats into its own letter.
+            // A held leader keeps waiting; it never repeats into its own letter. Any other repeat
+            // goes to the browser unless it continues the last fresh press that fired something.
             if (pendingLeader !== null || lastPress?.code !== event.code) {
                 return
             }

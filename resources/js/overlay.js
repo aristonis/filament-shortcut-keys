@@ -1,8 +1,8 @@
 import { isReservedOverlayKey, isTyping } from './keymap.js'
 import { setSingleKeysEnabled, singleKeysEnabled } from './preferences.js'
 
-// The cheatsheet the server injects on every page. Listeners live on the document so they survive
-// Livewire navigation; the element itself is re-rendered per page, so it is always queried fresh.
+// The cheatsheet the server injects on every page. The element is re-rendered per page, so it is
+// always queried fresh.
 const OVERLAY_ID = 'filament-shortcut-keys-overlay'
 const FOCUSABLE =
     'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'

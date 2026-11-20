@@ -157,7 +157,7 @@ describe('createDispatcher', () => {
 
     it('skips a group whose handler is not registered', () => {
         const dispatch = createDispatcher(
-            () => [group('page'), group('global')],
+            () => [group('custom'), group('global')],
             { global: recorder() },
         )
 
@@ -409,13 +409,13 @@ describe('createDispatcher', () => {
         })
 
         it('keeps repeating the binding that fired, past one that could not act', () => {
-            // A page binding on the same key with nothing to click falls through to the table on the
-            // first press; the repeat must not stop at the page binding.
-            const page = recorder(false)
+            // A custom binding on the same key with nothing to click falls through to the table on
+            // the first press; the repeat must not stop at the custom binding.
+            const custom = recorder(false)
             const table = recorder()
-            const pageArrow = group('page', { code: 'ArrowDown' })
-            const dispatch = createDispatcher(() => [pageArrow, rowDown()], {
-                page,
+            const customArrow = group('custom', { code: 'ArrowDown' })
+            const dispatch = createDispatcher(() => [customArrow, rowDown()], {
+                custom,
                 table,
             })
 
@@ -480,7 +480,7 @@ describe('createDispatcher', () => {
         function checkbox() {
             return createElement({
                 tagName: 'INPUT',
-                attributes: { type: 'checkbox' },
+                type: 'checkbox',
             })
         }
 

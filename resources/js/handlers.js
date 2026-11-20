@@ -1,4 +1,5 @@
 import { noteClick } from './inflight.js'
+import { safeQuery } from './query.js'
 
 // One handler per client-handler key. Each takes the matched binding and returns true only when it
 // actually fired something, so the dispatcher knows whether to swallow the key. A handler that can't
@@ -16,7 +17,7 @@ function navigate(url) {
 }
 
 function clickSelector(selector) {
-    const element = document.querySelector(selector)
+    const element = safeQuery(document, selector)
 
     if (!element) {
         return false
@@ -25,6 +26,19 @@ function clickSelector(selector) {
     noteClick(element)
     element.click()
     return true
+}
+
+function fireActivation(activation) {
+    if (activation?.kind === 'navigate') {
+        navigate(activation.url)
+        return true
+    }
+
+    if (activation?.kind === 'click') {
+        return clickSelector(activation.selector)
+    }
+
+    return false
 }
 
 export const handlers = {
@@ -42,33 +56,10 @@ export const handlers = {
     // A header action is either a Livewire control to click or an anchor to a page. Filament gives
     // Create, Edit and View a url whenever the resource registers that page, so both arrive here.
     global(binding) {
-        const activation = binding.activation
-
-        if (activation?.kind === 'navigate') {
-            navigate(activation.url)
-            return true
-        }
-
-        if (activation?.kind === 'click') {
-            return clickSelector(activation.selector)
-        }
-
-        return false
+        return fireActivation(binding.activation)
     },
 
-    // A user's custom binding carries its own action: navigate a route or click a selector.
     custom(binding) {
-        const activation = binding.activation
-
-        if (activation?.kind === 'navigate') {
-            navigate(activation.url)
-            return true
-        }
-
-        if (activation?.kind === 'click') {
-            return clickSelector(activation.selector)
-        }
-
-        return false
+        return fireActivation(binding.activation)
     },
 }

@@ -6,6 +6,7 @@ import { createTableHandler } from '../../resources/js/table.js'
 import {
     createElement,
     installDocument,
+    INVALID_SELECTOR,
     restoreGlobals,
 } from './support/dom.mjs'
 
@@ -176,6 +177,21 @@ describe('row-scoped actions', () => {
             true,
         )
         assert.equal(target.clicks, 1)
+    })
+
+    it('declines, without throwing, a custom row action whose selector is not valid CSS', () => {
+        const only = row({ '#bad[': INVALID_SELECTOR })
+        table([only])
+        const handle = createTableHandler()
+        handle(behavior('cursor-down'))
+
+        assert.equal(
+            handle({
+                code: 'KeyA',
+                activation: { kind: 'click', selector: '#bad[' },
+            }),
+            false,
+        )
     })
 
     it('declines while no row is focused', () => {

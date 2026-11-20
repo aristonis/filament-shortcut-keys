@@ -6,6 +6,7 @@ import {
     createElement,
     installDocument,
     installWindow,
+    INVALID_SELECTOR,
     restoreGlobals,
 } from './support/dom.mjs'
 
@@ -109,6 +110,18 @@ for (const name of ['global', 'custom']) {
             installWindow()
 
             assert.equal(handlers[name](binding(null)), false)
+        })
+
+        it('declines, without throwing, a selector that is not valid CSS', () => {
+            // Custom selectors come from an admin form that checks only their shape; a key bound to a
+            // broken one does nothing and leaves the key to the next candidate.
+            installDocument({ selectors: { '#bad[': INVALID_SELECTOR } })
+            installWindow()
+
+            assert.equal(
+                handlers[name](binding({ kind: 'click', selector: '#bad[' })),
+                false,
+            )
         })
     })
 }

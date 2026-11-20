@@ -5,13 +5,14 @@ import { paintHints } from '../../resources/js/hints.js'
 import {
     createElement,
     installDocument,
+    INVALID_SELECTOR,
     restoreGlobals,
 } from './support/dom.mjs'
 
 const HINT_CLASS = 'fi-hotkey-hint'
 
 function group(handler, code, activation) {
-    return { handler, bindings: [{ code, activation }] }
+    return { handler, modifier: '', bindings: [{ code, activation }] }
 }
 
 function badgesOn(element) {
@@ -90,8 +91,8 @@ describe('paintHints', () => {
     })
 
     it('ignores a handler that is not on the allowlist', () => {
-        // `page` is in the dispatcher's precedence list, so a group can carry it. Badging is opt-in,
-        // so an unknown handler paints nothing rather than painting on unreviewed markup.
+        // Badging is opt-in, so a handler this script does not know paints nothing rather than
+        // painting on unreviewed markup.
         const element = createElement()
         installDocument({ selectors: { '#anything': element } })
 
@@ -121,6 +122,78 @@ describe('paintHints', () => {
                 group('global', 'KeyC', { kind: 'click', selector: '#gone' }),
             ]),
         )
+    })
+
+    describe('a custom binding the browser cannot look up', () => {
+        // Custom selectors and routes come from an admin form that checks only their shape, so one
+        // the browser rejects must cost that binding its badge and nothing more.
+        afterEach(() => {
+            delete globalThis.CSS
+        })
+
+        it('skips a selector that is not valid CSS and still badges the rest', () => {
+            const button = createElement({ tagName: 'BUTTON' })
+            installDocument({
+                selectors: { '#bad[': INVALID_SELECTOR, '#export': button },
+            })
+
+            assert.doesNotThrow(() =>
+                paintHints([
+                    group('custom', 'KeyB', {
+                        kind: 'click',
+                        selector: '#bad[',
+                    }),
+                    group('global', 'KeyE', {
+                        kind: 'click',
+                        selector: '#export',
+                    }),
+                ]),
+            )
+            assert.deepEqual(badgesOn(button), ['E'])
+        })
+
+        it('skips a url that breaks the link lookup and still badges the rest', () => {
+            const button = createElement({ tagName: 'BUTTON' })
+            installDocument({
+                selectors: {
+                    'a[href="/say"hi"]': INVALID_SELECTOR,
+                    '#export': button,
+                },
+            })
+
+            assert.doesNotThrow(() =>
+                paintHints([
+                    group('custom', 'KeyS', {
+                        kind: 'navigate',
+                        url: '/say"hi',
+                    }),
+                    group('global', 'KeyE', {
+                        kind: 'click',
+                        selector: '#export',
+                    }),
+                ]),
+            )
+            assert.deepEqual(badgesOn(button), ['E'])
+        })
+
+        it('escapes the url when the browser offers CSS.escape', () => {
+            const anchor = createElement({ tagName: 'A' })
+            installDocument({
+                selectors: {
+                    'a[href="/say"hi"]': INVALID_SELECTOR,
+                    'a[href="/say\\"hi"]': anchor,
+                },
+            })
+            globalThis.CSS = {
+                escape: (value) => value.replace(/["\\]/g, '\\$&'),
+            }
+
+            paintHints([
+                group('custom', 'KeyS', { kind: 'navigate', url: '/say"hi' }),
+            ])
+
+            assert.deepEqual(badgesOn(anchor), ['S'])
+        })
     })
 
     it('skips a binding with no activation', () => {
@@ -161,6 +234,7 @@ describe('paintHints', () => {
         installDocument({ selectors: { 'a[href="/orders"]': anchor } })
         const navigation = {
             handler: 'navigation',
+            modifier: '',
             leader: 'KeyG',
             bindings: [
                 {

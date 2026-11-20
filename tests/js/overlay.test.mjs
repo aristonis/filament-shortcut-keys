@@ -212,7 +212,7 @@ describe('the cheatsheet overlay', () => {
         function withSwitch() {
             const toggle = createElement({
                 tagName: 'INPUT',
-                attributes: { type: 'checkbox' },
+                type: 'checkbox',
             })
             const overlay = createElement({
                 tagName: 'DIV',
