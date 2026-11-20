@@ -9,8 +9,10 @@ a shortcut; there is nothing to register per item.
 - **Namespace:** `Aristonis\FilamentShortcutKeys\` (PSR-4, `src/`). Composer: `aristonis/filament-shortcut-keys`.
 - **Entry point:** `FilamentShortcutKeysPlugin::make()` registered on a panel with `->plugin(...)`.
   There is no facade; the host does not call the resolver directly.
-- **Requirements:** PHP 8.2+, Laravel 12 or 13, Filament 5.x. After installing or updating, run
-  `php artisan filament:assets`; without it the keymap is in the page but no key fires.
+- **Requirements:** PHP 8.2+, Laravel 12 or 13, Filament 5.x (not 4). The client script must be
+  published; without it the keymap is in the page but no key fires. An app set up with
+  `filament:install` republishes it on every Composer install or update through `filament:upgrade`;
+  otherwise run `php artisan filament:assets` after installing or updating.
 - **Config:** `config('shortcut-keys.*')`, read at call time. The one setting that is not config is
   `->rowActions([...])`, a fluent method on the plugin.
 - **Two admin-facing pages** ship with the plugin and are always registered: a shortcut reference
@@ -22,10 +24,14 @@ a shortcut; there is nothing to register per item.
   letter must follow within about a second and a half; `Esc` cancels.
 - **Header actions:** bare letters, but only for actions that navigate or open a modal or
   confirmation first. An action that runs on the click itself gets no default key on bare letters.
+  A hidden or disabled header action gets no key.
 - **Table:** `/` search, `j`/`k` start and move a row cursor, `Esc` releases it, `Space` select,
   `Enter` edit, `Delete` delete; arrows move the cursor and page the table only while it is live.
+  Relation manager and table widget tables get the same keys; `/` and paging act on the table the
+  cursor is in. A held key fires an action once; the cursor and arrows repeat while held.
 - **Row actions:** bare letters for names registered with `->rowActions([...])`, never on a key
-  reserved in their pool (`g`, `j`, `k`, the table keys).
+  reserved in their pool (`g`, `j`, `k`, the table keys). Their letters are kept from header actions
+  on every page, even one with no table.
 - Nothing holds `Alt`, `Ctrl` or `Cmd` by default; held modifiers are opt-in per set in `modifiers`.
 - Users can switch every single-key shortcut off in the `?` cheatsheet; the choice is kept per
   browser under the local-storage key `filament-shortcut-keys:single-keys`.
@@ -58,7 +64,8 @@ For task recipes, the matching skill (`filament-shortcut-keys-usage`,
   selectors. Everything from outside arrives through a port the core declares itself. If you want an
   `Illuminate\` import in the core, what you need is a new port.
 - **Extend by registering a set, never by editing the resolver** (OCP). A new category of shortcut is
-  a `ShortcutSet` implementation added to a registry, not a branch in the resolution pipeline.
+  a `ShortcutSet` implementation added to a registry, not a branch in the resolution pipeline. The
+  ports in `Core\Contracts` that the pipeline runs on are `@internal`: not public API for host apps.
 - **Atomic writes run in a transaction owned by the service doing the write** (the persistence
   services, or the prune command for its deletes), never in a model.
 - **The panel-wide and page registries must share no set key.** Their results are concatenated, and

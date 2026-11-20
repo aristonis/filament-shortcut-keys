@@ -16,8 +16,10 @@ the page either way and everything looks installed — but the script that reads
 curl -I https://your-panel.test/js/filament-shortcut-keys/filament-shortcut-keys.js
 ```
 
-A 404 confirms it. Run `php artisan filament:assets` and reload. This needs re-running after each
-deploy and after any `composer update` that touches the package.
+A 404 confirms it. Run `php artisan filament:assets` and reload. An app whose `composer.json` runs
+`@php artisan filament:upgrade` in `post-autoload-dump` republishes it on every Composer install or
+update; add that hook if it is missing. On a local path install, re-run it after rebuilding the
+package's script.
 
 If the file is a 200 and still nothing fires, the map may be absent from the page entirely — check for
 `filament-shortcut-keys-map` in the source before going further.

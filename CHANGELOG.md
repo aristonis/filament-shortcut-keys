@@ -15,7 +15,8 @@ First release. Keyboard shortcuts for a Filament panel, derived from what the pa
 
 **Shortcuts without configuration.** Navigation shortcuts are built from every registered resource
 and page, header actions from each page's own action list, and table keys once from a fixed set that
-applies to every table in the panel. Adding a resource gives it a shortcut; nothing to register.
+applies to every table in the panel: a page's own, a relation manager's, a table widget's. Adding a
+resource gives it a shortcut; nothing to register.
 
 **Keys that stay out of the browser's way.** Nothing is held down by default. Navigation and custom
 bindings use a leader key, `G` then a letter; header and row actions use bare letters. `Alt` and
@@ -25,18 +26,22 @@ second and a half for its letter and `Esc` cancels it.
 
 **A header action is keyed only when a stray press is harmless.** On bare letters, an action gets a
 default key if it opens a page, a modal or a confirmation; one that does its work on the click gets
-none unless a developer pins it.
+none unless a developer pins it. A hidden or disabled header action gets no key and takes no letter.
+A registered row action's letter is never given to a header action on any page, so header letters do
+not change with the tables a page has.
 
 **Table keys.** `/` searches, `J` and `K` start and move a row cursor, `Esc` releases it, `Space`
 selects, `Enter` edits and `Delete` deletes the marked row through Filament's own confirm. While the
 cursor is live the arrows move it and page the table; otherwise they scroll the page as usual. The
 cursor holds real focus and follows the record, so a sort, a search or a refresh never points a row
-key at a different record.
+key at a different record. On a page with several tables, `J` and `K` walk all their rows in page
+order, and `/` and paging act on the table the cursor is in.
 
 **Keys go where the user's attention is.** No bare or `G` shortcut fires while typing in a field, while a modal,
 an open select, a dropdown, a menu or a tab list has the keyboard, or with `Enter`/`Space` on a focused
-button. A held key acts once, keys typed through an input method are ignored, and a key pressed while
-a shortcut's modal is still loading waits for it.
+button. A held key fires an action once; the row cursor and the arrow keys repeat while held, like
+scrolling. Keys typed through an input method are ignored, and a key pressed while a shortcut's modal
+is still loading waits for it.
 
 **Real controls, real permissions.** A shortcut clicks the Filament control or follows the route you
 would have used yourself, so authorization and confirmation modals stay Filament's. The plugin never
@@ -58,8 +63,9 @@ trusted admin create a preset, clone one, edit a shared map in place, or make a 
 default that every admin without their own map uses (everyone, in `locked` mode). Editing in place and
 changing the default ask for explicit confirmation, because both change keys for other admins.
 
-**Discoverability.** A reference page lists every panel-wide shortcut, `?` opens a cheatsheet of what
-is active on the current page, and a small key badge sits on each link and action that has a key.
+**Discoverability.** A reference page lists what is the same everywhere in the panel (navigation,
+custom bindings, the table keys and the row-action letters), `?` opens a cheatsheet of what is active
+on the current page, and a small key badge sits on each link and action that has a key.
 
 **Accessibility.** Each badged control carries `aria-keyshortcuts`, so a screen reader announces its
 key. The cheatsheet has a switch that turns every single-key shortcut off in that browser, for people
@@ -67,6 +73,8 @@ using assistive technology or voice control; held-modifier shortcuts, if configu
 
 **Row actions.** Register your own row-action names once and each gets a stable letter across the
 whole panel, active on any table exposing an action of that name, dispatched against the marked row.
+Relation manager and widget tables load after the page, so there the cheatsheet lists a row action
+only while a row carrying it is on the page, labelled from its name.
 
 **Configuration.** Per-set keys (`['g']` for a leader, `[]` for bare keys, or held modifiers), a config
 overlay that pins a letter or drops a shortcut with no database rows, the authority gate, and the
@@ -78,15 +86,19 @@ deletes what it can prove is gone, and reports the rest rather than guessing.
 **Portability.** Any authenticatable model, keyed by integer, UUID, or ULID. Tested against SQLite,
 MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
 
-**Agent guidelines.** Laravel Boost picks up the package's guidelines and skills on `boost:install`.
+**Agent guidelines.** Guidelines and skills for Laravel Boost. Pick the package in the interactive
+`boost:install`; a non-interactive install skips third-party packages, so add it to `boost.json` under
+`packages` and run `boost:install` again.
 
 ### Requirements
 
 - PHP 8.2 or newer
 - Laravel 12 or 13
-- Filament 5.x
+- Filament 5.x; Filament 4 is not supported
 - MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column)
-- `php artisan filament:assets` after install and after each update; without it no key fires
+- Published assets; without them no key fires. An app set up with `filament:install` republishes them
+  on every `composer install` or `update` through `filament:upgrade`; otherwise run
+  `php artisan filament:assets` after install and after each update
 
 ### Known limitations
 
@@ -114,6 +126,9 @@ MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
   allowed to hand one key to two shortcuts.
 - **One fixed leader per set is the only sequence.** No user-defined sequences, and no command
   palette.
+- **Navigation follows registration, not the sidebar.** A page hidden from the sidebar with
+  `$shouldRegisterNavigation = false` still gets a key; disable it in the config overlay if it should
+  not. Items added with `$panel->navigationItems()` get none.
 
 [Unreleased]: https://github.com/aristonis/filament-shortcut-keys/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/aristonis/filament-shortcut-keys/releases/tag/v1.0.0

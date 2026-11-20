@@ -20,7 +20,9 @@ php artisan filament:assets
 
 Migrations are required even in `locked` mode: the shared system map, its overrides, and each admin's
 selection all live in those tables. `filament:assets` publishes the client script; without it the
-keymap is in the page but no key fires. Re-run it after every update of the package.
+keymap is in the page but no key fires. An app set up with `filament:install` already re-runs it on
+every Composer install or update through `filament:upgrade` in `post-autoload-dump`; without that
+hook, re-run it after every update of the package.
 
 ## Register on the panel
 

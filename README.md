@@ -16,7 +16,7 @@ everyone else starts from.
 
 - PHP 8.2 or newer
 - Laravel 12 or 13
-- Filament 5.x
+- Filament 5.x (Filament 4 is not supported)
 - MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column)
 
 ## Installation
@@ -52,7 +52,11 @@ php artisan filament:assets
 
 Skipping this is the most common reason nothing happens when you press a key. The keymap still renders
 into the page, so there is no error to read — the script that listens for the keys is simply missing.
-Run it again after every deploy and after any `composer update` that touches the package.
+
+An app set up with `filament:install` already runs `@php artisan filament:upgrade` from Composer's
+`post-autoload-dump` hook, and that republishes every plugin's assets after each `composer install` or
+`update`. Run `filament:assets` by hand only if your `composer.json` lacks that hook, or after
+rebuilding the package's script on a local path install.
 
 If you use a custom Filament theme, add the plugin's views to your theme's css file so its classes
 survive Tailwind's purge:
@@ -77,7 +81,7 @@ focus; shortcuts on held modifiers, if you configure any, still do.
 | --- | --- | --- |
 | Navigation | `G`, then a letter | Every registered resource and page |
 | Actions | bare letter | The current page's header actions |
-| Table | bare keys | `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` select, `Enter` edit, `Delete` delete; while the cursor is live `↑`/`↓` move it and `←`/`→` paginate |
+| Table | bare keys | Every table on the page — its own, a relation manager's, a table widget's. `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` select, `Enter` edit, `Delete` delete; while the cursor is live `↑`/`↓` move it and `←`/`→` paginate |
 | Row actions | bare letters | Custom record actions you register (see below); never `J` or `K` while they share the table's modifiers |
 | Custom | `G`, then a letter | Bindings an admin adds themselves |
 
@@ -86,7 +90,8 @@ Nothing is held down by default. Browsers, operating systems and keyboard layout
 Windows, `Option` types characters on a Mac), and a page cannot tell which. So navigation uses a
 leader key: press `G`, let go, then press the letter within a second and a half. `Esc` cancels.
 Header and row actions share one pool of bare letters, so they never collide, and none of them can
-take `G`, `J` or `K`. If you prefer held modifiers, set them per set in the `modifiers` config.
+take `G`, `J` or `K`. A registered row action's letter is never given to a header action, on any
+page, so header letters do not change with the tables a page has. If you prefer held modifiers, set them per set in the `modifiers` config.
 
 On bare letters, a header action only gets a key by default if it is safe to press by accident: it opens a page, or it
 asks first with a modal or a confirmation. An action that does its work on the click itself gets no
@@ -94,6 +99,8 @@ default key, so one stray keystroke can never run it. To key one anyway, pin a l
 `overlay` config. Filament cannot tell without mounting an action whether a plain form schema will
 open a modal, so such an action is treated as instant too; give it a modal heading or pin it. On a
 held modifier or a leader every action keeps its key, since those are never pressed by accident.
+A header action that is hidden (`->visible(false)`, or a `visible` closure that fails for this admin)
+or disabled gets no key at all, so it never takes a letter a live action could have had.
 
 Anyone can turn single-key shortcuts off from the `Shift` + `/` cheatsheet. The choice is saved in
 that browser and silences every bare key and every `G` sequence, which assistive technology and voice
@@ -104,10 +111,20 @@ actions cannot use the same keys as navigation or custom bindings, because the t
 lettered separately. Both mistakes throw on the next render with a message naming the problem.
 
 The arrow keys scroll the page until `J` or `K` starts the row cursor, and again once you click
-somewhere else or press `Esc`, so a long page or a wide table still scrolls from the keyboard.
+somewhere else or press `Esc`, so a long page or a wide table still scrolls from the keyboard. A held
+key fires an action once; the row cursor and the arrow keys repeat while held, like scrolling.
 
-`Shift` + `/` opens a cheatsheet of everything active on the current page. A full listing of the
-panel-wide shortcuts also lives on its own page in the sidebar.
+A page with more than one table — a record page with relation managers, a dashboard with table
+widgets — gets the table keys too. `J` and `K` walk the rows of every table in page order, and `/`
+and the paging arrows act on the table the cursor is in. Relation managers and table widgets load
+after the page, so the cheatsheet checks the page when it opens and lists a row action only while a
+row carrying it is on the page; an empty or filtered-out table shows none. There it is labelled from
+its name (`mark_paid` reads "Mark paid"), since the page cannot read a label the action sets itself.
+
+`Shift` + `/` opens a cheatsheet of everything active on the current page. The "Keyboard shortcuts"
+page in the sidebar lists what is the same everywhere in the panel: navigation, custom bindings, the
+table keys and the row-action letters. Header actions change from page to page, so they are only in
+the cheatsheet.
 
 Letters are picked from the item's name first (the label for navigation, the action or binding name
 otherwise), then from the rest of the alphabet. Two shortcuts in the same pool never share a letter:
@@ -135,7 +152,8 @@ the control is left alone. Restyle it from your panel's stylesheet if the inline
 ### Row actions
 
 Table row actions are per-row, so the plugin only binds the ones you name. Register them once and
-they work on any table that exposes an action of that name, firing against the row the cursor is on:
+they work on any table that exposes an action of that name, including relation manager and widget
+tables, firing against the row the cursor is on:
 
 ```php
 FilamentShortcutKeysPlugin::make()
@@ -288,6 +306,27 @@ admin's map.
   unverified.
 - One fixed leader key per set (`G`, then a letter) is the only sequence. There are no user-defined
   sequences or macros.
+- Navigation keys cover every page and resource the panel registers, including a page left out of
+  the sidebar with `$shouldRegisterNavigation = false`; its key still opens it. To drop one, disable
+  it in the config `overlay`: `'navigation:App\Filament\Pages\Hidden' => ['disabled' => true]`.
+- Items added with `$panel->navigationItems([...])` get no key, whether they point inside the app or
+  elsewhere. An admin can bind a route to one as a custom binding.
+- Filament 4 is not supported. Its bug-fix window closes in January 2027, so the package targets
+  Filament 5 only.
+- Anything marked `@internal`, including the resolution ports in `Core\Contracts` (`ShortcutSet`,
+  `PageContextProvider`, `NavigationProvider`, `ReservesKeys`, `Resolver`), is not public API and may
+  change in a minor release.
+
+## Laravel Boost
+
+The package ships guidelines and skills for [Laravel Boost](https://github.com/laravel/boost). The
+interactive `php artisan boost:install` asks which third-party packages to include; pick this one. A
+non-interactive install (`-n`) skips third-party packages, so add the package to `boost.json` and run
+`boost:install` again:
+
+```json
+"packages": ["aristonis/filament-shortcut-keys"]
+```
 
 ## How it works inside
 

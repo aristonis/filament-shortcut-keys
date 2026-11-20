@@ -6,7 +6,8 @@ description: Give table record actions keyboard shortcuts with aristonis/filamen
 # Skill — key your own row actions
 
 Row actions are per-row, so the plugin binds only the names you register. Register once and they work
-on every table in the panel that exposes an action of that name.
+on every table in the panel that exposes an action of that name, relation manager and widget tables
+included.
 
 ## Register
 
@@ -35,13 +36,20 @@ has to survive a reordering, pin it in the config overlay rather than relying on
 catch: row actions are lettered before the overlay applies, so pinning one onto a letter a sibling row
 action already holds drops the pinned one. Pin both, or pick a letter no sibling has.
 
+A registered row action's letter is kept from header actions on every page, including pages with no
+table, so registering a new name can move a header action's letter panel-wide, but adding a relation
+manager or a table widget to a page never does.
+
 A row action never gets a key reserved in its pool. By default that is `G` (the navigation leader),
 `J` and `K` (they start and move the row cursor) and the other table keys. Putting row actions on
 modifiers of their own (`'row-action' => ['alt']`) frees those letters.
 
 On any given page, a binding is emitted only when that page's table actually exposes a record action
 of that name. Everywhere else it is neither bound nor listed in the cheatsheet, so there are no dead
-keys advertised to the user.
+keys advertised to the user. A relation manager or a table widget loads after the page, so on a page
+with one every registered name is bound, and the cheatsheet checks the page when it opens and lists
+a row action only while a row carrying it is on the page. There it is labelled from its name, not
+from a label the action sets itself.
 
 Firing one triggers the real Filament record action on the row the cursor is on, with its native
 authorization and confirmation. Start the cursor with `J` or `K` first; the arrow keys only move it
