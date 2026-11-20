@@ -28,6 +28,9 @@ jobs:
         exclude:
           - laravel: 13.*
             php: 8.2
+          # Laravel 12 supports PHP 8.2 to 8.5; on 8.6 its own session handler raises a deprecation.
+          - laravel: 12.*
+            php: 8.6
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
