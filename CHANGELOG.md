@@ -14,9 +14,9 @@ First release. Keyboard shortcuts for a Filament panel, derived from what the pa
 ### Added
 
 **Shortcuts without configuration.** Navigation shortcuts are built from every registered resource
-and page, header actions from each page's own action list, and table keys once from a fixed set that
-applies to every table in the panel: a page's own, a relation manager's, a table widget's. Adding a
-resource gives it a shortcut; nothing to register.
+and page, header actions from each page's own action list, and table keys from one fixed set that
+applies to a page's own table, its relation managers and its header, footer or dashboard table
+widgets. Adding a resource gives it a shortcut; nothing to register.
 
 **Keys that stay out of the browser's way.** Nothing is held down by default. Navigation and custom
 bindings use a leader key, `G` then a letter; header and row actions use bare letters. `Alt` and
@@ -27,8 +27,8 @@ second and a half for its letter and `Esc` cancels it.
 **A header action is keyed only when a stray press is harmless.** On bare letters, an action gets a
 default key if it opens a page, a modal or a confirmation; one that does its work on the click gets
 none unless a developer pins it. A hidden or disabled header action gets no key and takes no letter.
-A registered row action's letter is never given to a header action on any page, so header letters do
-not change with the tables a page has.
+A header action is never lettered automatically onto a registered row action's letter, on any page,
+so header letters do not change with the tables a page has.
 
 **Table keys.** `/` searches, `J` and `K` start and move a row cursor, `Esc` releases it, `Space`
 selects, `Enter` edits and `Delete` deletes the marked row through Filament's own confirm. While the
@@ -39,9 +39,11 @@ order, and `/` and paging act on the table the cursor is in.
 
 **Keys go where the user's attention is.** No bare or `G` shortcut fires while typing in a field, while a modal,
 an open select, a dropdown, a menu or a tab list has the keyboard, or with `Enter`/`Space` on a focused
-button. A held key fires an action once; the row cursor and the arrow keys repeat while held, like
-scrolling. Keys typed through an input method are ignored, and a key pressed while a shortcut's modal
-is still loading waits for it.
+button. A held key fires an action once; moving the row cursor (`J`, `K`, `↑`, `↓`) repeats while
+held, like scrolling. Keys typed through an input method are ignored. After a shortcut clicks a
+control that sends a Livewire request, bare keys and `G` sequences are ignored until the response
+arrives, for at most about two seconds, so a quick second key cannot land behind a modal that is about
+to open.
 
 **Real controls, real permissions.** A shortcut clicks the Filament control or follows the route you
 would have used yourself, so authorization and confirmation modals stay Filament's. The plugin never
@@ -65,11 +67,13 @@ changing the default ask for explicit confirmation, because both change keys for
 
 **Discoverability.** A reference page lists what is the same everywhere in the panel (navigation,
 custom bindings, the table keys and the row-action letters), `?` opens a cheatsheet of what is active
-on the current page, and a small key badge sits on each link and action that has a key.
+on the current page, and a small key badge sits on each navigation link, header action and custom
+binding target that has a key.
 
-**Accessibility.** Each badged control carries `aria-keyshortcuts`, so a screen reader announces its
-key. The cheatsheet has a switch that turns every single-key shortcut off in that browser, for people
-using assistive technology or voice control; held-modifier shortcuts, if configured, keep working.
+**Accessibility.** A badged control carries `aria-keyshortcuts`, so a screen reader announces its
+key; a `G` sequence gets none, since the attribute cannot express one. The cheatsheet has a switch
+that turns every single-key shortcut off in that browser, for people using assistive technology or
+voice control; held-modifier shortcuts, if configured, keep working.
 
 **Row actions.** Register your own row-action names once and each gets a stable letter across the
 whole panel, active on any table exposing an action of that name, dispatched against the marked row.
@@ -84,7 +88,7 @@ cache lifetime. Changing any of them reaches the cached keymap on the next reque
 deletes what it can prove is gone, and reports the rest rather than guessing.
 
 **Portability.** Any authenticatable model, keyed by integer, UUID, or ULID. Tested against SQLite,
-MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
+MySQL 8 and PostgreSQL 16 on every push, and on Laravel 12 and 13.
 
 **Agent guidelines.** Guidelines and skills for Laravel Boost. Pick the package in the interactive
 `boost:install`; a non-interactive install skips third-party packages, so add it to `boost.json` under
@@ -95,7 +99,8 @@ MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
 - PHP 8.2 or newer
 - Laravel 12 or 13
 - Filament 5.x; Filament 4 is not supported
-- MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column)
+- MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column); CI
+  tests SQLite, MySQL 8 and PostgreSQL 16, not older versions or MariaDB
 - Published assets; without them no key fires. An app set up with `filament:install` republishes them
   on every `composer install` or `update` through `filament:upgrade`; otherwise run
   `php artisan filament:assets` after install and after each update
@@ -126,6 +131,10 @@ MySQL, and PostgreSQL on every push, and on Laravel 12 and 13.
   allowed to hand one key to two shortcuts.
 - **One fixed leader per set is the only sequence.** No user-defined sequences, and no command
   palette.
+- **Table keys need a table the page can see.** A page's own table, relation managers, and header,
+  footer or dashboard table widgets are detected. A table placed through a page's own `content()`
+  schema or `Livewire::make()`, or a widget placed through `getWidgetsSchemaComponents()`, is not, so
+  that page gets no table keys unless it is a table page itself.
 - **Navigation follows registration, not the sidebar.** A page hidden from the sidebar with
   `$shouldRegisterNavigation = false` still gets a key; disable it in the config overlay if it should
   not. Items added with `$panel->navigationItems()` get none.

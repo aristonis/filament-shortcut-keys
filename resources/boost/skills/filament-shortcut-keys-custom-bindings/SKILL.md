@@ -72,10 +72,16 @@ it cannot displace a real shortcut.
 
 - **The letter falls on a reserved key in that pool** (`g`, `j`, `k` or another table key among bare
   keys). The override is stored but ignored, and the shortcut keeps its automatic letter.
-- **Another forced letter already holds that key** in the same pool. The first one wins and the other
-  shortcut is dropped. A forced letter does take its key from an automatically lettered shortcut,
-  which simply moves to another letter.
 - **The letter is not a–z.** Ignored during resolution; the shortcut keeps its automatic letter.
+- **Another forced letter already holds that key** in the same pool: an overlay pin, another stored
+  remap, or a row action's letter (row actions are lettered before the map applies, so theirs count
+  as forced). The earlier one in resolution order keeps the key and the later shortcut is dropped;
+  navigation comes before custom bindings, header actions before row actions. A forced letter does
+  take its key from an automatically lettered shortcut, which simply moves to another letter.
+- **The overlay disables that target.** An overlay disable wins over a stored letter. A letter the
+  overlay merely pins is replaced by the stored one.
+- **The selector does not match.** A selector that matches nothing on the page, or is not valid CSS,
+  does nothing when pressed; the rest of the keymap keeps working.
 - **The keymap looks stale.** Every write bumps the map version, which is what busts the cache. Writing
   to the tables directly without bumping serves the old map.
 

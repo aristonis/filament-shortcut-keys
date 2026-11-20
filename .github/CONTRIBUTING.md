@@ -40,7 +40,13 @@ Before submitting a pull request:
 
 If the project maintainer has any additional requirements, you will find them listed here.
 
-- **[PSR-2 Coding Standard](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md)** - The easiest way to apply the conventions is to install [PHP Code Sniffer](https://pear.php.net/package/PHP_CodeSniffer).
+- **Run the checks before you push** - CI runs Pint, PHPStan and both test suites on every push:
+  - `composer lint` formats the PHP with Pint; `composer test:lint` checks it without changing files.
+  - `composer analyse` runs PHPStan.
+  - `composer refactor` applies the Rector rules; `composer test:refactor` shows what it would change.
+  - `composer test` runs the PHP suite, and `npm test` the browser script's suite.
+  - After changing anything in `resources/js`, run `npm run build` and commit the rebuilt
+    `resources/dist` with your change.
 
 - **Add tests!** - Your patch won't be accepted if it doesn't have tests.
 

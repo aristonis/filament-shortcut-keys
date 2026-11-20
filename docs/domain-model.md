@@ -20,7 +20,6 @@ erDiagram
         string type "system or custom"
         string authenticatable_type "null for system"
         string authenticatable_id "null for system"
-        json modifiers "reserved, unread in v1"
         int version "monotonic per lineage"
         string default_marker UK "panel id when default, else null"
     }
@@ -49,8 +48,8 @@ A map stores **only differences**. Anything a map does not mention falls through
 convention engine, which is what lets a newly added resource appear in an admin's customised map
 without touching their stored rows.
 
-`modifiers` is reserved and currently read by nothing. The per-map modifier override was cut from v1;
-the column is kept so the feature needs a resolver change and no migration.
+A map holds letters, disables and custom bindings, never a key style. How each set's keys are pressed
+(a leader, bare keys or held modifiers) is configured once per deployment in the `modifiers` config.
 
 ## Invariants
 
@@ -114,7 +113,7 @@ the violation, discards its now-redundant map, and converges on the winner's.
 That recovery is wrapped in a savepoint, and it must stay that way. PostgreSQL abandons the entire
 transaction after any failed statement, so without the savepoint the loser's cleanup and lookup would
 run inside a transaction the server had already given up on, raising `25P02` and losing the edit
-instead of converging. This was a real defect, not a hypothetical — see `tests/Concurrency/ForkRaceTest.php`.
+instead of converging. `tests/Concurrency/ForkRaceTest.php` drives this race on PostgreSQL.
 
 Drivers reach the same outcome by different routes, which is worth knowing before you write a test for
 this. On PostgreSQL a `SELECT ... FOR UPDATE` matching no row locks nothing, so both requests proceed

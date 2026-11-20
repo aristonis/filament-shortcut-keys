@@ -50,10 +50,17 @@ is a new port.
 | `MapEditor` | `Core/Contracts` | `Persistence\EloquentMapRepository` (same instance) |
 | `SystemMapAuthor` | `Core/Contracts` | `Persistence\EloquentSystemMapAuthor` |
 | `ListMaps`, `MapSelector` | `Core/Contracts` | `Persistence\EloquentMapCatalog` (same instance) |
-| `NavigationProvider` | `Core/Contracts` | `Filament\FilamentNavigationProvider` |
-| `PageContextProvider` | `Core/Contracts` | `Filament\FilamentPageContextProvider`, `NullPageContextProvider` |
-| `Resolver` | `Core/Contracts` | `Core\Resolution\ShortcutResolver`, `CompositeResolver`, `Caching\CachedResolver` |
+| `NavigationProvider` (internal) | `Core/Contracts` | `Filament\FilamentNavigationProvider` |
+| `PageContextProvider` (internal) | `Core/Contracts` | `Filament\FilamentPageContextProvider`, `NullPageContextProvider`, `AnyTablePageContextProvider` |
+| `Resolver` (internal) | `Core/Contracts` | `Core\Resolution\ShortcutResolver`, `CompositeResolver`, `Caching\CachedResolver` |
+| `ShortcutSet` (internal) | `Core/Contracts` | one class per set in `Core/Sets` |
+| `ReservesKeys` (internal) | `Core/Contracts` | `Core\Sets\TableSet` |
+| `AcceptsCustomBindings` (internal) | `Core/Contracts` | `Core\Sets\CustomSet` (a marker with no methods) |
 | `AuthorityGate` | `src/Authorization` | `Authorization\ConfigAuthorityGate` |
+
+The ports marked internal carry `@internal`. They are the resolution pipeline's own seams rather than
+extension points: the plugin builds every set and provider itself, so they may gain methods in a minor
+release.
 
 `MapRepository` and `MapEditor` are deliberately separate interfaces over one class: readers depend
 only on the read contract, so nothing that merely resolves a keymap can accidentally write. The same
@@ -101,6 +108,12 @@ discovered at all.
 Sets are also constructed per render rather than at plugin registration, because a panel's text
 direction depends on the request locale and locale middleware runs long after plugins register.
 
+The render hook is not the only caller. The shortcut reference page resolves twice, away from any live
+page. `resolvePanelWideMap()` runs the panel-wide resolver against a `NullPageContextProvider`, so it
+lands on the same cached entry as the render hook. `resolveTableMap()` runs the page sets against an
+`AnyTablePageContextProvider`, a table with no page around it: the table keys and every registered row
+action's letter come out, and the header-action set finds nothing.
+
 ## The two-registry split
 
 Sets are divided by whether their contents depend on the current page.
@@ -108,16 +121,28 @@ Sets are divided by whether their contents depend on the current page.
 **Panel-wide** — `NavigationSet` and `CustomSet`. Identical on every page of a panel, so the result is
 cached.
 
-**Page** — `GlobalSet`, `TableSet`, `RowActionSet`, and `PageSet`. Different per page and cheap to
-build, so they are resolved fresh every time.
+**Page** — `GlobalSet`, `TableSet`, and `RowActionSet`. Different per page and cheap to build, so they
+are resolved fresh every time. A page's tables include nested ones (relation managers and table
+widgets), which render after the page; `resolution.md` covers how the row-action set and the
+cheatsheet deal with that.
 
 `CompositeResolver` concatenates the two results. That is only sound because the registries share no
 set key, which is an invariant maintained by the plugin's wiring rather than enforced in `merge()`.
 
-The cache key is a fingerprint over the panel id, the navigation version token, the active map's
-identity (`type:id:version`), a hash of the config overlay, and the locale. It deliberately does not
-include user identity: two admins on the same map share one entry. It equally deliberately does not
-include permissions, for the reason below.
+The split has two more consequences, both handled in the wiring. Keys reserved in one registry's pool
+have to be honoured by the other, so `KeyReservations` is built from both registries at once and the
+navigation leader lands in the bare pool the page sets letter. And a letter pool must not span both
+registries, since each resolver letters only its own sets: putting `global` or `row-action` on the
+scheme of `navigation` or `custom` throws. Row actions also letter themselves before the page resolver
+runs, and their keys are passed to it as claimed, so header-action letters do not depend on which
+tables a page has. See `resolution.md`.
+
+The cache key is a fingerprint over a cache format version, the panel id, the navigation version
+token, the active map's identity (`type:id:version`), a hash of the developer config that shapes the
+map (the overlay, the `modifiers` schemes and the reserved keys), and the locale. The format version
+means an upgrade that changes the cached shape reads a miss instead of misparsing an old entry. The
+key deliberately does not include user identity: two admins on the same map share one entry. It
+equally deliberately does not include permissions, for the reason below.
 
 A finite cache lifetime ships by default. The fingerprint guarantees freshness on its own, but it
 guarantees it by *changing key*, and nothing deletes the key it moved away from. The lifetime is what

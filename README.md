@@ -17,7 +17,8 @@ everyone else starts from.
 - PHP 8.2 or newer
 - Laravel 12 or 13
 - Filament 5.x (Filament 4 is not supported)
-- MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column)
+- MySQL 5.7+, MariaDB 10.2+, PostgreSQL, or SQLite (the schema uses a native `json` column). CI runs
+  the suite on SQLite, MySQL 8 and PostgreSQL 16; older versions and MariaDB are not tested.
 
 ## Installation
 
@@ -81,7 +82,7 @@ focus; shortcuts on held modifiers, if you configure any, still do.
 | --- | --- | --- |
 | Navigation | `G`, then a letter | Every registered resource and page |
 | Actions | bare letter | The current page's header actions |
-| Table | bare keys | Every table on the page — its own, a relation manager's, a table widget's. `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` select, `Enter` edit, `Delete` delete; while the cursor is live `↑`/`↓` move it and `←`/`→` paginate |
+| Table | bare keys | The page's own table, its relation managers' and its table widgets' (see below). `/` search, `J`/`K` start and move the row cursor, `Esc` releases it, `Space` select, `Enter` edit, `Delete` delete; while the cursor is live `↑`/`↓` move it and `←`/`→` paginate |
 | Row actions | bare letters | Custom record actions you register (see below); never `J` or `K` while they share the table's modifiers |
 | Custom | `G`, then a letter | Bindings an admin adds themselves |
 
@@ -90,8 +91,9 @@ Nothing is held down by default. Browsers, operating systems and keyboard layout
 Windows, `Option` types characters on a Mac), and a page cannot tell which. So navigation uses a
 leader key: press `G`, let go, then press the letter within a second and a half. `Esc` cancels.
 Header and row actions share one pool of bare letters, so they never collide, and none of them can
-take `G`, `J` or `K`. A registered row action's letter is never given to a header action, on any
-page, so header letters do not change with the tables a page has. If you prefer held modifiers, set them per set in the `modifiers` config.
+take `G`, `J` or `K`. A header action is never lettered automatically onto a registered row action's
+letter, on any page, so header letters do not change with the tables a page has. If you prefer held
+modifiers, set them per set in the `modifiers` config.
 
 On bare letters, a header action only gets a key by default if it is safe to press by accident: it opens a page, or it
 asks first with a modal or a confirmation. An action that does its work on the click itself gets no
@@ -112,11 +114,17 @@ lettered separately. Both mistakes throw on the next render with a message namin
 
 The arrow keys scroll the page until `J` or `K` starts the row cursor, and again once you click
 somewhere else or press `Esc`, so a long page or a wide table still scrolls from the keyboard. A held
-key fires an action once; the row cursor and the arrow keys repeat while held, like scrolling.
+key fires an action once; moving the row cursor (`J`, `K`, `↑`, `↓`) repeats while held, like
+scrolling. `←` and `→` turn one page per press.
 
-A page with more than one table — a record page with relation managers, a dashboard with table
-widgets — gets the table keys too. `J` and `K` walk the rows of every table in page order, and `/`
-and the paging arrows act on the table the cursor is in. Relation managers and table widgets load
+After a shortcut clicks a control that sends a Livewire request, bare keys and `G` sequences are
+ignored until the response arrives (at most about two seconds), so a quick second key cannot land on
+the row behind a modal that is about to open.
+
+A page with more than one table — a record page with relation managers, a page or dashboard with
+table widgets in its header, footer or widget area — gets the table keys too (a table placed any other
+way is not detected; see the notes below). `J` and `K` walk the rows of every table in page order, and
+`/` and the paging arrows act on the table the cursor is in. Relation managers and table widgets load
 after the page, so the cheatsheet checks the page when it opens and lists a row action only while a
 row carrying it is on the page; an empty or filtered-out table shows none. There it is labelled from
 its name (`mark_paid` reads "Mark paid"), since the page cannot read a label the action sets itself.
@@ -148,6 +156,9 @@ and nothing else; the key itself is announced through `aria-keyshortcuts` on the
 sequence gets no `aria-keyshortcuts`, because that attribute reads spaces as alternatives (`G O`
 would mean "G or O"), so the cheatsheet is where those are listed. A value your app already put on
 the control is left alone. Restyle it from your panel's stylesheet if the inline look does not suit the theme.
+
+The row the cursor is on carries the class `fi-hotkey-row-focused` and an inline outline. Target that
+class to restyle the cursor; an `outline` rule there needs `!important` to beat the inline one.
 
 ### Row actions
 
@@ -181,15 +192,20 @@ A custom binding points at either a route in your app or a CSS selector on the p
 ## Editing the shared map
 
 Editing the map everyone else sees is gated separately from personal customization, and denied by
-default. Grant it with a closure or a Gate ability:
+default. Grant it with a Gate ability or a closure:
 
 ```php
 // config/shortcut-keys.php
-'authorize' => fn (?Authenticatable $user, string $panelId) => $user?->isDeveloper() ?? false,
 
-// or the name of an ability you defined
+// the name of an ability you defined (recommended)
 'authorize' => 'manage-shortcut-keys',
+
+// or a closure; needs `use Illuminate\Contracts\Auth\Authenticatable;` at the top of the file
+'authorize' => fn (?Authenticatable $user, string $panelId) => $user?->isDeveloper() ?? false,
 ```
+
+Prefer the Gate ability. A closure in a config file cannot be serialized, so `php artisan config:cache`
+fails while one is there. The ability is checked as `Gate::forUser($user)->allows($ability, $panelId)`.
 
 Whoever passes the gate can create a preset, clone an existing one, edit a preset in place, or make a
 preset the panel default: the map every admin without their own selection uses, which in `locked`
@@ -229,14 +245,17 @@ return [
 ];
 ```
 
-The cache key already covers freshness: it is a fingerprint of the navigation, the admin's active map
-and its version, the overlay and the locale, so a change to any of them resolves to a different key.
+The cache key already covers freshness: it is a fingerprint of the panel id, the navigation, the
+active map's identity and version, the developer config (`overlay`, `modifiers` and the keys they
+reserve), the locale and the package's cache format, so a change to any of them resolves to a
+different key. It does not include who is asking: admins on the same map share one entry.
 The lifetime exists to reclaim the keys left behind by that rotation, since every edit and every
 deploy that touches navigation strands its predecessor. Setting it to `null` caches forever, which is
 only sensible on a store you actively manage.
 
-An `overlay` entry wins over both the conventions and an admin's own edit, and needs no database
-rows, which makes it the right tool for a key you need to pin in code.
+An `overlay` entry wins over the conventions and needs no database rows, which makes it the right tool
+for a key you need to pin in code. An overlay disable also wins over an admin's own edit; a pinned
+letter does not, so an admin who remaps that shortcut on the manage page gets their own letter.
 
 ## Pruning dead overrides
 
@@ -311,11 +330,15 @@ admin's map.
   it in the config `overlay`: `'navigation:App\Filament\Pages\Hidden' => ['disabled' => true]`.
 - Items added with `$panel->navigationItems([...])` get no key, whether they point inside the app or
   elsewhere. An admin can bind a route to one as a custom binding.
+- Table keys reach a table the page owns, a relation manager, or a table widget in the page's header
+  or footer widgets or on a dashboard. A table placed through the page's own `content()` schema or
+  `Livewire::make()`, or a widget placed through `getWidgetsSchemaComponents()`, is not detected, so
+  that page gets no table keys unless it is a table page itself.
 - Filament 4 is not supported. Its bug-fix window closes in January 2027, so the package targets
   Filament 5 only.
 - Anything marked `@internal`, including the resolution ports in `Core\Contracts` (`ShortcutSet`,
-  `PageContextProvider`, `NavigationProvider`, `ReservesKeys`, `Resolver`), is not public API and may
-  change in a minor release.
+  `PageContextProvider`, `NavigationProvider`, `ReservesKeys`, `AcceptsCustomBindings`, `Resolver`),
+  is not public API and may change in a minor release.
 
 ## Laravel Boost
 
@@ -349,8 +372,8 @@ composer test
 ```
 
 The suite runs on sqlite by default. Set `FSK_DB_DRIVER` to `pgsql` or `mysql` to run it against a
-real driver, which CI does on every push — a few behaviours, including the fork race above, cannot be
-observed on a single-connection database.
+real driver, which CI does on every push — a few behaviours, including the fork race described in
+[docs/domain-model.md](docs/domain-model.md), cannot be observed on a single-connection database.
 
 `composer test` skips coverage so it runs anywhere. For a coverage report, install pcov or Xdebug and
 run `composer test:coverage`.

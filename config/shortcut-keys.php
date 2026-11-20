@@ -92,9 +92,11 @@ return [
     |
     | Time-to-live, in seconds, for the cached panel-wide (navigation) keymap.
     |
-    | Freshness does not depend on this. The cache key is a fingerprint of everything that shapes the
-    | map, so changing the navigation, the active map, the overlay or the locale already produces a
-    | different key. What the fingerprint cannot do is remove the entry it moved away from, and
+    | Freshness does not depend on this. The cache key is a fingerprint of the panel id, the
+    | navigation, the active map's identity and version, the developer config (overlay, modifiers and
+    | the keys they reserve), the locale and the package's cache format, so changing any of them
+    | already produces a different key. It does not include the user: admins on the same map share
+    | one entry. What the fingerprint cannot do is remove the entry it moved away from, and
     | nothing else in this package deletes it either: every edit and every deploy that touches
     | navigation leaves its predecessor behind. The lifetime is what reclaims those, which matters
     | most on a store that never expires anything on its own.

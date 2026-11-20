@@ -37,9 +37,9 @@ The server injects the map into every panel page as a JSON block with id
 JSON.parse(document.getElementById('filament-shortcut-keys-map').textContent)
 ```
 
-Each group carries its set, its client handler, its modifier and its bindings. If the binding is
-absent, the problem is server-side discovery — skip to section 4. If it is present, the problem is
-dispatch.
+Each group carries its set, its client handler, its held modifiers, its leader key (null for none)
+and its bindings. If the binding is absent, the problem is server-side discovery — skip to section 4.
+If it is present, the problem is dispatch.
 
 ## 2. Nothing fires while typing
 
@@ -53,6 +53,10 @@ cause, and pressing a key there types rather than acts.
 A `G` shortcut is two presses: `G`, then the letter within about a second and a half. A `G` typed
 into a field stays a `G`, and a press of `Alt`+`G` belongs to the browser. Bare keys also stay quiet while a
 modal, an open select, a dropdown or a menu has the keyboard.
+
+After a shortcut clicks a control that sends a Livewire request, bare keys and `G` sequences are
+ignored until the response arrives, for at most about two seconds. A key pressed in that window is
+dropped, not queued.
 
 ## 3. The key fires but nothing happens
 
@@ -84,15 +88,23 @@ behaving correctly.
   cannot run it. Give it a confirmation or a modal, or pin a letter for it in the `overlay` config.
   An action whose only modal is a form schema counts as instant, because that is not knowable without
   mounting it.
-- **A shortcut with a forced letter that collided** — an invalid or taken forced letter is dropped
-  rather than displacing another shortcut.
+- **A shortcut with a forced letter that collided** — a forced letter that is not a–z or sits on a
+  reserved key (`g`, `j`, `k`, a table key) is ignored, and the shortcut keeps its automatic letter. A
+  forced letter on a key an automatic shortcut holds takes it, and that shortcut moves to another
+  letter. Only two forced letters on one key drop a shortcut: the later one. Row-action letters count
+  as forced, so pinning a row action onto a sibling's letter drops whichever is later in
+  `->rowActions([...])`.
+- **A table on a page that is not a table page** — table keys and row actions reach the page's own
+  table, relation managers, and header, footer or dashboard table widgets. A table placed through the
+  page's `content()` schema or `Livewire::make()`, or a widget placed through
+  `getWidgetsSchemaComponents()`, is not detected.
 
 ## 5. The wrong thing fires
 
 When one key could match more than one active set, the client resolves in a fixed order:
 
 ```
-page > custom > table > global > navigation
+custom > table > global > navigation
 ```
 
 Sets on different modifiers cannot collide at all, so this only arises within a shared modifier pool.
@@ -101,9 +113,10 @@ letters around — if keys shifted after a config change, that is why.
 
 ## 6. The keymap is stale
 
-The cache key is a fingerprint of the navigation, the active map and its version, the overlay, the
-`modifiers` config, the reserved keys and the locale. Any of those changing produces a different key, so a stale map almost always means a version
-that did not move:
+The cache key is a fingerprint of the panel id, the navigation, the active map's identity and
+version, the overlay, the `modifiers` config, the reserved keys, the locale and a cache format
+version. It does not include the user. Any of those changing produces a different key, so a stale map
+almost always means a version that did not move:
 
 - **Wrote to the tables directly?** Every content change must bump the map's `version`. The application
   services do this; raw SQL does not.

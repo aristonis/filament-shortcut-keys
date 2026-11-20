@@ -7,7 +7,7 @@ description: Give table record actions keyboard shortcuts with aristonis/filamen
 
 Row actions are per-row, so the plugin binds only the names you register. Register once and they work
 on every table in the panel that exposes an action of that name, relation manager and widget tables
-included.
+included (the last section lists the tables the plugin cannot see).
 
 ## Register
 
@@ -34,11 +34,15 @@ still free, so whoever comes first picks first — `['reject', 'refund']` gives 
 swapping the two gives refund `R` and reject `E`. Alphabetising the array during a cleanup silently rekeys the panel. If a letter
 has to survive a reordering, pin it in the config overlay rather than relying on the position. One
 catch: row actions are lettered before the overlay applies, so pinning one onto a letter a sibling row
-action already holds drops the pinned one. Pin both, or pick a letter no sibling has.
+action already holds leaves two fixed letters on one key, and whichever of the two is later in
+`->rowActions([...])` is dropped. With `['approve', 'reject']`, pinning approve to `r` gives approve
+`R` and leaves reject with no key. Pin both, or pick a letter no sibling has. Row actions do step
+around letters the overlay pins for header actions.
 
-A registered row action's letter is kept from header actions on every page, including pages with no
-table, so registering a new name can move a header action's letter panel-wide, but adding a relation
-manager or a table widget to a page never does.
+No header action is lettered automatically onto a registered row action's letter, on any page,
+including pages with no table. So registering a new name can move a header action's letter
+panel-wide, but adding a header action never moves a row action's letter, and adding a relation
+manager or a table widget to a page never moves a header action's.
 
 A row action never gets a key reserved in its pool. By default that is `G` (the navigation leader),
 `J` and `K` (they start and move the row cursor) and the other table keys. Putting row actions on
@@ -76,6 +80,10 @@ In order of likelihood:
    dropdown has not been verified. Header actions inside a group get no key at all.
 4. **The user is not authorized for it**, so Filament never rendered the control. The key exists and
    does nothing, which is the intended security model.
+5. **The page cannot see the table.** Only a page's own table, its relation managers, and header,
+   footer or dashboard table widgets are detected. A table placed through the page's `content()`
+   schema or `Livewire::make()`, or a widget placed through `getWidgetsSchemaComponents()`, gets no
+   table keys and no row actions unless the page is a table page itself.
 
 ## Letters
 
