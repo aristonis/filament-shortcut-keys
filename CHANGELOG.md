@@ -7,7 +7,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-11-17
+## [1.0.0] - 2026-11-21
 
 First release. Keyboard shortcuts for a Filament panel, derived from what the panel already declares.
 
