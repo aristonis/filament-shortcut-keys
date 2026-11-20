@@ -1,34 +1,53 @@
 <x-filament-panels::page>
-    <section class="fi-section-content-ctn">
-        <h2 class="text-base font-semibold text-gray-950 dark:text-white">
-            {{ trans('filament-shortcut-keys::shortcut-keys.manage.your_maps') }}
-        </h2>
+    {{--
+        Filament's compiled theme ships its own component classes but not Tailwind's utilities, so the
+        markup this page adds is styled here, on Filament's colour and size tokens, and needs no custom
+        theme. The class names stay clear of the cheatsheet's, which renders on this page too.
+    --}}
+    <style>
+        .fsk-manage-maps { margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); line-height: 1.25rem; }
+        .fsk-manage-map {
+            display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing) * 4);
+            padding-block: calc(var(--spacing) * 2); color: var(--gray-700);
+        }
+        .fsk-manage-map:where(.dark, .dark *) { color: var(--gray-300); }
+        .fsk-manage-map + .fsk-manage-map { border-top: 1px solid var(--gray-200); }
+        .fsk-manage-map + .fsk-manage-map:where(.dark, .dark *) { border-top-color: rgb(255 255 255 / .1); }
+        .fsk-manage-badges { display: flex; flex-wrap: wrap; gap: calc(var(--spacing) * 1); }
+        .fsk-manage-note { font-size: var(--text-sm); color: var(--gray-500); }
+        .fsk-manage-note:where(.dark, .dark *) { color: var(--gray-400); }
+    </style>
 
-        <ul class="mt-2 divide-y divide-gray-200 text-sm dark:divide-white/10">
+    <x-filament::section :heading="trans('filament-shortcut-keys::shortcut-keys.manage.your_maps')">
+        <ul class="fsk-manage-maps">
             @foreach ($maps as $map)
-                <li class="flex items-center justify-between py-2">
-                    <span class="text-gray-700 dark:text-gray-300">{{ $map['label'] }}</span>
-                    <span class="flex gap-1">
+                <li class="fsk-manage-map">
+                    <span>{{ $map['label'] }}</span>
+                    <span class="fsk-manage-badges">
                         @if ($map['isActive'])
-                            <span class="rounded bg-primary-50 px-1.5 py-0.5 text-xs text-primary-700 dark:bg-primary-400/10 dark:text-primary-400">{{ trans('filament-shortcut-keys::shortcut-keys.manage.active') }}</span>
+                            <x-filament::badge color="primary">
+                                {{ trans('filament-shortcut-keys::shortcut-keys.manage.active') }}
+                            </x-filament::badge>
                         @endif
                         @if ($map['isDefault'])
-                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-white/10 dark:text-gray-300">{{ trans('filament-shortcut-keys::shortcut-keys.manage.default') }}</span>
+                            <x-filament::badge color="gray">
+                                {{ trans('filament-shortcut-keys::shortcut-keys.manage.default') }}
+                            </x-filament::badge>
                         @endif
                     </span>
                 </li>
             @endforeach
         </ul>
-    </section>
+    </x-filament::section>
 
     @unless ($isPersonal)
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="fsk-manage-note">
             {{ trans('filament-shortcut-keys::shortcut-keys.manage.locked_note') }}
         </p>
     @endunless
 
     @if ($canAuthor)
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="fsk-manage-note">
             {{ trans('filament-shortcut-keys::shortcut-keys.manage.authoring_note') }}
         </p>
     @endif
