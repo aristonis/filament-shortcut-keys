@@ -130,3 +130,14 @@ it('flags a header action that runs the moment it is clicked', function () {
         ->and($actions['export']->runsImmediately)->toBeFalse()   // asks for confirmation first
         ->and($actions['create']->runsImmediately)->toBeFalse();  // navigates
 });
+
+it('leaves out header actions the page does not render or that cannot be clicked', function () {
+    $names = collect((new FilamentPageContextProvider(Livewire::test(ListOrders::class)->instance()))->actions())
+        ->pluck('name')
+        ->all();
+
+    expect($names)->toContain('export')
+        ->not->toContain('secret')   // ->visible(false)
+        ->not->toContain('gated')    // ->visible(fn) that fails for this user
+        ->not->toContain('locked');  // ->disabled()
+});

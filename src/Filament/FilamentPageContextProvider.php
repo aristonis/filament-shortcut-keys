@@ -12,9 +12,20 @@ final class FilamentPageContextProvider implements PageContextProvider
     /** @param object $page the currently-rendering Filament page (a Livewire component) */
     public function __construct(private object $page) {}
 
+    /**
+     * Only header actions the user can click. A hidden action is not rendered and a disabled one does
+     * nothing, so a key on either would be dead in the cheatsheet and would take a letter from the
+     * bare pool that a live action could have had. Row actions are left alone: their visibility
+     * depends on the record, which is not known until the cursor lands on a row.
+     */
     public function actions(): array
     {
-        return $this->toTargets($this->page->getCachedHeaderActions(), fn (Action $action): ActionTarget => $this->toHeaderTarget($action));
+        $clickable = array_filter(
+            $this->page->getCachedHeaderActions(),
+            fn (object $action): bool => ! $action instanceof Action || ($action->isVisible() && ! $action->isDisabled()),
+        );
+
+        return $this->toTargets($clickable, fn (Action $action): ActionTarget => $this->toHeaderTarget($action));
     }
 
     public function hasTable(): bool
