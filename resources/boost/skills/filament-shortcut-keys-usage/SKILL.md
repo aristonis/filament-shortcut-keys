@@ -38,12 +38,8 @@ public function panel(Panel $panel): Panel
 That is the whole setup. The plugin registers its own pages, injects the keymap into every panel page,
 and ships the client script.
 
-With a custom Filament theme, add the plugin's views to the theme's css so its classes survive
-Tailwind's purge:
-
-```css
-@source '../../../../vendor/aristonis/filament-shortcut-keys/resources/**/*.blade.php';
-```
+No theme step is needed, custom theme or not: the plugin's views style themselves with Filament's
+own components and a small embedded stylesheet, so there are no Tailwind classes to keep from purging.
 
 ## What you get with no configuration
 
