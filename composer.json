@@ -1,6 +1,6 @@
 {
     "name": "aristonis/filament-shortcut-keys",
-    "description": "This is my package filament-shortcut-keys",
+    "description": "Keyboard shortcuts for a Filament panel, assigned automatically from its resources, pages, actions and tables.",
     "keywords": [
         "aristonis",
         "laravel",
