@@ -52,9 +52,10 @@ invents a privileged action and never calls a Livewire method directly.
 **Stable identity.** A shortcut is keyed on the resource class or the action name, never on a slug or
 a label, so a stored override survives both renaming and reordering.
 
-**Two modes.** `locked` gives every admin one shared map. `personal` lets each admin customize their
+**Three modes.** `locked` gives every admin one shared map. `personal` lets each admin customize their
 own: the first edit forks the shared map, stores only the differences, and leaves everything else
-following the conventions, so a resource added later still appears in a customized map.
+following the conventions, so a resource added later still appears in a customized map. `config`
+takes keys only from the config file and stores nothing, so the migrations are optional.
 
 **Custom bindings.** An admin can bind a key to a route in the app or to an element already on the
 page. Those two shapes are the whole surface, which is what keeps a binding from becoming a way to

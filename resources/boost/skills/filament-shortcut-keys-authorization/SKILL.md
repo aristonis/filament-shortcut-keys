@@ -7,7 +7,7 @@ description: Control who may edit a panel's shared system shortcut maps in arist
 
 Two different permissions are easy to confuse:
 
-- **Personal customization** is controlled by `customization` (`personal` or `locked`). It lets an
+- **Personal customization** is controlled by `customization` (`personal`, `locked` or `config`). It lets an
   admin change their *own* keys and touches nobody else.
 - **Authoring** is controlled by `authorize`. It lets someone change shared presets and choose the
   panel default, the map every admin without their own selection uses.

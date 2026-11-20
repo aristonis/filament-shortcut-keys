@@ -16,9 +16,9 @@ per item.
   otherwise run `php artisan filament:assets` after installing or updating.
 - **Config:** `config('shortcut-keys.*')`, read at call time. The one setting that is not config is
   `->rowActions([...])`, a fluent method on the plugin.
-- **Two admin-facing pages** ship with the plugin and are always registered: a shortcut reference
-  page, and a manage-shortcuts page that opens in `personal` mode, or in `locked` mode for a user the
-  authoring gate grants.
+- **Two admin-facing pages** ship with the plugin: a shortcut reference page, always registered, and a
+  manage-shortcuts page that opens in `personal` mode, or in `locked` mode for a user the authoring
+  gate grants. In `config` mode the manage page is not registered and nothing touches the database.
 
 ## Default keys
 - **Navigation and custom bindings:** a leader key, `g` then a letter (config token `['g']`). The

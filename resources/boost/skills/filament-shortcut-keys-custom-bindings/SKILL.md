@@ -5,7 +5,7 @@ description: Let admins personalize their own shortcuts in aristonis/filament-sh
 
 # Skill — personal customization
 
-Requires `config('shortcut-keys.customization') === 'personal'`. In `locked` mode every write throws.
+Requires `config('shortcut-keys.customization') === 'personal'`. In `locked` or `config` mode every write throws.
 
 Admins normally do all of this through the manage-shortcuts page. Drive it from code only when you are
 building your own UI on top.

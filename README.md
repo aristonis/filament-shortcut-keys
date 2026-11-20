@@ -31,6 +31,9 @@ php artisan vendor:publish --tag="filament-shortcut-keys-migrations"
 php artisan migrate
 ```
 
+The migrations store admins' own keys and shared presets. If you set keys only in the config file
+(`'customization' => 'config'`), nothing is stored and you can skip them.
+
 Register the plugin on your panel:
 
 ```php
@@ -72,6 +75,7 @@ runs it on every `composer install` or `update` through `filament:upgrade`; othe
   would have used, so authorization and confirmations stay Filament's.
 - **Customization.** `personal` mode lets each admin remap, disable and add their own bindings; `locked`
   gives everyone one shared map. A trusted admin, behind a gate you supply, edits the shared presets.
+  `config` mode takes keys from the config file alone and needs no database.
 - **Discoverability and accessibility.** A `?` cheatsheet, a reference page, key badges with
   `aria-keyshortcuts`, and a switch that turns single-key shortcuts off per browser.
 - **Maintenance.** `shortcut-keys:prune` removes stored overrides whose target no longer exists.

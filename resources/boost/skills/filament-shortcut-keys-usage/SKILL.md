@@ -18,8 +18,9 @@ php artisan migrate
 php artisan filament:assets
 ```
 
-Migrations are required even in `locked` mode: the shared system map, its overrides, and each admin's
-selection all live in those tables. `filament:assets` publishes the client script; without it the
+Migrations are required in `personal` and `locked` mode: the shared system map, its overrides, and
+each admin's selection all live in those tables. In `config` mode nothing is stored, so they are
+optional. `filament:assets` publishes the client script; without it the
 keymap is in the page but no key fires. An app set up with `filament:install` already re-runs it on
 every Composer install or update through `filament:upgrade` in `post-autoload-dump`; without that
 hook, re-run it after every update of the package.
@@ -77,13 +78,16 @@ Shortcuts on held modifiers, if you configure any, still do.
 
 ## Choose a mode
 
-`config('shortcut-keys.customization')` takes one of two values:
+`config('shortcut-keys.customization')` takes one of three values (any other throws):
 
 - **`personal`** (default) — each admin gets a manage-shortcuts page to remap a key, disable one, add
   their own binding, or switch between presets. Their first edit copies the shared map into a private
   one. From then on, later edits to the shared map no longer reach them; keys they never touched still
   follow the conventions, so a resource added later still gets a key.
 - **`locked`** — no per-admin editing at all. Everyone uses the panel's default system map, which an authorized admin sets on the manage page; with none set, the conventions. An admin who selected a map while `personal` mode was on keeps that selection, including a personal map they can no longer change.
+- **`config`** — keys come only from the conventions and the config file (`modifiers`, `overlay`).
+  Nothing is read from or written to the database, so the migrations are optional and the manage page
+  is not registered; `shortcut-keys:prune` has nothing to do.
 
 Publish the config only if you need to change something:
 
