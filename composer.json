@@ -4,15 +4,23 @@
     "keywords": [
         "aristonis",
         "laravel",
-        "filamentphp",
         "filament",
+        "filamentphp",
         "filament-plugin",
+        "filament-v5",
+        "keyboard-shortcuts",
+        "shortcuts",
+        "hotkeys",
+        "keyboard",
+        "keymap",
+        "accessibility",
         "filament-shortcut-keys"
     ],
     "homepage": "https://github.com/aristonis/filament-shortcut-keys",
     "support": {
         "issues": "https://github.com/aristonis/filament-shortcut-keys/issues",
-        "source": "https://github.com/aristonis/filament-shortcut-keys"
+        "source": "https://github.com/aristonis/filament-shortcut-keys",
+        "docs": "https://aristonis.org/open-source/filament-shortcut-keys/docs"
     },
     "license": "MIT",
     "authors": [

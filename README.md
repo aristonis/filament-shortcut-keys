@@ -1,9 +1,18 @@
 # Filament shortcut keys
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions?query=workflow%3Atests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/fix-code-style.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions?query=workflow%3Afix-code-style+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
+[![PHP Version](https://img.shields.io/packagist/php-v/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
+[![Filament](https://img.shields.io/badge/filament-5.x-FDAE4B?style=flat-square)](https://filamentphp.com)
+[![Laravel](https://img.shields.io/badge/laravel-12%20%7C%2013-FF2D20?style=flat-square)](https://laravel.com)
+[![License](https://img.shields.io/github/license/aristonis/filament-shortcut-keys.svg?style=flat-square)](LICENSE.md)
+
+[![tests](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions/workflows/tests.yml?query=branch%3Amain)
+[![database](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/tests-database.yml?branch=main&label=database&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions/workflows/tests-database.yml?query=branch%3Amain)
+[![js tests](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/tests-js.yml?branch=main&label=js%20tests&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions/workflows/tests-js.yml?query=branch%3Amain)
+[![phpstan](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/phpstan.yml?branch=main&label=phpstan&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions/workflows/phpstan.yml?query=branch%3Amain)
+[![code style](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/fix-code-style.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions/workflows/fix-code-style.yml?query=branch%3Amain)
+[![Docs](https://img.shields.io/badge/docs-aristonis.org-blue?style=flat-square)](https://aristonis.org/open-source/filament-shortcut-keys/docs)
 
 Keyboard shortcuts for a Filament panel, assigned automatically. The plugin walks the panel's
 registered resources, pages, and actions, gives each one a letter, and injects the resulting keymap
