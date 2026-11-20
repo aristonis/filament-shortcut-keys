@@ -20,6 +20,7 @@ use Aristonis\FilamentShortcutKeys\Core\Sets\ShortcutSetRegistry;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ModifierScheme;
 use Aristonis\FilamentShortcutKeys\Exceptions\InvalidModifierSchemeException;
+use Aristonis\FilamentShortcutKeys\Filament\AnyTablePageContextProvider;
 use Aristonis\FilamentShortcutKeys\Filament\ClientMapSerializer;
 use Aristonis\FilamentShortcutKeys\Filament\FilamentPageContextProvider;
 use Aristonis\FilamentShortcutKeys\Filament\NullPageContextProvider;
@@ -136,6 +137,25 @@ class FilamentShortcutKeysPlugin implements Plugin
             $user instanceof Model ? $user->getMorphClass() : '',
             (string) ($user?->getAuthIdentifier() ?? ''),
         );
+    }
+
+    /**
+     * Resolve the table keys and the row-action letters for the reference page. Both are the same on
+     * every table in the panel, so they are resolved against a table with no page around it, through
+     * the same sets, overlay and maps as a live page. The header-action set finds no actions there.
+     */
+    public function resolveTableMap(string $panelId, ?Authenticatable $user): ResolvedMap
+    {
+        $pageSets = $this->pageSets();
+
+        return (new ShortcutResolver($pageSets, config('shortcut-keys.overlay', []), app(MapRepository::class), $this->keyReservations(), $this->claimedRowActionCodes($pageSets)))
+            ->resolve(
+                app(NavigationProvider::class),
+                new AnyTablePageContextProvider,
+                $panelId,
+                $user instanceof Model ? $user->getMorphClass() : '',
+                (string) ($user?->getAuthIdentifier() ?? ''),
+            );
     }
 
     private function panelWideSets(): ShortcutSetRegistry

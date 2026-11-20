@@ -3,6 +3,7 @@
 namespace Aristonis\FilamentShortcutKeys\Filament\Pages;
 
 use Aristonis\FilamentShortcutKeys\Core\Contracts\NavigationProvider;
+use Aristonis\FilamentShortcutKeys\Filament\OverlayCatalog;
 use Aristonis\FilamentShortcutKeys\Filament\ReferenceCatalog;
 use Aristonis\FilamentShortcutKeys\FilamentShortcutKeysPlugin;
 use BackedEnum;
@@ -10,9 +11,9 @@ use Filament\Facades\Filament;
 use Filament\Pages\Page;
 
 /**
- * A read-only listing of the panel-wide shortcuts (navigation and the user's own custom bindings)
- * for the current admin. Page-scoped shortcuts vary per page, so those surface on each page and in
- * the cheatsheet overlay instead of here.
+ * A read-only listing of the shortcuts that are the same everywhere in the panel for the current
+ * admin: navigation, their own custom bindings, the table keys and the row-action letters. Header
+ * actions vary per page, so those surface on each page and in the cheatsheet overlay instead.
  */
 final class ShortcutReference extends Page
 {
@@ -45,10 +46,21 @@ final class ShortcutReference extends Page
     {
         $panelId = Filament::getCurrentPanel()->getId();
 
-        $map = FilamentShortcutKeysPlugin::get()->resolvePanelWideMap($panelId, Filament::auth()->user());
+        $plugin = FilamentShortcutKeysPlugin::get();
+        $user = Filament::auth()->user();
+
+        $panelWide = ReferenceCatalog::build($plugin->resolvePanelWideMap($panelId, $user), app(NavigationProvider::class)->items($panelId));
+
+        // Labelled the way the cheatsheet labels them, so a key reads the same in both places.
+        $tables = OverlayCatalog::build(
+            $plugin->resolveTableMap($panelId, $user),
+            [],
+            [],
+            (array) trans('filament-shortcut-keys::shortcut-keys.table_behaviors'),
+        );
 
         return [
-            'groups' => ReferenceCatalog::build($map, app(NavigationProvider::class)->items($panelId)),
+            'groups' => [...$panelWide, ...$tables],
         ];
     }
 }
