@@ -41,7 +41,7 @@ it('emits a binding only for names both registered AND present on the page', fun
         ->and($bindings[0]->keyCombo)->not->toBeNull();
 });
 
-it('excludes the table-reserved names (view/edit/delete) even when registered', function () {
+it('excludes the table-reserved names (edit, delete) even when registered', function () {
     $set = new RowActionSet(['edit', 'approve']);
 
     $bindings = $set->discover(emptyNav(), rowActionPage(['edit', 'approve']), 'admin');
