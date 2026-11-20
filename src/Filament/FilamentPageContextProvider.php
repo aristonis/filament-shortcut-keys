@@ -144,7 +144,7 @@ final class FilamentPageContextProvider implements PageContextProvider
 
     /**
      * Header and footer widgets on any page, plus the dashboard's own. Each accessor is probed rather
-     * than assumed, so a page type that lacks one simply contributes nothing.
+     * than assumed, so a page type that lacks one contributes nothing.
      *
      * Filament 5 marks getVisibleFooterWidgets() and getVisibleWidgets() deprecated in favour of
      * getWidgetsSchemaComponents(). When they go, a widget table loses its keys; the dashboard test

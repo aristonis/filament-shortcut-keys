@@ -12,7 +12,7 @@ export function safeQuery(scope, selector) {
 }
 
 // The anchor that links to a url. Escaped where the browser can, so a quote or backslash in the url
-// still finds its link; without CSS.escape such a url simply finds nothing.
+// still finds its link; without CSS.escape such a url finds nothing.
 export function linkTo(url) {
     const value = globalThis.CSS?.escape ? globalThis.CSS.escape(url) : url
 

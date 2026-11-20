@@ -49,7 +49,7 @@ final class EloquentMapRepository implements MapEditor, MapRepository
             // Lock the selection row if it exists so a concurrent fork blocks until we commit.
             // On PostgreSQL a lockForUpdate over a non-existent row locks nothing, which is why the
             // no-selection branch relies on the unique constraint rather than the lock. InnoDB
-            // differs: it gap-locks the range, so there the competing insert simply waits. Both
+            // differs: it gap-locks the range, so there the competing insert waits. Both
             // converge on one map, by different mechanisms.
             $lockedId = ShortcutMapSelection::query()
                 ->where('authenticatable_type', $authType)
