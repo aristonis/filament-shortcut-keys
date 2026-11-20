@@ -7,7 +7,7 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
 [![Filament](https://img.shields.io/badge/filament-5.x-FDAE4B?style=flat-square)](https://filamentphp.com)
 [![Laravel](https://img.shields.io/badge/laravel-12%20%7C%2013-FF2D20?style=flat-square)](https://laravel.com)
-[![License](https://img.shields.io/github/license/aristonis/filament-shortcut-keys.svg?style=flat-square)](LICENSE.md)
+[![License](https://img.shields.io/github/license/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/blob/main/LICENSE.md)
 
 [![tests](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions/workflows/tests.yml?query=branch%3Amain)
 [![database](https://img.shields.io/github/actions/workflow/status/aristonis/filament-shortcut-keys/tests-database.yml?branch=main&label=database&style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/actions/workflows/tests-database.yml?query=branch%3Amain)
@@ -57,7 +57,7 @@ runs it on every `composer install` or `update` through `filament:upgrade`; othe
   guides: getting started, the shortcuts, row actions, customization, custom bindings, configuration,
   pruning, translations, security, troubleshooting and limitations.
 - **For AI agents → [Laravel Boost](https://laravel.com/docs/boost)** — the package ships Boost guidelines and
-  skills in [`resources/boost/`](resources/boost/). Pick the package when the interactive
+  skills in [`resources/boost/`](https://github.com/aristonis/filament-shortcut-keys/tree/main/resources/boost). Pick the package when the interactive
   `php artisan boost:install` asks for third-party packages, or add it to `boost.json` under `packages`
   and run `boost:install` again; your coding agent then loads the guideline and the
   `filament-shortcut-keys-*` skills.
@@ -91,21 +91,21 @@ npm test        # browser client, on node alone
 
 ## Changelog
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+Please see [CHANGELOG](https://github.com/aristonis/filament-shortcut-keys/blob/main/CHANGELOG.md) for more information on what has changed recently.
 
 ## Contributing
 
-Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING](https://github.com/aristonis/filament-shortcut-keys/blob/main/.github/CONTRIBUTING.md) for details.
 
 ## Security Vulnerabilities
 
-Please review [our security policy](.github/SECURITY.md) on how to report security vulnerabilities.
+Please review [our security policy](https://github.com/aristonis/filament-shortcut-keys/blob/main/.github/SECURITY.md) on how to report security vulnerabilities.
 
 ## Credits
 
 - [Mekad Alibrahem](https://github.com/aristonis)
-- [All Contributors](../../contributors)
+- [All Contributors](https://github.com/aristonis/filament-shortcut-keys/graphs/contributors)
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](https://github.com/aristonis/filament-shortcut-keys/blob/main/LICENSE.md) for more information.
