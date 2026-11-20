@@ -50,7 +50,7 @@ If the project maintainer has any additional requirements, you will find them li
 
 - **Add tests!** - Your patch won't be accepted if it doesn't have tests.
 
-- **Document any change in behaviour** - Make sure the `README.md` and any other relevant documentation are kept up-to-date.
+- **Document any change in behaviour** - Update `README.md`, `CHANGELOG.md` and the Boost files in `resources/boost/` here, and the guides in the [docs repository](https://github.com/aristonis/filament-shortcut-keys-docs).
 
 - **Consider our release cycle** - We try to follow [SemVer v2.0.0](https://semver.org/). Randomly breaking public APIs is not an option.
 

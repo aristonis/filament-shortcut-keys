@@ -138,6 +138,10 @@ MySQL 8 and PostgreSQL 16 on every push, and on Laravel 12 and 13.
 - **Navigation follows registration, not the sidebar.** A page hidden from the sidebar with
   `$shouldRegisterNavigation = false` still gets a key; disable it in the config overlay if it should
   not. Items added with `$panel->navigationItems()` get none.
+- **A pool holds at most 26 letters.** Past that, a shortcut gets no key. The default bare pool has 23,
+  since `G`, `J` and `K` are taken.
+- **Custom bindings are managed from code, not the page.** The manage page can add or replace one but
+  not remove or disable it.
 
 [Unreleased]: https://github.com/aristonis/filament-shortcut-keys/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/aristonis/filament-shortcut-keys/releases/tag/v1.0.0

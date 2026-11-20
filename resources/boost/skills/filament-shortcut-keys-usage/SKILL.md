@@ -85,8 +85,9 @@ Shortcuts on held modifiers, if you configure any, still do.
 
 - **`personal`** (default) — each admin gets a manage-shortcuts page to remap a key, disable one, add
   their own binding, or switch between presets. Their first edit copies the shared map into a private
-  one, so later changes to the shared map still reach every key they have not touched.
-- **`locked`** — no per-admin editing at all. Everyone uses the panel's default system map, which an authorized admin sets on the manage page; with none set, the conventions. An admin who selected a map while `personal` mode was on keeps that selection.
+  one. From then on, later edits to the shared map no longer reach them; keys they never touched still
+  follow the conventions, so a resource added later still gets a key.
+- **`locked`** — no per-admin editing at all. Everyone uses the panel's default system map, which an authorized admin sets on the manage page; with none set, the conventions. An admin who selected a map while `personal` mode was on keeps that selection, including a personal map they can no longer change.
 
 Publish the config only if you need to change something:
 
