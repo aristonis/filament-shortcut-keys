@@ -14,7 +14,8 @@ use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ShortcutTarget;
 /**
  * Dev-registered custom row actions (e.g. approve/reject), auto-lettered and uniform across every
  * table. A shortcut is emitted only when the current page's table exposes a record action of that
- * name, so the reference overlay never shows a key the page can't use.
+ * name, so the reference overlay never shows a key the page can't use. A page with a nested table
+ * gets every registered name, and the cheatsheet hides the ones its tables turn out not to have.
  */
 final class RowActionSet implements ShortcutSet
 {
@@ -39,7 +40,48 @@ final class RowActionSet implements ShortcutSet
         return $this->modifier ?? ModifierScheme::none();
     }
 
+    /**
+     * The key each registered name takes, before any overlay pin. The same on every page, which is
+     * what lets the header actions sharing this pool keep clear of all of them, not only of the ones
+     * the current page has.
+     *
+     * @return array<string, string> name => key code
+     */
+    public function codes(): array
+    {
+        $codes = [];
+        foreach ($this->lettered() as $binding) {
+            $codes[$binding->target->structureKey] = (string) $binding->keyCombo?->code;
+        }
+
+        return $codes;
+    }
+
     public function discover(NavigationProvider $navigationProvider, PageContextProvider $pageContextProvider, string $panelId): array
+    {
+        $assigned = $this->lettered();
+
+        // A nested table (relation manager, table widget) loads after the page, so its actions are
+        // unknown here: every registered name is kept and the cheatsheet checks the page for each.
+        if ($pageContextProvider->hasNestedTables()) {
+            return $assigned;
+        }
+
+        $present = array_map(fn (ActionTarget $action) => $action->name, $pageContextProvider->rowActions());
+
+        return array_values(array_filter(
+            $assigned,
+            fn (ShortcutBinding $binding) => in_array($binding->target->structureKey, $present, true),
+        ));
+    }
+
+    /**
+     * Letters are assigned over the FULL registered list, then filtered to what the page has, so a
+     * name keeps the same key whether or not its siblings are present on a given page.
+     *
+     * @return ShortcutBinding[]
+     */
+    private function lettered(): array
     {
         $names = array_values(array_diff($this->registeredNames, TableSet::RESERVED_RECORD_ACTIONS));
 
@@ -52,16 +94,7 @@ final class RowActionSet implements ShortcutSet
             $names,
         );
 
-        // Letters are assigned over the FULL registered list, then filtered to what the page has,
-        // so a name keeps the same key whether or not its siblings are present on a given page.
-        $assigned = (new LetterAssigner)->assign($this->defaultModifier(), $bindings, $this->unavailableCodes);
-
-        $present = array_map(fn (ActionTarget $action) => $action->name, $pageContextProvider->rowActions());
-
-        return array_values(array_filter(
-            $assigned,
-            fn (ShortcutBinding $binding) => in_array($binding->target->structureKey, $present, true),
-        ));
+        return (new LetterAssigner)->assign($this->defaultModifier(), $bindings, $this->unavailableCodes);
     }
 
     public function clientHandler(): string

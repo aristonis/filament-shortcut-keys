@@ -19,12 +19,16 @@ final readonly class ShortcutResolver implements Resolver
 {
     /**
      * @param  array<string, string[]>  $reservedCodes  keys no letter may take, by pool (see KeyReservations)
+     * @param  array<string, string[]>  $claimedCodes  keys a shortcut holds on other pages, by pool: an
+     *                                                 automatic letter steps around them so it does not
+     *                                                 move from page to page, but a forced one may take them
      */
     public function __construct(
         private ShortcutSetRegistry $registry,
         private array $overlay = [],
         private ?MapRepository $maps = null,
         private array $reservedCodes = [],
+        private array $claimedCodes = [],
     ) {}
 
     public function resolve(NavigationProvider $nav, PageContextProvider $page, string $panelId, string $authType = '', string $authId = ''): ResolvedMap
@@ -163,7 +167,7 @@ final readonly class ShortcutResolver implements Resolver
         foreach ($pools as $name => $pool) {
             $result = array_merge(
                 $result,
-                $assigner->assign($this->schemeFor($pool[0]->target->set), $pool, $this->reservedCodes[$name] ?? []),
+                $assigner->assign($this->schemeFor($pool[0]->target->set), $pool, [...$this->reservedCodes[$name] ?? [], ...$this->claimedCodes[$name] ?? []]),
             );
         }
 

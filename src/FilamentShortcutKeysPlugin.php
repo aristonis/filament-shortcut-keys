@@ -207,6 +207,43 @@ class FilamentShortcutKeysPlugin implements Plugin
     }
 
     /**
+     * Every registered row action's key, in its pool. A row action is emitted only where a table has
+     * it, so without this a header action would take that letter on one page and lose it on the next,
+     * and a page that gains a relation manager would rekey its header actions. Claimed rather than
+     * reserved, so an overlay pin onto one of these keys still works as before.
+     *
+     * @return array<string, string[]>
+     */
+    private function claimedRowActionCodes(ShortcutSetRegistry $pageSets): array
+    {
+        $rowActions = $pageSets->get('row-action');
+
+        if (! $rowActions instanceof RowActionSet) {
+            return [];
+        }
+
+        $overlay = config('shortcut-keys.overlay', []);
+        $codes = [];
+
+        foreach ($rowActions->codes() as $name => $code) {
+            $rule = $overlay['row-action:' . $name] ?? [];
+            if ($rule['disabled'] ?? false) {
+                continue;
+            }
+
+            // A pin moves the key; the automatic one is kept as well, which costs at most a letter and
+            // stays right if the resolver turns the pin down.
+            $codes[] = $code;
+            $letter = $rule['letter'] ?? null;
+            if (is_string($letter) && preg_match('/^[a-z]$/i', $letter)) {
+                $codes[] = 'Key' . strtoupper($letter);
+            }
+        }
+
+        return [$rowActions->defaultModifier()->toString() => array_values(array_unique($codes))];
+    }
+
+    /**
      * Letters the overlay pins onto other sets in a pool, as key codes.
      *
      * @return string[]
@@ -265,7 +302,7 @@ class FilamentShortcutKeysPlugin implements Plugin
 
         return new CompositeResolver(
             $this->panelWideResolver($panelWideSets),
-            new ShortcutResolver($pageSets, $overlay, app(MapRepository::class), $this->keyReservations()),
+            new ShortcutResolver($pageSets, $overlay, app(MapRepository::class), $this->keyReservations(), $this->claimedRowActionCodes($pageSets)),
         );
     }
 
@@ -311,12 +348,45 @@ class FilamentShortcutKeysPlugin implements Plugin
             $this->navigationLabels($navigation, $panelId),
             $this->actionLabels($pageContext),
             (array) trans('filament-shortcut-keys::shortcut-keys.table_behaviors'),
+            $this->unverifiedRowActions($map, $pageContext),
         );
 
         return view('filament-shortcut-keys::overlay', [
             'groups' => $groups,
             'referenceUrl' => ShortcutReference::getUrl(),
         ])->render();
+    }
+
+    /**
+     * Row actions the page could not check because they may live on a nested table, each with the
+     * control the cheatsheet looks for before it shows the row.
+     *
+     * @return array<string, string> target identity => selector
+     */
+    private function unverifiedRowActions(ResolvedMap $map, PageContextProvider $pageContext): array
+    {
+        if (! $pageContext->hasNestedTables()) {
+            return [];
+        }
+
+        $known = array_map(fn ($action) => 'row-action:' . $action->name, $pageContext->rowActions());
+        $selectors = [];
+
+        foreach ($map->groups() as $group) {
+            if ($group->setKey !== 'row-action') {
+                continue;
+            }
+
+            foreach ($group->bindings as $binding) {
+                $identity = $binding->target->identity();
+
+                if (! in_array($identity, $known, true)) {
+                    $selectors[$identity] = FilamentPageContextProvider::rowActionSelector($binding->target->structureKey);
+                }
+            }
+        }
+
+        return $selectors;
     }
 
     /** @return array<string, string> */

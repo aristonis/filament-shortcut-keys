@@ -21,6 +21,11 @@ final class NullPageContextProvider implements PageContextProvider
         return false;
     }
 
+    public function hasNestedTables(): bool
+    {
+        return false;
+    }
+
     public function rowActions(): array
     {
         return [];

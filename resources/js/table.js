@@ -8,7 +8,12 @@ import { noteClick } from './inflight.js'
 // Record rows only: Filament also renders a column-search row and group headers as tr.fi-ta-row. A
 // record row's wire:key ends in its record key, which is how the cursor remembers it.
 const ROW_SELECTOR = 'tr.fi-ta-row[wire\\:key*=".table.records."]'
-const SEARCH_SELECTOR = '.fi-ta-search-field input, input[type="search"]'
+// Only a table's own search field: the panel's global search in the topbar is also a search input,
+// and it comes first in the page.
+const SEARCH_SELECTOR = '.fi-ta-search-field input'
+// The root of one table, wrapping its search field and its pagination. A record page with a relation
+// manager, or a dashboard with table widgets, has several.
+const TABLE_SELECTOR = '.fi-ta'
 const FOCUS_CLASS = 'fi-hotkey-row-focused'
 
 function rows() {
@@ -21,8 +26,8 @@ function keyOf(row) {
 
 // Match on rel, which Filament emits on both the simple and the numbered pagination. The visible
 // label and the aria-label are translated, so matching on those breaks in any non-English panel.
-function paginationLink(direction) {
-    return document.querySelector(`.fi-pagination [rel="${direction}"]`)
+function paginationLink(scope, direction) {
+    return scope.querySelector(`.fi-pagination [rel="${direction}"]`)
 }
 
 export function createTableHandler() {
@@ -122,6 +127,12 @@ export function createTableHandler() {
         return live
     }
 
+    // The table the cursor is in, so / and paging reach that table rather than the first one on the
+    // page. With no cursor, the whole page, whose first table is the one in view.
+    function scope() {
+        return focusedRow()?.closest?.(TABLE_SELECTOR) ?? document
+    }
+
     function clickInRow(selector) {
         const row = focusedRow()
         const target = row && row.querySelector(selector)
@@ -137,7 +148,7 @@ export function createTableHandler() {
     function runBehavior(behavior) {
         switch (behavior) {
             case 'search': {
-                const input = document.querySelector(SEARCH_SELECTOR)
+                const input = scope().querySelector(SEARCH_SELECTOR)
                 if (!input) return false
                 input.focus()
                 return true
@@ -166,7 +177,10 @@ export function createTableHandler() {
                 if (!isCursorLive()) return false
                 // Which arrow key carries which direction is decided server-side (mirrored in an
                 // RTL panel); by the time it reaches here the behavior is already the real one.
-                const link = paginationLink(behavior === 'page-prev' ? 'prev' : 'next')
+                const link = paginationLink(
+                    scope(),
+                    behavior === 'page-prev' ? 'prev' : 'next',
+                )
                 if (!link) return false
                 link.click()
                 return true

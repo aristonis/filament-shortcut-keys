@@ -7,6 +7,7 @@ const OVERLAY_ID = 'filament-shortcut-keys-overlay'
 const FOCUSABLE =
     'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
 const SINGLE_KEYS_SWITCH = '[data-fsk-single-keys]'
+const PRESENCE_ROW = '[data-fsk-presence]'
 
 let lastFocused = null
 
@@ -16,6 +17,40 @@ function overlay() {
 
 function isOpen(element) {
     return element !== null && !element.hasAttribute('hidden')
+}
+
+function setHidden(element, hidden) {
+    hidden
+        ? element.setAttribute('hidden', '')
+        : element.removeAttribute('hidden')
+}
+
+// The selector is built from a registered row-action name, so a name that is not valid CSS makes it
+// throw. Such a row stays listed rather than keeping the cheatsheet from opening at all.
+function isPresent(selector) {
+    try {
+        return document.querySelector(selector) !== null
+    } catch {
+        return true
+    }
+}
+
+// A row action on a relation manager or a table widget is listed by the server without knowing whether
+// that table has it: those tables load after the page. Each such row names the control it needs, and is
+// shown only while the page has one. Checked on every open, since a lazy table can arrive at any time.
+function syncPresence(element) {
+    element.querySelectorAll(PRESENCE_ROW).forEach((row) => {
+        setHidden(row, !isPresent(row.getAttribute('data-fsk-presence')))
+    })
+
+    element.querySelectorAll('.fsk-group').forEach((group) => {
+        const rows = group.querySelectorAll('.fsk-row')
+        setHidden(
+            group,
+            rows.length > 0 &&
+                [...rows].every((row) => row.hasAttribute('hidden')),
+        )
+    })
 }
 
 function open(element) {
@@ -28,6 +63,7 @@ function open(element) {
         toggle.checked = singleKeysEnabled()
     }
 
+    syncPresence(element)
     element.removeAttribute('hidden')
     element.querySelector(FOCUSABLE)?.focus()
 }

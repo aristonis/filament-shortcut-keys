@@ -5,6 +5,7 @@ namespace Aristonis\FilamentShortcutKeys\Tests\Support\Panel;
 use Aristonis\FilamentShortcutKeys\FilamentShortcutKeysPlugin;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\UserResource;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Widgets\PendingOrders;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -28,6 +29,9 @@ final class AdminPanelProvider extends PanelProvider
             ])
             ->pages([
                 Dashboard::class,
+            ])
+            ->widgets([
+                PendingOrders::class,
             ])
             ->plugin(
                 FilamentShortcutKeysPlugin::make()->rowActions(['approve', 'reject']),

@@ -3,6 +3,7 @@
 namespace Aristonis\FilamentShortcutKeys\Tests\Support\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Minimal model backing the test-only OrderResource so the testbench admin panel has a
@@ -14,4 +15,10 @@ final class Order extends Model
     protected $table = 'orders';
 
     protected $guarded = [];
+
+    /** @return HasMany<OrderItem, $this> */
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

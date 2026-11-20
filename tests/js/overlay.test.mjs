@@ -269,3 +269,96 @@ describe('the cheatsheet overlay', () => {
         })
     })
 })
+
+describe('rows for keys the server could not check', () => {
+    // A row action on a lazy relation manager or table widget is listed with the control it needs;
+    // the cheatsheet shows it only when the page actually has that control.
+    const APPROVE = '[wire\\:key*=".actions.approve."]'
+    const REJECT = '[wire\\:key*=".actions.reject."]'
+
+    function presenceRow(selector) {
+        return createElement({ attributes: { 'data-fsk-presence': selector } })
+    }
+
+    function sheetWith(groups) {
+        const rows = groups.flat()
+        const sections = groups.map((groupRows) =>
+            createElement({ selectors: { '.fsk-row': groupRows } }),
+        )
+
+        return createElement({
+            tagName: 'DIV',
+            attributes: { hidden: '' },
+            selectors: {
+                '[data-fsk-presence]': rows.filter((r) =>
+                    r.hasAttribute('data-fsk-presence'),
+                ),
+                '.fsk-group': sections,
+            },
+        })
+    }
+
+    function pageWith(overlay, present) {
+        const document = installDocument({
+            elementsById: { [OVERLAY_ID]: overlay },
+            selectors: Object.fromEntries(
+                present.map((selector) => [selector, createElement()]),
+            ),
+        })
+        initOverlay()
+
+        return document
+    }
+
+    it('shows a row whose control is on the page and hides one whose is not', () => {
+        const approve = presenceRow(APPROVE)
+        const reject = presenceRow(REJECT)
+        const document = pageWith(sheetWith([[approve, reject]]), [APPROVE])
+
+        document.dispatch('keydown', toggleKey())
+
+        assert.equal(approve.hasAttribute('hidden'), false)
+        assert.equal(reject.hasAttribute('hidden'), true)
+    })
+
+    it('hides a group heading when every row under it is hidden', () => {
+        const reject = presenceRow(REJECT)
+        const fixed = createElement()
+        const overlay = sheetWith([[reject], [fixed]])
+        const [rowActions, table] = overlay.querySelectorAll('.fsk-group')
+        const document = pageWith(overlay, [])
+
+        document.dispatch('keydown', toggleKey())
+
+        assert.equal(rowActions.hasAttribute('hidden'), true)
+        assert.equal(table.hasAttribute('hidden'), false)
+    })
+
+    it('still opens, keeping the row, when a selector is not valid CSS', () => {
+        // A row-action name is concatenated into the selector, so a stray quote in a registered
+        // name must not take the whole cheatsheet down with it.
+        const broken = presenceRow('[wire\\:key*=".actions.a"b."]')
+        const overlay = sheetWith([[broken]])
+        const document = pageWith(overlay, [])
+        document.querySelector = () => {
+            throw new SyntaxError('not a valid selector')
+        }
+
+        document.dispatch('keydown', toggleKey())
+
+        assert.equal(isOpen(overlay), true)
+        assert.equal(broken.hasAttribute('hidden'), false)
+    })
+
+    it('checks again on every open, after a lazy table has loaded', () => {
+        const approve = presenceRow(APPROVE)
+        const document = pageWith(sheetWith([[approve]]), [])
+
+        document.dispatch('keydown', toggleKey())
+        document.dispatch('keydown', toggleKey())
+        document.selectors[APPROVE] = createElement()
+        document.dispatch('keydown', toggleKey())
+
+        assert.equal(approve.hasAttribute('hidden'), false)
+    })
+})

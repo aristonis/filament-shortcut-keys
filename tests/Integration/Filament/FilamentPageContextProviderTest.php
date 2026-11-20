@@ -6,7 +6,9 @@ use Aristonis\FilamentShortcutKeys\Filament\FilamentPageContextProvider;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Dom\SelectorProbe;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Models\Order;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\Pages\CreateOrder;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\Pages\ListOrders;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\Pages\ViewOrder;
 use Filament\Pages\Dashboard;
 use Livewire\Livewire;
 
@@ -39,13 +41,39 @@ it('reads header actions, table presence, and row actions from a table page', fu
     expect(collect($rowActions)->pluck('name')->all())->toContain('approve', 'reject');
 });
 
-it('reports no table and no row actions on a non-table page', function () {
-    $page = Livewire::test(Dashboard::class)->instance();
+it('reports no table and no row actions on a page with no table anywhere', function () {
+    $page = Livewire::test(CreateOrder::class)->instance();
 
     $provider = new FilamentPageContextProvider($page);
 
     expect($provider->hasTable())->toBeFalse()
+        ->and($provider->hasNestedTables())->toBeFalse()
         ->and($provider->rowActions())->toBe([]);
+});
+
+it('counts a relation manager table as a table on the record page', function () {
+    $order = Order::create(['name' => 'Probe order']);
+
+    $provider = new FilamentPageContextProvider(Livewire::test(ViewOrder::class, ['record' => $order->getKey()])->instance());
+
+    // The page owns no table, so it cannot list the relation manager's actions; it can only say the
+    // table is there.
+    expect($provider->hasTable())->toBeTrue()
+        ->and($provider->hasNestedTables())->toBeTrue()
+        ->and($provider->rowActions())->toBe([]);
+});
+
+it('counts a table widget as a table on the dashboard', function () {
+    $provider = new FilamentPageContextProvider(Livewire::test(Dashboard::class)->instance());
+
+    expect($provider->hasTable())->toBeTrue()
+        ->and($provider->hasNestedTables())->toBeTrue();
+});
+
+it('reports no nested table on a list page', function () {
+    $provider = new FilamentPageContextProvider(Livewire::test(ListOrders::class)->instance());
+
+    expect($provider->hasNestedTables())->toBeFalse();
 });
 
 it('hands a header action with a url to the client as a url, not a selector', function () {

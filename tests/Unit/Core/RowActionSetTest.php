@@ -76,3 +76,13 @@ it('never gives a row action a key reserved for its pool', function () {
         ->not->toContain('KeyJ')
         ->not->toContain('KeyK');
 });
+
+it('keeps every registered name, on its usual letter, when a nested table hides the actions', function () {
+    $set = new RowActionSet(['approve', 'archive']);
+    $page = new InMemoryPageContextProvider([], true, [], hasNestedTables: true);
+
+    $bindings = collect($set->discover(emptyNav(), $page, 'admin'))
+        ->mapWithKeys(fn ($b) => [$b->target->structureKey => $b->keyCombo->code]);
+
+    expect($bindings->all())->toBe(['approve' => 'KeyA', 'archive' => 'KeyR']);
+});

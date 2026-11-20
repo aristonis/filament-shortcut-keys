@@ -77,3 +77,26 @@ it('labels the Escape key the way keyboards print it', function () {
 
     expect(overlayGroup($groups, 'table')['rows'][0]['keys'])->toBe(['Esc']);
 });
+
+it('names an unlabeled row action the way Filament labels it', function () {
+    $map = new ResolvedMap([
+        new ResolvedGroup('row-action', ModifierScheme::none(), [overlayBinding('row-action', 'mark_paid', 'KeyM')]),
+    ]);
+
+    $groups = OverlayCatalog::build($map, [], [], []);
+
+    expect($groups[0]['rows'][0]['label'])->toBe('Mark paid');
+});
+
+it('tells the cheatsheet which control a row needs before it is shown', function () {
+    $map = new ResolvedMap([
+        new ResolvedGroup('row-action', ModifierScheme::none(), [
+            overlayBinding('row-action', 'approve', 'KeyA'),
+            overlayBinding('row-action', 'reject', 'KeyR'),
+        ]),
+    ]);
+
+    $groups = OverlayCatalog::build($map, [], [], [], ['row-action:reject' => '#reject']);
+
+    expect(array_column($groups[0]['rows'], 'presence'))->toBe([null, '#reject']);
+});

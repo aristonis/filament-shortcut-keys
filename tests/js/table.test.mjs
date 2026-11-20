@@ -11,7 +11,7 @@ import {
 
 // Record rows only: Filament also renders a column-search row and group headers as tr.fi-ta-row.
 const ROW_SELECTOR = 'tr.fi-ta-row[wire\\:key*=".table.records."]'
-const SEARCH_SELECTOR = '.fi-ta-search-field input, input[type="search"]'
+const SEARCH_SELECTOR = '.fi-ta-search-field input'
 const FOCUS_CLASS = 'fi-hotkey-row-focused'
 const EDIT_SELECTOR = '[wire\\:key*=".actions.edit."]'
 const DELETE_SELECTOR = '[wire\\:key*=".actions.delete."]'
@@ -443,5 +443,68 @@ describe('a row action that goes to the server', () => {
         handle(behavior('delete'))
 
         assert.equal(isAwaitingResponse(), true)
+    })
+})
+
+describe('pages with more than one table', () => {
+    // A record page with a relation manager, or a dashboard with table widgets: / and the paging
+    // arrows act on the table the cursor is in, not on whichever table comes first in the page.
+    const TABLE_SELECTOR = '.fi-ta'
+
+    function tableWith(extra) {
+        return createElement({ matches: [TABLE_SELECTOR], selectors: extra })
+    }
+
+    function rowIn(container) {
+        const record = row()
+        container.appendChild(record)
+
+        return record
+    }
+
+    it('searches the table the cursor is in', () => {
+        const firstInput = createElement({ tagName: 'INPUT' })
+        const secondInput = createElement({ tagName: 'INPUT' })
+        const second = tableWith({ [SEARCH_SELECTOR]: secondInput })
+        const record = rowIn(second)
+        table([record], { [SEARCH_SELECTOR]: firstInput })
+        const handle = createTableHandler()
+
+        handle(behavior('cursor-down'))
+        handle(behavior('search'))
+
+        assert.equal(secondInput.focusCalls, 1)
+        assert.equal(firstInput.focusCalls, 0)
+    })
+
+    it('pages the table the cursor is in', () => {
+        const firstNext = createElement({ tagName: 'A' })
+        const secondNext = createElement({ tagName: 'A' })
+        const second = tableWith({ '.fi-pagination [rel="next"]': secondNext })
+        const record = rowIn(second)
+        table([record], { '.fi-pagination [rel="next"]': firstNext })
+        const handle = createTableHandler()
+
+        handle(behavior('cursor-down'))
+
+        assert.equal(handle(behavior('page-next')), true)
+        assert.equal(secondNext.clicks, 1)
+        assert.equal(firstNext.clicks, 0)
+    })
+
+    it('leaves the panel global search alone, which is also a search input', () => {
+        const globalSearch = createElement({ tagName: 'INPUT' })
+        table([], { 'input[type="search"]': globalSearch })
+
+        assert.equal(createTableHandler()(behavior('search')), false)
+        assert.equal(globalSearch.focusCalls, 0)
+    })
+
+    it('searches the first table on the page before the cursor starts', () => {
+        const firstInput = createElement({ tagName: 'INPUT' })
+        table([], { [SEARCH_SELECTOR]: firstInput })
+
+        assert.equal(createTableHandler()(behavior('search')), true)
+        assert.equal(firstInput.focusCalls, 1)
     })
 })

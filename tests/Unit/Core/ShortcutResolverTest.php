@@ -366,3 +366,19 @@ it('moves an unpinned letter when a screen is added ahead of it, which is why pi
     expect($resolve([convention('navigation', 'products', 'Products')])->keyCombo->code)->toBe('KeyP')
         ->and($resolve([convention('navigation', 'partners', 'Partners'), convention('navigation', 'products', 'Products')])->keyCombo->code)->not->toBe('KeyP');
 });
+
+it('routes auto letters around keys claimed elsewhere but still lets a pin take one', function () {
+    $registry = new ShortcutSetRegistry;
+    $registry->register(resolverSet('global', ModifierScheme::none(), [
+        convention('global', 'archive', 'Archive'),
+        convention('global', 'export', 'Export'),
+    ]));
+
+    $nav = new InMemoryNavigationProvider([], 'v1');
+    $page = new InMemoryPageContextProvider([], false);
+    $groups = (new ShortcutResolver($registry, ['global:export' => ['letter' => 'a']], claimedCodes: ['' => ['KeyA']]))
+        ->resolve($nav, $page, 'admin')->groups();
+
+    expect(bindingFor($groups, 'global', 'archive')->keyCombo->code)->toBe('KeyR')
+        ->and(bindingFor($groups, 'global', 'export')->keyCombo->code)->toBe('KeyA');
+});

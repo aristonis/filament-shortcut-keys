@@ -7,6 +7,7 @@ use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\Pages\C
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\Pages\EditOrder;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\Pages\ListOrders;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\Pages\ViewOrder;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource\RelationManagers\ItemsRelationManager;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -61,6 +62,13 @@ final class OrderResource extends Resource
                 Action::make('approve'),
                 Action::make('reject'),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            ItemsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

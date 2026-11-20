@@ -68,6 +68,10 @@ final readonly class ClientMapSerializer
             'navigation' => isset($urls[$identity]) ? ['kind' => 'navigate', 'url' => $urls[$identity]] : null,
             'table' => ['kind' => 'table', 'behavior' => $binding->target->structureKey],
             'custom' => $this->customActivation($binding->payload),
+            // A row action on a nested table is not in the page's own list, but its control has the
+            // same shape whichever component renders the table.
+            'row-action' => $actions[$identity]
+                ?? ['kind' => 'click', 'selector' => FilamentPageContextProvider::rowActionSelector($binding->target->structureKey)],
             default => $actions[$identity] ?? null,
         };
     }

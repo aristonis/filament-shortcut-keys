@@ -6,7 +6,7 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 
 class InMemoryPageContextProvider implements PageContextProvider
 {
-    public function __construct(private array $actions, private bool $hasTable, private array $rowActions = []) {}
+    public function __construct(private array $actions, private bool $hasTable, private array $rowActions = [], private bool $hasNestedTables = false) {}
 
     public function actions(): array
     {
@@ -16,6 +16,11 @@ class InMemoryPageContextProvider implements PageContextProvider
     public function hasTable(): bool
     {
         return $this->hasTable;
+    }
+
+    public function hasNestedTables(): bool
+    {
+        return $this->hasNestedTables;
     }
 
     public function rowActions(): array

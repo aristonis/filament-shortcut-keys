@@ -33,7 +33,9 @@
     #filament-shortcut-keys-overlay .fsk-close:hover { opacity: 1; }
     #filament-shortcut-keys-overlay .fsk-body { padding: 1rem 1.25rem; }
     #filament-shortcut-keys-overlay .fsk-set { font-size: .8rem; font-weight: 600; opacity: .7; margin: 1rem 0 .35rem; }
-    #filament-shortcut-keys-overlay .fsk-set:first-child { margin-top: 0; }
+    #filament-shortcut-keys-overlay .fsk-group[hidden] { display: none; }
+    #filament-shortcut-keys-overlay .fsk-row[hidden] { display: none; }
+    #filament-shortcut-keys-overlay .fsk-group:first-child .fsk-set { margin-top: 0; }
     #filament-shortcut-keys-overlay .fsk-row {
         display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .3rem 0; font-size: .875rem;
     }
@@ -59,20 +61,22 @@
 
         <div class="fsk-body">
             @forelse ($groups as $group)
-                <p class="fsk-set">{{ trans('filament-shortcut-keys::shortcut-keys.sets.' . $group['set']) }}</p>
-                @foreach ($group['rows'] as $row)
-                    <div class="fsk-row">
-                        <span>{{ $row['label'] }}</span>
-                        <span>
-                            @foreach ($row['keys'] as $key)
-                                @if ($row['sequence'] && ! $loop->first)
-                                    <span class="fsk-then">{{ trans('filament-shortcut-keys::shortcut-keys.overlay.then') }}</span>
-                                @endif
-                                <kbd>{{ $key }}</kbd>
-                            @endforeach
-                        </span>
-                    </div>
-                @endforeach
+                <div class="fsk-group">
+                    <p class="fsk-set">{{ trans('filament-shortcut-keys::shortcut-keys.sets.' . $group['set']) }}</p>
+                    @foreach ($group['rows'] as $row)
+                        <div class="fsk-row" @if ($row['presence'] ?? null) data-fsk-presence="{{ $row['presence'] }}" @endif>
+                            <span>{{ $row['label'] }}</span>
+                            <span>
+                                @foreach ($row['keys'] as $key)
+                                    @if ($row['sequence'] && ! $loop->first)
+                                        <span class="fsk-then">{{ trans('filament-shortcut-keys::shortcut-keys.overlay.then') }}</span>
+                                    @endif
+                                    <kbd>{{ $key }}</kbd>
+                                @endforeach
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
             @empty
                 <p>{{ trans('filament-shortcut-keys::shortcut-keys.empty') }}</p>
             @endforelse

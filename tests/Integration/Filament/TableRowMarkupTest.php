@@ -32,3 +32,24 @@ it('gives every record row, and only those, a wire:key ending in the record key'
     $source = file_get_contents(__DIR__ . '/../../../resources/js/table.js');
     expect($source)->toContain("const ROW_SELECTOR = 'tr.fi-ta-row[wire\\\\:key*=\".table.records.\"]'");
 });
+
+/*
+ * `/` focuses `.fi-ta-search-field input`, and only that, because the panel's global search is also a
+ * search input and sits before the table in the page.
+ */
+it('renders a table search input inside the field the search key looks for', function () {
+    $document = new DOMDocument;
+    libxml_use_internal_errors(true);
+    $document->loadHTML('<?xml encoding="UTF-8">' . Livewire::test(ListOrders::class)->html());
+    libxml_clear_errors();
+    libxml_use_internal_errors(false);
+
+    $inputs = (new DOMXPath($document))->query(
+        '//*[contains(concat(" ", normalize-space(@class), " "), " fi-ta-search-field ")]//input',
+    );
+
+    expect($inputs->length)->toBeGreaterThan(0);
+
+    $source = file_get_contents(__DIR__ . '/../../../resources/js/table.js');
+    expect($source)->toContain("const SEARCH_SELECTOR = '.fi-ta-search-field input'");
+});

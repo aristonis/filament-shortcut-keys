@@ -6,9 +6,21 @@ use Aristonis\FilamentShortcutKeys\Core\Contracts\PageContextProvider;
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\ActionTarget;
 use Filament\Actions\Action;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Widgets\WidgetConfiguration;
 
 final class FilamentPageContextProvider implements PageContextProvider
 {
+    /**
+     * The sets, the serializer and the cheatsheet all ask the same questions during one render, and
+     * the answers run the app's visibility closures and relation manager policies, so each is worked
+     * out once per provider.
+     *
+     * @var ActionTarget[]|null
+     */
+    private ?array $actions = null;
+
+    private ?bool $hasNestedTables = null;
+
     /** @param object $page the currently-rendering Filament page (a Livewire component) */
     public function __construct(private object $page) {}
 
@@ -20,22 +32,36 @@ final class FilamentPageContextProvider implements PageContextProvider
      */
     public function actions(): array
     {
+        if ($this->actions !== null) {
+            return $this->actions;
+        }
+
         $clickable = array_filter(
             $this->page->getCachedHeaderActions(),
             fn (object $action): bool => ! $action instanceof Action || ($action->isVisible() && ! $action->isDisabled()),
         );
 
-        return $this->toTargets($clickable, fn (Action $action): ActionTarget => $this->toHeaderTarget($action));
+        return $this->actions = $this->toTargets($clickable, fn (Action $action): ActionTarget => $this->toHeaderTarget($action));
     }
 
     public function hasTable(): bool
     {
-        return $this->page instanceof HasTable;
+        return $this->page instanceof HasTable || $this->hasNestedTables();
+    }
+
+    /**
+     * A relation manager or a table widget is a Livewire component of its own, lazy by default, so
+     * its table has not rendered when the page's keymap is built. All the page can know is that the
+     * table is there.
+     */
+    public function hasNestedTables(): bool
+    {
+        return $this->hasNestedTables ??= $this->relationManagers() !== [] || $this->hasTableWidget();
     }
 
     public function rowActions(): array
     {
-        if (! $this->hasTable()) {
+        if (! $this->page instanceof HasTable) {
             return [];
         }
 
@@ -92,8 +118,53 @@ final class FilamentPageContextProvider implements PageContextProvider
         return new ActionTarget(
             (string) $action->getName(),
             (string) $action->getLabel(),
-            '[wire\\:key*=".actions.' . $action->getName() . '."]',
+            self::rowActionSelector((string) $action->getName()),
         );
+    }
+
+    /** The control for a named record action inside a table row, whichever component owns the table. */
+    public static function rowActionSelector(string $name): string
+    {
+        return '[wire\\:key*=".actions.' . $name . '."]';
+    }
+
+    /**
+     * The relation managers the record page shows, after Filament's own access checks. The cached
+     * accessor is the one Filament renders from, so the policies behind it run once per request.
+     *
+     * @return array<mixed>
+     */
+    private function relationManagers(): array
+    {
+        return method_exists($this->page, 'getCachedRelationManagers') ? $this->page->getCachedRelationManagers() : [];
+    }
+
+    /**
+     * Header and footer widgets on any page, plus the dashboard's own. Each accessor is probed rather
+     * than assumed, so a page type that lacks one simply contributes nothing.
+     *
+     * Filament 5 marks getVisibleFooterWidgets() and getVisibleWidgets() deprecated in favour of
+     * getWidgetsSchemaComponents(). When they go, a widget table loses its keys; the dashboard test
+     * catches that. A table placed through a page's own content() schema is not seen here at all.
+     */
+    private function hasTableWidget(): bool
+    {
+        $widgets = [];
+        foreach (['getVisibleHeaderWidgets', 'getVisibleFooterWidgets', 'getVisibleWidgets'] as $accessor) {
+            if (method_exists($this->page, $accessor)) {
+                $widgets = [...$widgets, ...$this->page->{$accessor}()];
+            }
+        }
+
+        foreach ($widgets as $widget) {
+            $class = $widget instanceof WidgetConfiguration ? $widget->widget : $widget;
+
+            if (is_string($class) && is_subclass_of($class, HasTable::class)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
