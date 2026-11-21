@@ -47,9 +47,16 @@ public function panel(Panel $panel): Panel
 }
 ```
 
-The client script is published by `filament:assets`. An app set up with `filament:install` already
-runs it on every `composer install` or `update` through `filament:upgrade`; otherwise run
-`php artisan filament:assets` yourself. See the **[Getting started guide](https://aristonis.org/open-source/filament-shortcut-keys/docs)**.
+Then publish the client script:
+
+```bash
+php artisan filament:assets
+```
+
+Run it once after registering the plugin, even on an app set up with `filament:install`: its
+`filament:upgrade` hook ran during `composer require`, before the plugin was on a panel, so it
+published nothing for it. After that, the hook republishes the script on every `composer install` or
+`update`; without the hook, run `php artisan filament:assets` after every update. See the **[Getting started guide](https://aristonis.org/open-source/filament-shortcut-keys/docs)**.
 
 ## Documentation — two audiences
 

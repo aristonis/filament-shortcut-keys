@@ -11,9 +11,11 @@ per item.
 - **Entry point:** `FilamentShortcutKeysPlugin::make()` registered on a panel with `->plugin(...)`.
   There is no facade; the host does not call the resolver directly.
 - **Requirements:** PHP 8.2+, Laravel 12 or 13, Filament 5.x (not 4). The client script must be
-  published; without it the keymap is in the page but no key fires. An app set up with
-  `filament:install` republishes it on every Composer install or update through `filament:upgrade`;
-  otherwise run `php artisan filament:assets` after installing or updating.
+  published; without it the keymap is in the page but no key fires. Run `php artisan filament:assets`
+  once after registering the plugin, even with the `filament:upgrade` hook: during `composer require`
+  the plugin is not on a panel yet, so the hook publishes nothing for it. After that, an app set up with
+  `filament:install` republishes it on every Composer install or update; otherwise run
+  `php artisan filament:assets` after every update.
 - **Config:** `config('shortcut-keys.*')`, read at call time. The one setting that is not config is
   `->rowActions([...])`, a fluent method on the plugin.
 - **Two admin-facing pages** ship with the plugin: a shortcut reference page, always registered, and a

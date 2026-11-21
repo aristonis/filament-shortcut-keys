@@ -15,15 +15,11 @@ Requires PHP 8.2+, Laravel 12 or 13, and Filament 5.x.
 composer require aristonis/filament-shortcut-keys
 php artisan vendor:publish --tag="filament-shortcut-keys-migrations"
 php artisan migrate
-php artisan filament:assets
 ```
 
 Migrations are required in `personal` and `locked` mode: the shared system map, its overrides, and
 each admin's selection all live in those tables. In `config` mode nothing is stored, so they are
-optional. `filament:assets` publishes the client script; without it the
-keymap is in the page but no key fires. An app set up with `filament:install` already re-runs it on
-every Composer install or update through `filament:upgrade` in `post-autoload-dump`; without that
-hook, re-run it after every update of the package.
+optional.
 
 ## Register on the panel
 
@@ -35,6 +31,18 @@ public function panel(Panel $panel): Panel
     return $panel->plugin(FilamentShortcutKeysPlugin::make());
 }
 ```
+
+Then publish the client script:
+
+```bash
+php artisan filament:assets
+```
+
+Run it after registering the plugin, even when `composer.json` runs `filament:upgrade` in
+`post-autoload-dump`: Filament publishes the script only for a panel that has the plugin, and during
+`composer require` it has none, so the hook published nothing. Without the script the keymap is in the
+page but no key fires. After that, the hook republishes it on every Composer install or update; without
+the hook, re-run `filament:assets` after every update of the package.
 
 That is the whole setup. The plugin registers its own pages, injects the keymap into every panel page,
 and ships the client script.
