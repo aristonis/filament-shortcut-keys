@@ -1,6 +1,6 @@
 # Aristonis Filament Shortcut Keys
 
-`aristonis/filament-shortcut-keys` gives a Filament v5 panel keyboard shortcuts derived from what the
+`aristonis/filament-shortcut-keys` gives a Filament v4 or v5 panel keyboard shortcuts derived from what the
 panel already declares. Resources and pages in the sidebar become navigation shortcuts, lettered in
 sidebar order (hidden ones only with `navigation.include_hidden`), a page's header actions become
 action shortcuts, and the page's tables (its own, its relation managers', its table widgets') get the
@@ -11,7 +11,7 @@ per item.
 - **Namespace:** `Aristonis\FilamentShortcutKeys\` (PSR-4, `src/`). Composer: `aristonis/filament-shortcut-keys`.
 - **Entry point:** `FilamentShortcutKeysPlugin::make()` registered on a panel with `->plugin(...)`.
   There is no facade; the host does not call the resolver directly.
-- **Requirements:** PHP 8.2+, Laravel 12 or 13, Filament 5.x (not 4). The client script must be
+- **Requirements:** PHP 8.2+, Laravel 12 or 13, Filament 4.x or 5.x. The client script must be
   published; without it the keymap is in the page but no key fires. Run `php artisan filament:assets`
   once after registering the plugin, even with the `filament:upgrade` hook: during `composer require`
   the plugin is not on a panel yet, so the hook publishes nothing for it. After that, an app set up with

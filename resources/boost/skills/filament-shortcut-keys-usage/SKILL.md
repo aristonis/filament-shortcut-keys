@@ -1,6 +1,6 @@
 ---
 name: filament-shortcut-keys-usage
-description: Install and register aristonis/filament-shortcut-keys on a Filament v5 panel, understand which shortcuts appear with no configuration, and choose between the locked and personal customization modes. Use when adding keyboard shortcuts to a panel, when a shortcut is expected but missing, or when deciding whether admins may customize their own keys.
+description: Install and register aristonis/filament-shortcut-keys on a Filament v4 or v5 panel, understand which shortcuts appear with no configuration, and choose between the locked and personal customization modes. Use when adding keyboard shortcuts to a panel, when a shortcut is expected but missing, or when deciding whether admins may customize their own keys.
 ---
 
 # Skill — use the package
@@ -9,7 +9,7 @@ Register the plugin on a panel and every resource, page, header action and table
 
 ## Install
 
-Requires PHP 8.2+, Laravel 12 or 13, and Filament 5.x.
+Requires PHP 8.2+, Laravel 12 or 13, and Filament 4.x or 5.x.
 
 ```bash
 composer require aristonis/filament-shortcut-keys

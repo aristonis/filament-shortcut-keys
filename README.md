@@ -5,7 +5,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
 [![Total Downloads](https://img.shields.io/packagist/dt/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
 [![PHP Version](https://img.shields.io/packagist/php-v/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://packagist.org/packages/aristonis/filament-shortcut-keys)
-[![Filament](https://img.shields.io/badge/filament-5.x-FDAE4B?style=flat-square)](https://filamentphp.com)
+[![Filament](https://img.shields.io/badge/filament-4.x%20%7C%205.x-FDAE4B?style=flat-square)](https://filamentphp.com)
 [![Laravel](https://img.shields.io/badge/laravel-12%20%7C%2013-FF2D20?style=flat-square)](https://laravel.com)
 [![License](https://img.shields.io/github/license/aristonis/filament-shortcut-keys.svg?style=flat-square)](https://github.com/aristonis/filament-shortcut-keys/blob/main/LICENSE.md)
 
@@ -23,7 +23,7 @@ into every page. There is no per-resource wiring: add a resource and it gets a s
 Admins can remap or disable their own keys, and a developer you trust can edit the shared map that
 everyone else starts from.
 
-> Status: **1.0.** Filament 5 on Laravel 12 and 13, PHP 8.2 or newer. Filament 4 is not supported.
+> Status: **1.0.** Filament 4 or 5 on Laravel 12 and 13, PHP 8.2 or newer.
 
 ## Install
 

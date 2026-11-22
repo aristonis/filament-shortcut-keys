@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Filament 4 support. The same release runs on Filament 4.x (Livewire 3) and 5.x (Livewire 4); nothing
+  changes in the panel or in config.
+
 ## [1.0.0] - 2026-11-21
 
 First release. Keyboard shortcuts for a Filament panel, derived from what the panel already declares.
