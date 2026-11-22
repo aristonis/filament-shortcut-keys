@@ -7,10 +7,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-22
+
 ### Added
 
 - Filament 4 support. The same release runs on Filament 4.x (Livewire 3) and 5.x (Livewire 4); nothing
   changes in the panel or in config.
+
+## [1.1.0] - 2026-11-22
+
+### Changed
+
+**Navigation letters follow the sidebar.** Letters are assigned in sidebar order: ungrouped items, then
+groups in the order the panel registers them, sorted inside each group, then cluster pages. Some
+automatic letters move on upgrade; pinned letters do not.
+
+**Hidden pages get no key by default.** Resources and pages with `shouldRegisterNavigation()` false no
+longer get a navigation shortcut. Set `'navigation' => ['include_hidden' => true]` in
+`config/shortcut-keys.php` to restore them (lettered after every sidebar item), or pin one in the
+overlay to give that page a key.
+
+### Fixed
+
+- A nested resource, a resource without an `index` page, or a page whose route needs a parameter no
+  longer makes every panel page return a 500.
+- The navigation list is no longer reused across requests in long-running workers such as Octane.
+- The installation docs now say to run `php artisan filament:assets` after registering the plugin, even
+  with the `filament:upgrade` hook.
 
 ## [1.0.0] - 2026-11-21
 
@@ -149,5 +172,7 @@ MySQL 8 and PostgreSQL 16 on every push, and on Laravel 12 and 13.
 - **Custom bindings are managed from code, not the page.** The manage page can add or replace one but
   not remove or disable it.
 
-[Unreleased]: https://github.com/aristonis/filament-shortcut-keys/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/aristonis/filament-shortcut-keys/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/aristonis/filament-shortcut-keys/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/aristonis/filament-shortcut-keys/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/aristonis/filament-shortcut-keys/releases/tag/v1.0.0
