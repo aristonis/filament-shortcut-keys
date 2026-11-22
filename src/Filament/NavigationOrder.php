@@ -9,8 +9,8 @@ use Illuminate\Support\Collection;
 use UnitEnum;
 
 /**
- * Orders navigation targets the way Filament lays out the sidebar, so letters are handed out in the
- * order the admin reads them: ungrouped items, then each group, sorted inside the group.
+ * Orders navigation targets the way Filament lays out the sidebar, so letters follow the order the
+ * admin reads them.
  *
  * The ranking mirrors Filament's NavigationManager: a missing sort counts as -1, registered groups keep
  * the panel's order (an enum group ranks by its case), and unregistered groups follow in order of their

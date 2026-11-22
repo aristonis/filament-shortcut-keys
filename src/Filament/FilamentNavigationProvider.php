@@ -20,9 +20,8 @@ final class FilamentNavigationProvider implements NavigationProvider
 
     public function items(string $panelId): array
     {
-        // Building each NavItem calls getIndexUrl()/getUrl() per resource; this provider is scoped to
-        // the request and both the keymap serializer and the overlay ask for the same list, so memoize
-        // it and pay that cost once per request.
+        // Each NavItem generates a URL, and both the keymap serializer and the overlay ask for the same
+        // list, so build it once per request.
         return $this->items[$panelId] ??= array_values(array_filter(array_map(
             fn ($target) => $this->itemFor($target),
             $this->targets($panelId)
