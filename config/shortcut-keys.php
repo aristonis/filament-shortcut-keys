@@ -92,6 +92,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Navigation
+    |--------------------------------------------------------------------------
+    |
+    | Resources and pages hidden from the sidebar ($shouldRegisterNavigation =
+    | false) get no navigation shortcut by default: many only open with a
+    | record or a parameter, so a key to their bare URL would land on an error.
+    |
+    |   'include_hidden' => true — letter them too, after every sidebar item.
+    |                              A hidden page whose URL needs a parameter
+    |                              is still skipped.
+    |
+    | A letter pinned in the overlay above also gives one hidden target a key.
+    | A value other than true or false throws.
+    |
+    */
+
+    'navigation' => [
+        'include_hidden' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache
     |--------------------------------------------------------------------------
     |

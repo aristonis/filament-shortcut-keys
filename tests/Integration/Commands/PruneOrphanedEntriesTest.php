@@ -3,6 +3,7 @@
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Factories\ShortcutMapFactory;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Pages\UsageReport;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
 use Filament\Panel;
 use Filament\PanelRegistry;
@@ -66,6 +67,15 @@ it('leaves an untouched map at its current version', function () {
     $this->artisan('shortcut-keys:prune')->assertSuccessful();
 
     expect($map->fresh()->version)->toBe($before);
+});
+
+it('keeps overrides of a page hidden from the sidebar, which has no key but still exists', function () {
+    $map = ShortcutMapFactory::new()->default('admin')->create();
+    $map->entries()->create(['target' => 'navigation:' . UsageReport::class, 'letter' => 'r']);
+
+    $this->artisan('shortcut-keys:prune')->assertSuccessful();
+
+    expect(remainingTargets($map))->toBe(['navigation:' . UsageReport::class]);
 });
 
 it('changes nothing on a dry run', function () {

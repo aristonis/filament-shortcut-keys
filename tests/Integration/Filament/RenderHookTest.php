@@ -3,7 +3,11 @@
 use Aristonis\FilamentShortcutKeys\Core\ValueObjects\MapEntryEdit;
 use Aristonis\FilamentShortcutKeys\Filament\Pages\ManageShortcuts;
 use Aristonis\FilamentShortcutKeys\Persistence\EloquentSystemMapAuthor;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Pages\AuditLog;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Pages\UsageReport;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\UserResource;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 it('injects the resolved keymap as a JSON script block on a panel page', function () {
     $html = (string) $this->get('/admin')->assertOk()->getContent();
@@ -25,6 +29,48 @@ it('binds a navigation shortcut for each registered resource', function () {
     $targets = array_column($navigation['bindings'], 'target');
 
     expect($targets)->toContain('navigation:' . OrderResource::class);
+});
+
+it('gives a visible item its own letter even when a hidden page shares the first letter', function () {
+    $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))
+        ->firstWhere('set', 'navigation');
+    $users = collect($navigation['bindings'])->firstWhere('target', 'navigation:' . UserResource::class);
+
+    expect($users['code'])->toBe('KeyU')
+        ->and(array_column($navigation['bindings'], 'target'))->not->toContain('navigation:' . UsageReport::class);
+});
+
+it('still renders the panel when an included hidden page has no url without parameters', function () {
+    config()->set('shortcut-keys.navigation.include_hidden', true);
+
+    $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))
+        ->firstWhere('set', 'navigation');
+
+    expect(array_column($navigation['bindings'], 'target'))->toContain('navigation:' . UsageReport::class);
+});
+
+it('gives a hidden page a key when the overlay pins it a letter', function () {
+    config()->set('shortcut-keys.overlay', ['navigation:' . UsageReport::class => ['letter' => 'r']]);
+
+    $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))
+        ->firstWhere('set', 'navigation');
+    $report = collect($navigation['bindings'])->firstWhere('target', 'navigation:' . UsageReport::class);
+
+    expect($report['code'] ?? null)->toBe('KeyR');
+});
+
+it('letters a page by what each admin sees in the sidebar, and never serves one admin the map of another', function () {
+    $targetsFor = function (int $id): array {
+        app()->forgetScopedInstances();
+        $this->actingAs((new AuthUser)->forceFill(['id' => $id, 'name' => "Admin $id"]));
+        $navigation = collect(injectedKeymap((string) $this->get('/admin')->assertOk()->getContent()))
+            ->firstWhere('set', 'navigation');
+
+        return array_column($navigation['bindings'], 'target');
+    };
+
+    expect($targetsFor(1))->toContain('navigation:' . AuditLog::class)
+        ->and($targetsFor(2))->not->toContain('navigation:' . AuditLog::class);
 });
 
 it('keeps a page the current user cannot open in the keymap', function () {

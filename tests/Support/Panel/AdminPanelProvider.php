@@ -3,6 +3,9 @@
 namespace Aristonis\FilamentShortcutKeys\Tests\Support\Panel;
 
 use Aristonis\FilamentShortcutKeys\FilamentShortcutKeysPlugin;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Pages\AuditLog;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Pages\DailyUsage;
+use Aristonis\FilamentShortcutKeys\Tests\Support\Pages\UsageReport;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\OrderResource;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Resources\UserResource;
 use Aristonis\FilamentShortcutKeys\Tests\Support\Widgets\PendingOrders;
@@ -28,6 +31,9 @@ final class AdminPanelProvider extends PanelProvider
                 OrderResource::class,
             ])
             ->pages([
+                UsageReport::class,
+                DailyUsage::class,
+                AuditLog::class,
                 Dashboard::class,
             ])
             ->widgets([

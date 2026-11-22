@@ -56,7 +56,9 @@ class FilamentShortcutKeysServiceProvider extends PackageServiceProvider
         // depend only on the contracts. Only the persistence and authorization bindings are meant to
         // be swapped by a host app; the resolution ports are @internal. PageContextProvider is left
         // unbound because it is page-specific, built per render from the current page.
-        $this->app->singleton(NavigationProvider::class, FilamentNavigationProvider::class);
+        // Scoped, not a singleton: its memoized list depends on the signed-in admin and the locale, so a
+        // long-lived worker (Octane, queues) must not carry it into the next request.
+        $this->app->scoped(NavigationProvider::class, FilamentNavigationProvider::class);
         $this->app->singleton(AuthorityGate::class, ConfigAuthorityGate::class);
 
         // In 'config' mode nothing is stored, so every persistence port resolves to a store that never

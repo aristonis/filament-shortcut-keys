@@ -13,6 +13,11 @@ class InMemoryNavigationProvider implements NavigationProvider
         return $this->items;
     }
 
+    public function registeredTargets(string $panelId): array
+    {
+        return array_map(fn ($item) => $item->structureKey, $this->items);
+    }
+
     public function versionToken(string $panelId): string
     {
         return $this->versionToken;

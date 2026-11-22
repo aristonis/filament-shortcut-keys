@@ -1,9 +1,10 @@
 # Aristonis Filament Shortcut Keys
 
 `aristonis/filament-shortcut-keys` gives a Filament v5 panel keyboard shortcuts derived from what the
-panel already declares. Registered resources and pages become navigation shortcuts, a page's header
-actions become action shortcuts, and the page's tables (its own, its relation managers', its table
-widgets') get the same fixed keys. Adding a resource gives it a shortcut; there is nothing to register
+panel already declares. Resources and pages in the sidebar become navigation shortcuts, lettered in
+sidebar order (hidden ones only with `navigation.include_hidden`), a page's header actions become
+action shortcuts, and the page's tables (its own, its relation managers', its table widgets') get the
+same fixed keys. Adding a resource gives it a shortcut; there is nothing to register
 per item.
 
 ## Orientation

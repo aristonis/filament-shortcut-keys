@@ -87,6 +87,13 @@ letters the overlay pins for header actions.
 Pin the screens whose keys people rely on. Automatic letters follow sidebar order, so adding a
 resource can move the letter of a later one that lost a clash; a pinned letter never moves.
 
+Resources and pages hidden from the sidebar get no navigation key. `'navigation' =>
+['include_hidden' => true]` letters them after every sidebar item, or an overlay letter pin opts in
+one hidden page. Hidden pages whose route needs a parameter, nested resources and resources without an
+index page never get one; disable, in the overlay, any other hidden page that shows nothing without a
+record or a query parameter. Cluster pages are lettered after the sidebar. When
+`shouldRegisterNavigation()` depends on the user, each admin is lettered by their own sidebar.
+
 A letter pin also turns on a header action that runs on the click itself, which otherwise gets no
 key on bare letters. Only pin such an action if a stray keystroke running it is acceptable.
 

@@ -7,7 +7,6 @@ use Aristonis\FilamentShortcutKeys\Core\Enums\CustomizationMode;
 use Aristonis\FilamentShortcutKeys\Core\Enums\TargetVerdict;
 use Aristonis\FilamentShortcutKeys\Core\Maintenance\TargetAudit;
 use Aristonis\FilamentShortcutKeys\Core\Sets\TableSet;
-use Aristonis\FilamentShortcutKeys\Core\ValueObjects\NavItem;
 use Aristonis\FilamentShortcutKeys\FilamentShortcutKeysPlugin;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMap;
 use Aristonis\FilamentShortcutKeys\Models\ShortcutMapEntry;
@@ -138,10 +137,7 @@ class PruneOrphanedEntriesCommand extends Command
         $plugin = $panel->getPlugin($this->pluginId());
 
         return [
-            'navigation' => array_map(
-                fn (NavItem $item) => $item->structureKey,
-                app(NavigationProvider::class)->items($panel->getId()),
-            ),
+            'navigation' => app(NavigationProvider::class)->registeredTargets($panel->getId()),
             'row-action' => $plugin instanceof FilamentShortcutKeysPlugin ? $plugin->getRowActions() : [],
             'table' => TableSet::behaviors(),
         ];
