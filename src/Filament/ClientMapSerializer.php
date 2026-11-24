@@ -57,8 +57,8 @@ final readonly class ClientMapSerializer
 
     /**
      * @param  array<string, string>  $urls
-     * @param  array<string, array<string, string>>  $actions
-     * @return array<string, string>|null
+     * @param  array<string, array<string, string|true>>  $actions
+     * @return array<string, string|true>|null
      */
     private function activation(ShortcutBinding $binding, string $set, array $urls, array $actions): ?array
     {
@@ -109,7 +109,7 @@ final readonly class ClientMapSerializer
     }
 
     /**
-     * @return array<string, array<string, string>> target identity => how the client fires it
+     * @return array<string, array<string, string|true>> target identity => how the client fires it
      */
     private function actionActivations(): array
     {
@@ -127,12 +127,14 @@ final readonly class ClientMapSerializer
     }
 
     /**
-     * @return array<string, string>|null
+     * @return array<string, string|true>|null
      */
     private function actionActivation(ActionTarget $action): ?array
     {
         if ($action->url !== null) {
-            return ['kind' => 'navigate', 'url' => $action->url];
+            return $action->opensInNewTab
+                ? ['kind' => 'navigate', 'url' => $action->url, 'newTab' => true]
+                : ['kind' => 'navigate', 'url' => $action->url];
         }
 
         return $action->selector === null

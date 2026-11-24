@@ -10,11 +10,16 @@ final class ViewOrder extends ViewRecord
 {
     protected static string $resource = OrderResource::class;
 
-    /** `archive` wants the A that the registered `approve` row action holds. */
+    /**
+     * `archive` wants the A that the registered `approve` row action holds. `print` and `share` open
+     * their url in a new tab, set the two ways Filament allows.
+     */
     protected function getHeaderActions(): array
     {
         return [
             Action::make('archive')->requiresConfirmation(),
+            Action::make('print')->url('/print/order', shouldOpenInNewTab: true),
+            Action::make('share')->url('/share/order')->openUrlInNewTab(),
         ];
     }
 }

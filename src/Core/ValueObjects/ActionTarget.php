@@ -10,6 +10,8 @@ namespace Aristonis\FilamentShortcutKeys\Core\ValueObjects;
  *
  * runsImmediately marks an action that does its work on the click itself, with no page, modal or
  * confirmation in between, so a single stray key would run it.
+ *
+ * opensInNewTab carries the action's own new-tab setting, so a navigated url opens where a click would.
  */
 final readonly class ActionTarget
 {
@@ -19,5 +21,6 @@ final readonly class ActionTarget
         public ?string $selector = null,
         public ?string $url = null,
         public bool $runsImmediately = false,
+        public bool $opensInNewTab = false,
     ) {}
 }

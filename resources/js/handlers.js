@@ -5,7 +5,13 @@ import { safeQuery } from './query.js'
 // actually fired something, so the dispatcher knows whether to swallow the key. A handler that can't
 // act (missing element, wrong activation kind) returns false and lets the next candidate try.
 
-function navigate(url) {
+function navigate(url, newTab = false) {
+    // The action asked for a new tab, so it leaves the panel exactly as a click on its link would.
+    if (newTab) {
+        window.open(url, '_blank', 'noopener')
+        return
+    }
+
     // Prefer Livewire's SPA navigation so the shortcut feels like a normal in-panel click; fall back
     // to a full load when Livewire isn't present (e.g. a page outside the SPA shell).
     if (window.Livewire && typeof window.Livewire.navigate === 'function') {
@@ -30,7 +36,7 @@ function clickSelector(selector) {
 
 function fireActivation(activation) {
     if (activation?.kind === 'navigate') {
-        navigate(activation.url)
+        navigate(activation.url, activation.newTab === true)
         return true
     }
 
@@ -49,7 +55,7 @@ export const handlers = {
             return false
         }
 
-        navigate(activation.url)
+        navigate(activation.url, activation.newTab === true)
         return true
     },
 

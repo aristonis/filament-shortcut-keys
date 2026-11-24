@@ -49,6 +49,26 @@ describe('the navigation handler', () => {
         assert.deepEqual(window.location.assigned, ['/orders'])
     })
 
+    it('opens a new tab, not the SPA shell, when the activation asks for one', () => {
+        installDocument()
+        const visited = []
+        const opened = []
+        const window = installWindow({
+            Livewire: { navigate: (url) => visited.push(url) },
+            open: (...args) => opened.push(args),
+        })
+
+        assert.equal(
+            handlers.navigation(
+                binding({ kind: 'navigate', url: '/print/1', newTab: true }),
+            ),
+            true,
+        )
+        assert.deepEqual(opened, [['/print/1', '_blank', 'noopener']])
+        assert.deepEqual(visited, [])
+        assert.deepEqual(window.location.assigned, [])
+    })
+
     it('declines anything that is not a navigation', () => {
         installDocument()
         installWindow()
@@ -81,6 +101,26 @@ for (const name of ['global', 'custom']) {
                 true,
             )
             assert.deepEqual(visited, ['/orders/create'])
+        })
+
+        it('opens a link in a new tab when the action says so', () => {
+            // A header action set with ->url($url, shouldOpenInNewTab: true) or ->openUrlInNewTab().
+            installDocument()
+            const visited = []
+            const opened = []
+            installWindow({
+                Livewire: { navigate: (url) => visited.push(url) },
+                open: (...args) => opened.push(args),
+            })
+
+            assert.equal(
+                handlers[name](
+                    binding({ kind: 'navigate', url: '/print/1', newTab: true }),
+                ),
+                true,
+            )
+            assert.deepEqual(opened, [['/print/1', '_blank', 'noopener']])
+            assert.deepEqual(visited, [])
         })
 
         it('clicks when the action is a control', () => {

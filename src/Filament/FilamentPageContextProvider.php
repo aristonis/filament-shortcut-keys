@@ -105,6 +105,7 @@ final class FilamentPageContextProvider implements PageContextProvider
             filled($url) ? null : $this->livewireSelector($action),
             filled($url) ? (string) $url : null,
             ! filled($url) && ! $this->asksFirst($action),
+            filled($url) && $action->shouldOpenUrlInNewTab(),
         );
     }
 
